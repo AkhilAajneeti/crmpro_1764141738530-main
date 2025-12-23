@@ -35,26 +35,7 @@
 // };
 import api from "./api";
 
-/* GET */
 export const fetchAccounts = async () => {
   const res = await api.get("/api/accounts");
-  return res.data;
-};
-
-/* CREATE */
-export const createAccount = async (payload) => {
-  const res = await api.post("/api/accounts", payload);
-  return res.data;
-};
-
-/* UPDATE */
-export const updateAccount = async (id, payload) => {
-  const res = await api.put(`/api/accounts?id=${id}`, payload);
-  return res.data;
-};
-
-/* DELETE */
-export const deleteAccount = async (id) => {
-  const res = await api.delete(`/api/accounts?id=${id}`);
   return res.data;
 };

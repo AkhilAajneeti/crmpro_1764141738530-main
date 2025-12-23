@@ -16,13 +16,9 @@ export default async function handler(req, res) {
       data: req.body,
     });
 
-    return res.status(200).json(response.data);
-  } catch (error) {
-    console.error("ESPO ERROR:", error?.response?.data || error.message);
-
-    return res.status(error?.response?.status || 500).json({
-      message: "EspoCRM API failed",
-      details: error?.response?.data || error.message,
-    });
+    res.status(200).json(response.data);
+  } catch (err) {
+    console.error("SERVER ERROR:", err?.response?.data || err.message);
+    res.status(500).json({ error: "Serverless function failed" });
   }
 }
