@@ -3,14 +3,14 @@ import axios from "axios";
 export default async function handler(req, res) {
   try {
     const auth = Buffer.from(
-      ${process.env.ESPO_USER}:${process.env.ESPO_PASS}
+     ` ${process.env.ESPO_USER}:${process.env.ESPO_PASS}`
     ).toString("base64");
 
     const response = await axios({
       method: req.method,
       url: "https://crm.theintelligentrealtors.com/api/v1/Account",
       headers: {
-        Authorization: Basic ${auth},
+        Authorization: `Basic ${auth}`,
         "Content-Type": "application/json",
       },
       data: req.method !== "GET" ? req.body : undefined,
