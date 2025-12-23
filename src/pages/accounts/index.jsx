@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import Papa from "papaparse";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import Icon from "../../components/AppIcon";
@@ -6,7 +7,7 @@ import Button from "../../components/ui/Button";
 import AccountsTable from "./components/AccountsTable";
 import AccountsFilters from "./components/AccountsFilters";
 import AccountDrawer from "./components/AccountDrawer";
-import { fetchAccounts } from "services/account.service";
+import { deleteAccount, fetchAccounts } from "services/account.service";
 
 const AccountsPage = () => {
   const [mockAccounts, setmockAccounts] = useState([]);
@@ -34,6 +35,18 @@ const AccountsPage = () => {
     };
     loadAccount();
   }, []);
+
+  const handleAccountSuccess = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAccounts();
+      setmockAccounts(data.list); // refresh table
+    } catch (error) {
+      console.error("Failed to refresh accounts", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter accounts based on active filters
   const filteredAccounts = useMemo(() => {
@@ -94,9 +107,32 @@ const AccountsPage = () => {
     setDrawerMode("view");
   };
 
-  const handleBulkAction = (action, selectedIds) => {
-    console.log(`Bulk ${action} for accounts:`, selectedIds);
-    // Implement bulk actions here
+  const handleBulkAction = async (action, ids) => {
+    if (action !== "delete") return;
+
+    const validIds = ids.filter(Boolean); // remove undefined/null
+
+    if (validIds.length === 0) {
+      alert("No valid account IDs");
+      return;
+    }
+
+    if (!window.confirm(`Delete ${validIds.length} accounts?`)) return;
+
+    try {
+      console.log("DELETE IDS:", ids);
+
+      for (const id of validIds) {
+        await deleteAccount(id);
+      }
+
+      setmockAccounts((prev) =>
+        prev.filter((acc) => !validIds.includes(acc.id))
+      );
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+      alert("Failed to delete accounts");
+    }
   };
 
   const handleFiltersChange = (newFilters) => {
@@ -108,6 +144,55 @@ const AccountsPage = () => {
     setDrawerMode("create");
 
     setIsDrawerOpen(true);
+  };
+
+  const handleExportAccount = () => {
+    try {
+      if (!filteredAccounts || filteredAccounts.length === 0) {
+        alert("No Account To Export");
+        return;
+      }
+      const exportData = filteredAccounts.map((account) => ({
+        Name: account?.name || "",
+        Industry: account?.industry || "",
+        Website: account?.website || "",
+        Phone: account?.phoneNumber || "",
+
+        "Billing Street": account?.billingAddressStreet || "",
+        "Billing City": account?.billingAddressCity || "",
+        "Billing State": account?.billingAddressState || "",
+        "Billing Country": account?.billingAddressCountry || "",
+        "Billing Postal Code": account?.billingAddressPostalCode || "",
+
+        Type: account?.type || "",
+        Description: account?.description || "",
+        "Created By": account?.createdByName || "",
+        "Created At": account?.createdAt || "",
+      }));
+
+      const csv = Papa.unparse(exportData);
+      const blob = new Blob([csv], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `accounts_export_${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+
+      alert(`Successfully exported ${exportData.length} accounts`);
+    } catch (error) {
+      console.error("Error exporting accounts:", error);
+      alert("Failed to export accounts. Please try again.");
+    }
   };
 
   return (
@@ -131,6 +216,10 @@ const AccountsPage = () => {
             </div>
 
             <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+              <Button variant="outline" onClick={handleExportAccount}>
+                <Icon name="Upload" size={16} className="mr-2" />
+                Export
+              </Button>
               <Button variant="outline">
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
@@ -162,10 +251,11 @@ const AccountsPage = () => {
         account={selectedAccount}
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}
+        onSuccess={handleAccountSuccess}
         mode={drawerMode}
       />
     </div>
   );
 };
 
-export default AccountsPage; 
+export default AccountsPage;

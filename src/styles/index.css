@@ -13,3 +13,11 @@ body {
 input{
   border-color: #5bcd5f4d!important;
 }
+select{
+   /* --tw-ring-color: #5bcd5f4d!important; */
+     border-color: #5bcd5f4d!important;
+}
+select:focus{
+   --tw-ring-color: #5bcd5f4d!important;
+     border-color: #5bcd5f4d!important;
+}

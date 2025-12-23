@@ -27,10 +27,10 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
  
   
   const columns = [
-    { key: 'company', label: 'Company Name', sortable: true },
+    { key: 'company', label: 'Account Name', sortable: true },
     { key: 'industry', label: 'Industry', sortable: true },
     { key: 'revenue', label: 'Annual Revenue', sortable: true },
-    { key: 'contacts', label: 'Contacts', sortable: true },
+    { key: 'contacts', label: 'Type', sortable: true },
     { key: 'dealValue', label: 'Deal Value', sortable: true },
     { key: 'lastActivity', label: 'Last Activity', sortable: true },
     { key: 'actions', label: 'Actions', sortable: false }
@@ -176,7 +176,7 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onBulkAction('delete', Array.from(selectedRows))}
+                  onClick={() => onBulkAction('delete',Array.from(selectedRows))}
                 >
                   <Icon name="Trash2" size={16} className="mr-2" />
                   Delete
@@ -309,8 +309,8 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                         <Icon name="Building2" size={16} className="text-primary" />
                       </div>
                       <div>
-                        <div className="font-medium text-foreground">{account?.website}</div>
-                        <div className="text-sm text-muted-foreground">{account?.owner}</div>
+                        <div className="font-medium text-foreground">{account?.name}</div>
+                        <div className="text-sm text-muted-foreground">{account?.website}</div>
                       </div>
                     </div>
                   </td>
@@ -322,18 +322,18 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                   <td className="p-4 text-foreground">{formatCurrency(account?.revenue)}</td>
                 )}
                 {visibleColumns?.contacts && (
-                  <td className="p-4 text-foreground">{account?.contactCount}</td>
+                  <td className="p-4 text-foreground">{account?.type}</td>
                 )}
                 {visibleColumns?.dealValue && (
                   <td className="p-4 text-foreground">{formatCurrency(account?.dealValue)}</td>
                 )}
                 {visibleColumns?.lastActivity && (
-                  <td className="p-4 text-muted-foreground">{formatDate(account?.lastActivity)}</td>
+                  <td className="p-4 text-muted-foreground">{formatDate(account?.modifiedAt)}</td>
                 )}
                 {visibleColumns?.actions && (
                   <td className="p-4" onClick={(e) => e?.stopPropagation()}>
                     <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon"  onClick={() => onRowClick(account)}>
                         <Icon name="Edit" size={16} />
                       </Button>
                       <Button variant="ghost" size="icon">

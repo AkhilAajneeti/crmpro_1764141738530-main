@@ -2,8 +2,14 @@ import React, { useEffect, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-
-const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
+import { createAccount, updateAccount } from "services/account.service";
+const AccountDrawer = ({
+  account,
+  isOpen,
+  onClose,
+  mode = "view",
+  onSuccess,
+}) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(account || {});
@@ -14,12 +20,78 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
     name: "",
     website: "",
     industry: "",
+    type: "",
+    phoneNumber: "",
+    emailAddress: "",
     description: "",
-    annualRevenue: "",
-    employeeCount: "",
-    billingAddress: "",
-    shippingAddress: "",
+    // team: "",
+    billingAddressStreet: "",
+    billingAddressCity: "",
+    billingAddressState: "",
+    billingAddressPostalCode: "",
+    billingAddressCountry: "",
+    shippingAddressStreet: "",
+    shippingAddressCity: "",
+    shippingAddressState: "",
+    shippingAddressCountry: "",
+    shippingAddressPostalCode: "",
   });
+
+  // industries options
+  const INDUSTRIES = [
+    "Advertising",
+    "Aerospace",
+    "Agriculture",
+    "Apparel & Accessories",
+    "Architecture",
+    "Automotive",
+    "Banking",
+    "Biotechnology",
+    "Building Materials & Equipment",
+    "Chemical",
+    "Computer",
+    "Construction",
+    "Consulting",
+    "Creative",
+    "Culture",
+    "Defense",
+    "Education",
+    "Electric Power",
+    "Electronics",
+    "Energy",
+    "Entertainment & Leisure",
+    "Finance",
+    "Food & Beverage",
+    "Grocery",
+    "Healthcare",
+    "Hospitality",
+    "Insurance",
+    "Legal",
+    "Manufacturing",
+    "Marketing",
+    "Mass Media",
+    "Mining",
+    "Music",
+    "Petroleum",
+    "Publishing",
+    "Real Estate",
+    "Retail",
+    "Service",
+    "Shipping",
+    "Software",
+    "Sports",
+    "Support",
+    "Technology",
+    "Telecommunications",
+    "Television",
+    "Testing, Inspection & Certification",
+    "Transportation",
+    "Travel",
+    "Venture Capital",
+    "Water",
+    "Wholesale",
+  ];
+  const TYPE = ["Customer", "Investor", "Partner", "Reseller"];
 
   useEffect(() => {
     if (account && (drawerMode === "view" || drawerMode === "edit")) {
@@ -44,7 +116,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
         phoneNumber: "",
         emailAddress: "",
         description: "",
-        team: "",
+        // team: "",
         billingAddressStreet: "",
         billingAddressCity: "",
         billingAddressState: "",
@@ -182,10 +254,31 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
     },
   ];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Handle save logic here
-    console.log("Saving account data:", editData);
-    setIsEditing(false);
+    // console.log("Saving account data:", editData);
+    // setIsEditing(false);
+    try {
+      setIsLoading(true);
+      const payload = {
+        ...formData,
+        version: account?.versionNumber,
+      };
+
+      console.log("CREATE ACCOUNT PAYLOAD", payload);
+      if (drawerMode === "edit" || drawerMode === "create") {
+        await updateAccount(account.id, payload);
+      } else {
+        await createAccount(payload);
+      }
+      onSuccess(); // refresh table
+      onClose(); // close drawer
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create account");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -362,17 +455,6 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                     />
                   </div>
 
-                  {/* <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Industry
-                    </label>
-                    <Input
-                      name="industry"
-                      value={formData?.industry}
-                      onChange={handleInputChange}
-                      placeholder="Technology"
-                    />
-                  </div> */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
@@ -407,7 +489,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Input
-                          name="phoneNumber"
+                          name="billingAddressStreet"
                           type="text"
                           value={formData?.billingAddressStreet}
                           onChange={handleInputChange}
@@ -416,7 +498,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="City"
+                          name="billingAddressCity"
                           type="text"
                           value={formData?.billingAddressCity}
                           onChange={handleInputChange}
@@ -425,7 +507,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="State"
+                          name="billingAddressState"
                           type="text"
                           value={formData?.billingAddressState}
                           onChange={handleInputChange}
@@ -434,7 +516,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="Postal"
+                          name="billingAddressPostalCode"
                           type="text"
                           value={formData?.billingAddressPostalCode}
                           onChange={handleInputChange}
@@ -443,7 +525,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div className="col-span-2">
                         <Input
-                          name="Country"
+                          name="billingAddressCountry"
                           type="text"
                           value={formData?.billingAddressCountry}
                           onChange={handleInputChange}
@@ -460,7 +542,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Input
-                          name="phoneNumber"
+                          name="shippingAddressStreet"
                           type="text"
                           value={formData?.shippingAddressStreet}
                           onChange={handleInputChange}
@@ -469,7 +551,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="City"
+                          name="shippingAddressCity"
                           type="text"
                           value={formData?.shippingAddressCity}
                           onChange={handleInputChange}
@@ -478,7 +560,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="State"
+                          name="shippingAddressState"
                           type="text"
                           value={formData?.shippingAddressState}
                           onChange={handleInputChange}
@@ -487,7 +569,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div>
                         <Input
-                          name="Postal"
+                          name="shippingAddressPostalCode"
                           type="text"
                           value={formData?.shippingAddressPostalCode}
                           onChange={handleInputChange}
@@ -496,7 +578,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                       </div>
                       <div className="col-span-2">
                         <Input
-                          name="Country"
+                          name="shippingAddressCountry"
                           type="text"
                           value={formData?.shippingAddressCountry}
                           onChange={handleInputChange}
@@ -513,7 +595,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                           Assigned User
                         </label>
                         <Input
-                          name="Assigned UserName"
+                          name="assignedUserName"
                           type="text"
                           value={formData?.assignedUserName}
                           onChange={handleInputChange}
@@ -525,7 +607,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                           Teams
                         </label>
                         <Input
-                          name="City"
+                          name="team"
                           type="text"
                           value={formData?.team}
                           onChange={handleInputChange}
@@ -541,22 +623,34 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Input
-                          name="phoneNumber"
-                          type="text"
+                        <select
+                          name="type"
                           value={formData?.type}
                           onChange={handleInputChange}
-                          placeholder="Type"
-                        />
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          <option value="">Type</option>
+                          {TYPE.map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div>
-                        <Input
+                        <select
                           name="industry"
-                          type="text"
-                          value={formData?.industry}
+                          value={formData.industry}
                           onChange={handleInputChange}
-                          placeholder="Industry"
-                        />
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          <option value="">Select industry</option>
+                          {INDUSTRIES.map((industry) => (
+                            <option key={industry} value={industry}>
+                              {industry}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="col-span-2">
                         <textarea
@@ -626,7 +720,7 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                   </div>
                 </div>
 
-                {/* Account Details */}
+                {/* Account Details update*/}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-foreground">
                     Account Details
@@ -635,59 +729,74 @@ const AccountDrawer = ({ account, isOpen, onClose, mode = "view" }) => {
                   {isEditing ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        label="Company Name"
-                        value={editData?.company || ""}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            company: e?.target?.value,
-                          })
-                        }
+                        label="Account Name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
                       />
 
-                      <Input
-                        label="Industry"
-                        value={editData?.industry || ""}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            industry: e?.target?.value,
-                          })
-                        }
-                      />
+                      <select
+                        name="industry"
+                        value={formData.industry}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="">Select Industry</option>
+                        {INDUSTRIES.map((industry) => (
+                          <option key={industry} value={industry}>
+                            {industry}
+                          </option>
+                        ))}
+                      </select>
 
                       <Input
                         label="Website"
-                        value={editData?.website || "https://techcorp.com"}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            website: e?.target?.value,
-                          })
-                        }
+                        name="website"
+                        value={formData.website}
+                        onChange={handleInputChange}
                       />
 
                       <Input
                         label="Phone"
-                        value={editData?.phone || "+1 (555) 123-4567"}
-                        onChange={(e) =>
-                          setEditData({ ...editData, phone: e?.target?.value })
-                        }
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
                       />
 
                       <Input
-                        label="Address"
-                        value={
-                          editData?.address ||
-                          "123 Tech Street, San Francisco, CA 94105"
-                        }
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            address: e?.target?.value,
-                          })
-                        }
+                        label="Billing Street"
+                        name="billingAddressStreet"
+                        value={formData.billingAddressStreet}
+                        onChange={handleInputChange}
                         className="md:col-span-2"
+                      />
+
+                      <Input
+                        label="City"
+                        name="billingAddressCity"
+                        value={formData.billingAddressCity}
+                        onChange={handleInputChange}
+                      />
+
+                      <Input
+                        label="State"
+                        name="billingAddressState"
+                        value={formData.billingAddressState}
+                        onChange={handleInputChange}
+                      />
+
+                      <Input
+                        label="Postal Code"
+                        name="billingAddressPostalCode"
+                        value={formData.billingAddressPostalCode}
+                        onChange={handleInputChange}
+                      />
+
+                      <Input
+                        label="Country"
+                        name="billingAddressCountry"
+                        value={formData.billingAddressCountry}
+                        onChange={handleInputChange}
                       />
                     </div>
                   ) : (

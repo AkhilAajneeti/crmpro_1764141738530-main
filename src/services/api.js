@@ -6,7 +6,7 @@ const password = "79pmYKy34C}";
 const basicAuthToken = btoa(`${username}:${password}`);
 
 const api = axios.create({
-  baseURL: "/crm",
+  baseURL:import.meta.env.VITE_API_BASE_URL,
   headers: {
     Authorization: `Basic ${basicAuthToken}`,
     "Content-Type": "application/json",
