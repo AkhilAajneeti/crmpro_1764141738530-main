@@ -34,10 +34,14 @@
 //   return res.data;
 // };
 import api from "./api";
+const isLocal = location.hostname === "localhost";
 
+const url = isLocal
+  ? "/api/accounts.local"
+  : "/api/accounts";
 /* GET */
 export const fetchAccounts = async () => {
-  const res = await api.get("/api/accounts");
+  const res = await api.get(url);
   return res.data;
 };
 
