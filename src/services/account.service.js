@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const fetchAccounts = async () => {
-  const res = await api.get("/api/accounts.js");
+  const res = await api.get("/api/accounts");
   return res.data;
 };
 
