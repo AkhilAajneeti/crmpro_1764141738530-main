@@ -17,13 +17,13 @@ export default defineConfig({
     host: "0.0.0.0",
     strictPort: true,
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new'],
-    proxy: {
-      "/crm": {
-        target: "https://crm.theintelligentrealtors.com",
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/crm/, "/api/v1"),
-      },
-    }
+    // proxy: {
+    //   "/crm": {
+    //     target: "https://crm.theintelligentrealtors.com",
+    //     changeOrigin: true,
+    //     secure: false,
+    //     rewrite: (path) => path.replace(/^\/crm/, "/api/v1"),
+    //   },
+    // }
   }
 });
