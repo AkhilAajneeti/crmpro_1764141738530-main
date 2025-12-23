@@ -1,28 +1,48 @@
-import axios from "axios";
+export const config = {
+  runtime: "edge",
+};
 
-export default async function handler(req, res) {
+export default async function handler(req) {
   try {
-    const auth = Buffer.from(
-     ` ${process.env.ESPO_USER}:${process.env.ESPO_PASS}`
-    ).toString("base64");
+    // Safety check for env vars
+    if (!process.env.ESPO_USER || !process.env.ESPO_PASS) {
+      return new Response(
+        JSON.stringify({ error: "Missing ESPO credentials" }),
+        { status: 500 }
+      );
+    }
 
-    const response = await axios({
-      method: req.method,
-      url: "https://crm.theintelligentrealtors.com/api/v1/Account",
+    // Create Basic Auth header (Edge compatible)
+    const auth = btoa(
+      `${process.env.ESPO_USER}:${process.env.ESPO_PASS}`
+    );
+
+    const response = await fetch(
+      "https://crm.theintelligentrealtors.com/api/v1/Account",
+      {
+        method: req.method,
+        headers: {
+          "Authorization": `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.text();
+
+    return new Response(data, {
+      status: response.status,
       headers: {
-        Authorization: `Basic ${auth}`,
         "Content-Type": "application/json",
       },
-      data: req.method !== "GET" ? req.body : undefined,
     });
-
-    res.status(response.status).json(response.data);
-  } catch (err) {
-    console.error("SERVER ERROR:", err?.response?.data || err.message);
-
-    res.status(err?.response?.status || 500).json({
-      error: "Serverless function failed",
-      details: err?.response?.data || null,
-    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: "Vercel proxy failed",
+        message: error.message,
+      }),
+      { status: 500 }
+    );
   }
 }
