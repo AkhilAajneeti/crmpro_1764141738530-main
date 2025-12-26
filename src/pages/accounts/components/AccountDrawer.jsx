@@ -24,7 +24,7 @@ const AccountDrawer = ({
     phoneNumber: "",
     emailAddress: "",
     description: "",
-    // team: "",
+    team: "",
     billingAddressStreet: "",
     billingAddressCity: "",
     billingAddressState: "",
@@ -100,11 +100,7 @@ const AccountDrawer = ({
         name: account?.company || account?.name || "",
         website: account?.website || "",
         industry: account?.industry || "",
-        description: account?.description || "",
         phoneNumber: account?.phoneNumber || "",
-        emailAddress: account?.emailAddress || "",
-        billingAddress: account?.billingAddress || "",
-        shippingAddress: account?.shippingAddress || "",
       });
     } else if (drawerMode === "create") {
       // Reset form for new account
@@ -116,7 +112,7 @@ const AccountDrawer = ({
         phoneNumber: "",
         emailAddress: "",
         description: "",
-        // team: "",
+        team: "",
         billingAddressStreet: "",
         billingAddressCity: "",
         billingAddressState: "",
@@ -127,6 +123,7 @@ const AccountDrawer = ({
         shippingAddressState: "",
         shippingAddressCountry: "",
         shippingAddressPostalCode: "",
+        // versionNumber: account?.versionNumber|| null,
       });
     }
   }, [account, drawerMode]);
@@ -140,18 +137,15 @@ const AccountDrawer = ({
   };
 
   const handleCancelEdit = () => {
+    setIsEditing(false);
     setDrawerMode("view");
     // Reset form data to original account data
     if (account) {
       setFormData({
-        name: account?.company || account?.name || "",
+        name: account?.name || "",
         website: account?.website || "",
         industry: account?.industry || "",
-        description: account?.description || "",
-        annualRevenue: account?.annualRevenue || "",
-        employeeCount: account?.employeeCount || "",
-        billingAddress: account?.billingAddress || "",
-        shippingAddress: account?.shippingAddress || "",
+        phoneNumber: account?.phoneNumber || "",
       });
     }
   };
@@ -253,32 +247,68 @@ const AccountDrawer = ({
       time: "11:00 AM",
     },
   ];
+  const validateForm = () => {
+    if (!formData?.name?.trim()) {
+      alert("Account name is required");
+      return false;
+    }
+    return true;
+  };
 
-  const handleSave = async () => {
-    // Handle save logic here
-    // console.log("Saving account data:", editData);
-    // setIsEditing(false);
+  const handleUpdate = async () => {
+    if (!validateForm()) return;
+
     try {
       setIsLoading(true);
+
       const payload = {
-        ...formData,
-        version: account?.versionNumber,
+      name: formData.name,
       };
 
-      console.log("CREATE ACCOUNT PAYLOAD", payload);
-      if (drawerMode === "edit" || drawerMode === "create") {
-        await updateAccount(account.id, payload);
-      } else {
-        await createAccount(payload);
-      }
+      console.log("UPDATE ACCOUNT PAYLOAD", payload);
+      console.log("UPDATE versionNumber", account?.versionNumber);
+
+      await updateAccount(account.id, payload, account?.versionNumber);
+
       onSuccess(); // refresh table
       onClose(); // close drawer
     } catch (err) {
-      console.error(err);
+      console.error("Update failed:", err);
+      alert("Failed to update account");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleCreate = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setIsLoading(true);
+
+      const payload = {
+        ...formData,
+      };
+
+      console.log("CREATE ACCOUNT PAYLOAD", payload);
+
+      await createAccount(payload);
+
+      onSuccess(); // refresh table
+      onClose(); // close drawer
+    } catch (err) {
+      console.error("Create failed:", err);
       alert("Failed to create account");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSave = () => {
+  if (drawerMode === "edit") {
+    handleUpdate();
+  } else {
+    handleCreate();
+  }
   };
 
   const handleCancel = () => {
@@ -385,7 +415,9 @@ const AccountDrawer = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    setIsEditing(true);
+                   setDrawerMode("edit");}}
                 >
                   <Icon name="Edit" size={16} className="mr-2" />
                   Edit
@@ -426,274 +458,271 @@ const AccountDrawer = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            {activeTab === "overview" &&
-              (drawerMode === "create" || drawerMode === "edit") && (
-                <div className="p-6 space-y-4">
+            {activeTab === "overview" && (drawerMode === "create") && (
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    name="name"
+                    value={formData?.name}
+                    onChange={handleInputChange}
+                    placeholder="Acme Corporation"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Website
+                  </label>
+                  <Input
+                    name="website"
+                    type="url"
+                    value={formData?.website}
+                    onChange={handleInputChange}
+                    placeholder="https://www.acme.com"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Name <span className="text-destructive">*</span>
+                      Phone
                     </label>
                     <Input
-                      name="name"
-                      value={formData?.name}
+                      name="phoneNumber"
+                      type="tel"
+                      value={formData?.phoneNumber}
                       onChange={handleInputChange}
-                      placeholder="Acme Corporation"
-                      required
+                      placeholder="1234567891"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Website
+                      Email
                     </label>
                     <Input
-                      name="website"
-                      type="url"
-                      value={formData?.website}
+                      name="emailAddress"
+                      type="email"
+                      value={formData?.emailAddress}
                       onChange={handleInputChange}
-                      placeholder="https://www.acme.com"
+                      placeholder="example123@gmail.com"
                     />
                   </div>
+                </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Billing Address
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        name="billingAddressStreet"
+                        type="text"
+                        value={formData?.billingAddressStreet}
+                        onChange={handleInputChange}
+                        placeholder="Street"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="billingAddressCity"
+                        type="text"
+                        value={formData?.billingAddressCity}
+                        onChange={handleInputChange}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="billingAddressState"
+                        type="text"
+                        value={formData?.billingAddressState}
+                        onChange={handleInputChange}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="billingAddressPostalCode"
+                        type="text"
+                        value={formData?.billingAddressPostalCode}
+                        onChange={handleInputChange}
+                        placeholder="text"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        name="billingAddressCountry"
+                        type="text"
+                        value={formData?.billingAddressCountry}
+                        onChange={handleInputChange}
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Shipping Address
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        name="shippingAddressStreet"
+                        type="text"
+                        value={formData?.shippingAddressStreet}
+                        onChange={handleInputChange}
+                        placeholder="Street"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="shippingAddressCity"
+                        type="text"
+                        value={formData?.shippingAddressCity}
+                        onChange={handleInputChange}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="shippingAddressState"
+                        type="text"
+                        value={formData?.shippingAddressState}
+                        onChange={handleInputChange}
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        name="shippingAddressPostalCode"
+                        type="text"
+                        value={formData?.shippingAddressPostalCode}
+                        onChange={handleInputChange}
+                        placeholder="text"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        name="shippingAddressCountry"
+                        type="text"
+                        value={formData?.shippingAddressCountry}
+                        onChange={handleInputChange}
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Phone
+                        Assigned User
                       </label>
                       <Input
-                        name="phoneNumber"
-                        type="tel"
-                        value={formData?.phoneNumber}
+                        name="assignedUserName"
+                        type="text"
+                        value={formData?.assignedUserName}
                         onChange={handleInputChange}
-                        placeholder="1234567891"
+                        placeholder="Assigned User"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Email
+                        Teams
                       </label>
                       <Input
-                        name="emailAddress"
-                        type="email"
-                        value={formData?.emailAddress}
+                        name="team"
+                        type="text"
+                        value={formData?.team}
                         onChange={handleInputChange}
-                        placeholder="example123@gmail.com"
+                        placeholder="Developer"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Billing Address
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Input
-                          name="billingAddressStreet"
-                          type="text"
-                          value={formData?.billingAddressStreet}
-                          onChange={handleInputChange}
-                          placeholder="Street"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="billingAddressCity"
-                          type="text"
-                          value={formData?.billingAddressCity}
-                          onChange={handleInputChange}
-                          placeholder="City"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="billingAddressState"
-                          type="text"
-                          value={formData?.billingAddressState}
-                          onChange={handleInputChange}
-                          placeholder="State"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="billingAddressPostalCode"
-                          type="text"
-                          value={formData?.billingAddressPostalCode}
-                          onChange={handleInputChange}
-                          placeholder="text"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          name="billingAddressCountry"
-                          type="text"
-                          value={formData?.billingAddressCountry}
-                          onChange={handleInputChange}
-                          placeholder="Country"
-                        />
-                      </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Details
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <select
+                        name="type"
+                        value={formData?.type}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="">Type</option>
+                        {TYPE.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Shipping Address
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Input
-                          name="shippingAddressStreet"
-                          type="text"
-                          value={formData?.shippingAddressStreet}
-                          onChange={handleInputChange}
-                          placeholder="Street"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="shippingAddressCity"
-                          type="text"
-                          value={formData?.shippingAddressCity}
-                          onChange={handleInputChange}
-                          placeholder="City"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="shippingAddressState"
-                          type="text"
-                          value={formData?.shippingAddressState}
-                          onChange={handleInputChange}
-                          placeholder="State"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          name="shippingAddressPostalCode"
-                          type="text"
-                          value={formData?.shippingAddressPostalCode}
-                          onChange={handleInputChange}
-                          placeholder="text"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          name="shippingAddressCountry"
-                          type="text"
-                          value={formData?.shippingAddressCountry}
-                          onChange={handleInputChange}
-                          placeholder="Country"
-                        />
-                      </div>
+                    <div>
+                      <select
+                        name="industry"
+                        value={formData.industry}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="">Select industry</option>
+                        {INDUSTRIES.map((industry) => (
+                          <option key={industry} value={industry}>
+                            {industry}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  </div>
-
-                  <div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Assigned User
-                        </label>
-                        <Input
-                          name="assignedUserName"
-                          type="text"
-                          value={formData?.assignedUserName}
-                          onChange={handleInputChange}
-                          placeholder="Assigned User"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Teams
-                        </label>
-                        <Input
-                          name="team"
-                          type="text"
-                          value={formData?.team}
-                          onChange={handleInputChange}
-                          placeholder="Developer"
-                        />
-                      </div>
+                    <div className="col-span-2">
+                      <textarea
+                        name="description"
+                        value={formData?.description}
+                        onChange={handleInputChange}
+                        placeholder="Brief description of the company..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Details
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <select
-                          name="type"
-                          value={formData?.type}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          <option value="">Type</option>
-                          {TYPE.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <select
-                          name="industry"
-                          value={formData.industry}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          <option value="">Select industry</option>
-                          {INDUSTRIES.map((industry) => (
-                            <option key={industry} value={industry}>
-                              {industry}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <textarea
-                          name="description"
-                          value={formData?.description}
-                          onChange={handleInputChange}
-                          placeholder="Brief description of the company..."
-                          rows={3}
-                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3 pt-4">
-                    <Button
-                      onClick={handleSave}
-                      disabled={isLoading}
-                      className="flex-1"
-                    >
-                      {isLoading
-                        ? "Saving..."
-                        : drawerMode === "edit"
-                        ? "Update Account"
-                        : "Save Account"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={
-                        drawerMode === "edit" ? handleCancelEdit : onClose
-                      }
-                      disabled={isLoading}
-                    >
-                      Cancel
-                    </Button>
                   </div>
                 </div>
-              )}
 
-            {activeTab === "overview" && drawerMode === "view" && account && (
+                <div className="flex items-center space-x-3 pt-4">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    {isLoading
+                      ? "Saving..."
+                      : drawerMode === "edit"
+                      ? "Update Account"
+                      : "Save Account"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={drawerMode === "edit" ? handleCancelEdit : onClose}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "overview" && (drawerMode === "view"||drawerMode === "edit") && account && (
               <div className="space-y-6">
                 {/* Key Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-muted/50 rounded-lg p-4">
                     <div className="text-sm text-muted-foreground">
                       Annual Revenue
@@ -718,7 +747,7 @@ const AccountDrawer = ({
                       {formatCurrency(account?.dealValue)}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Account Details update*/}
                 <div className="space-y-4">
@@ -731,11 +760,11 @@ const AccountDrawer = ({
                       <Input
                         label="Account Name"
                         name="name"
-                        value={formData.name}
+                        value={formData.name || ""}
                         onChange={handleInputChange}
                       />
 
-                      <select
+                      {/* <select
                         name="industry"
                         value={formData.industry}
                         onChange={handleInputChange}
@@ -749,24 +778,19 @@ const AccountDrawer = ({
                         ))}
                       </select>
 
-                      <Input
-                        label="Website"
-                        name="website"
-                        value={formData.website}
-                        onChange={handleInputChange}
-                      />
+                      
 
                       <Input
                         label="Phone"
                         name="phoneNumber"
-                        value={formData.phoneNumber}
+                        value={formData.phoneNumber || ""}
                         onChange={handleInputChange}
-                      />
+                      /> */}
 
-                      <Input
+                      {/* <Input
                         label="Billing Street"
                         name="billingAddressStreet"
-                        value={formData.billingAddressStreet}
+                        value={formData.billingAddressStreet || ""}
                         onChange={handleInputChange}
                         className="md:col-span-2"
                       />
@@ -774,30 +798,30 @@ const AccountDrawer = ({
                       <Input
                         label="City"
                         name="billingAddressCity"
-                        value={formData.billingAddressCity}
+                        value={formData.billingAddressCity || ""}
                         onChange={handleInputChange}
                       />
 
                       <Input
                         label="State"
                         name="billingAddressState"
-                        value={formData.billingAddressState}
+                        value={formData.billingAddressState || ""}
                         onChange={handleInputChange}
                       />
 
                       <Input
                         label="Postal Code"
                         name="billingAddressPostalCode"
-                        value={formData.billingAddressPostalCode}
+                        value={formData.billingAddressPostalCode || ""}
                         onChange={handleInputChange}
                       />
 
                       <Input
                         label="Country"
                         name="billingAddressCountry"
-                        value={formData.billingAddressCountry}
+                        value={formData.billingAddressCountry || ""}
                         onChange={handleInputChange}
-                      />
+                      /> */}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -834,7 +858,7 @@ const AccountDrawer = ({
                           Last Activity
                         </div>
                         <div className="text-foreground">
-                          {formatDate(account?.lastActivity)}
+                          {formatDate(account?.modifiedAt)}
                         </div>
                       </div>
                     </div>

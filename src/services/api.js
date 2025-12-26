@@ -1,13 +1,17 @@
+const apiFetch = async (url, options = {}) => {
+  const res = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    ...options,
+  });
 
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
 
-// export default api;
-import axios from "axios";
+  return res.json();
+};
 
-const api = axios.create({
-  baseURL: "", // same domain (vercel)
-  // headers: {
-  //   "Content-Type": "application/json",
-  // },
-});
-
-export default api;
+export default apiFetch;

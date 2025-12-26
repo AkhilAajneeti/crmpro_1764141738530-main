@@ -1,64 +1,78 @@
-// import api from "./api";
-
-// export const fetchAccounts = async () => {
-//   const res = await api.get("/api/accounts");
-//   return res.data;
-// };
-
-// export const createAccount = async (payload) => {
-//   const formData = new URLSearchParams();
-
-//   Object.entries(payload).forEach(([key, value]) => {
-//     if (value !== "" && value !== null && value !== undefined) {
-//       formData.append(key, value);
-//     }
-//   });
-
-//   const res = await api.post("/Account", formData, {
-//     headers: {
-//       "Content-Type": "application/x-www-form-urlencoded",
-//     },
-//   });
-
-//   return res.data;
-// };
-
-// export const deleteAccount = async (id) => {
-//   const res = await api.delete(`/Account/${id}`, {
-//     deleted: true,
-//   });
-//   return res.data;
-// };
-// export const updateAccount = async (id, payload) => {
-//   const res = await api.put(`/Account/${id}`,payload);
-//   return res.data;
-// };
-import api from "./api";
-const isLocal = location.hostname === "localhost";
-
-const url = isLocal
-  ? "/api/accounts.local"
-  : "/api/accounts";
 /* GET */
 export const fetchAccounts = async () => {
-  const res = await api.get(url);
-  return res.data;
+  const token = localStorage.getItem("auth_token");
+
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+
+  const res = await fetch("https://gateway.aajneetiadvertising.com/Account", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token, // ✅ backend expects this
+    },
+  });
+
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+
+    throw new Error("Failed to fetch accounts");
+  }
+
+  return await res.json();
 };
 
 /* CREATE */
 export const createAccount = async (payload) => {
-  const res = await api.post("/api/accounts", payload);
-  return res.data;
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch("https://gateway.aajneetiadvertising.com/Account", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", token: token },
+
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error("account is not created");
+  }
+  // EspoCRM returns array
+  return text ? JSON.parse(text) : null;
 };
 
 /* UPDATE */
-export const updateAccount = async (id, payload) => {
-  const res = await api.put(`/api/accounts?id=${id}`, payload);
-  return res.data;
+export const updateAccount = async (id, payload, versionNumber) => {
+    const token = localStorage.getItem("auth_token");
+  console.log(id, payload, versionNumber);
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Account/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      // "X-Version-Number": String(versionNumber||1),
+      token: token,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  console.log("response front servicejs", res);
+  if (!res.ok) {
+    throw new Error(text || "Account update failed");
+  }
+
+  return text ? JSON.parse(text) : null;
 };
 
 /* DELETE */
 export const deleteAccount = async (id) => {
-  const res = await api.delete(`/api/accounts?id=${id}`);
-  return res.data;
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Account/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", token: token },
+  });
+  return res.json();
 };

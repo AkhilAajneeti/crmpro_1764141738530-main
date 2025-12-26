@@ -1,48 +1,36 @@
-export const config = {
-  runtime: "edge",
-};
+export const config = { runtime: "edge" };
 
 export default async function handler(req) {
-  try {
-    // Safety check for env vars
-    if (!process.env.ESPO_USER || !process.env.ESPO_PASS) {
-      return new Response(
-        JSON.stringify({ error: "Missing ESPO credentials" }),
-        { status: 500 }
-      );
-    }
+  const auth = btoa(`${process.env.ESPO_USER}:${process.env.ESPO_PASS}`);
 
-    // Create Basic Auth header (Edge compatible)
-    const auth = btoa(
-      `${process.env.ESPO_USER}:${process.env.ESPO_PASS}`
-    );
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
 
-    const response = await fetch(
-      "https://crm.theintelligentrealtors.com/api/v1/Account",
-      {
-        method: req.method,
-        headers: {
-          "Authorization": `Basic ${auth}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+  const espoUrl = id
+    ? `https://crm.theintelligentrealtors.com/api/v1/Account/${id}`
+    : `https://crm.theintelligentrealtors.com/api/v1/Account`;
 
-    const data = await response.text();
+  const body =
+    req.method === "POST" || req.method === "PUT" || req.method === "PATCH"
+      ? await req.text()
+      : undefined;
 
-    return new Response(data, {
-      status: response.status,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "Vercel proxy failed",
-        message: error.message,
-      }),
-      { status: 500 }
-    );
-  }
+  const response = await fetch(espoUrl, {
+    method: req.method,
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+      // ...(versionNumber && {
+      //   "X-Version-Number": versionNumber,
+      // }),
+    },
+    body,
+  });
+
+  const data = await response.text();
+
+  return new Response(data, {
+    status: response.status,
+    headers: { "Content-Type": "application/json" },
+  });
 }

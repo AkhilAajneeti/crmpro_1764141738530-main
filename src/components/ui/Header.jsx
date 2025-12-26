@@ -4,6 +4,9 @@ import Icon from '../AppIcon';
 import Button from './Button';
 
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
+   const LogInuserstr = localStorage.getItem("login_object");
+   const LogInuser = LogInuserstr?JSON.parse(LogInuserstr):null;
+
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
   const location = useLocation();
@@ -26,8 +29,18 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
   const handleLogout = () => {
     // Implement logout logic
-    console.log('Logout clicked');
-    handleDropdownClose();
+    console.log('User Logout');
+    // 1️⃣ Clear auth data
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("username");
+  localStorage.removeItem("rememberMe");
+  localStorage.removeItem("auth_token");
+
+  // 2️⃣ Close dropdown
+  handleDropdownClose();
+
+  // 3️⃣ Redirect to login
+  navigate("/login", { replace: true });
   };
 
   const handleProfileClick = () => {
@@ -165,11 +178,11 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 aria-label="User account menu"
               >
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">JD</span>
+                  <span className="text-sm font-medium text-primary-foreground">ACL</span>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-foreground">John Doe</div>
-                  <div className="text-xs text-muted-foreground">Sales Manager</div>
+                  <div className="text-sm font-medium text-foreground">{LogInuser.username}</div>
+                  <div className="text-xs text-muted-foreground">Aajneeti Connect ltd</div>
                 </div>
                 <Icon 
                   name="ChevronDown" 
@@ -188,12 +201,12 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                     <div className="p-4 border-b border-border">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary-foreground">JD</span>
+                          <span className="text-sm font-medium text-primary-foreground">ACL</span>
                         </div>
                         <div>
-                          <div className="font-medium text-popover-foreground">John Doe</div>
-                          <div className="text-sm text-muted-foreground">john.doe@company.com</div>
-                          <div className="text-xs text-muted-foreground">Sales Manager</div>
+                          <div className="font-medium text-popover-foreground">{LogInuser.username}</div>
+                          {/* <div className="text-sm text-muted-foreground">john.doe@company.com</div> */}
+                          <div className="text-xs text-muted-foreground">Aajneeti Connect ltd</div>
                         </div>
                       </div>
                     </div>
