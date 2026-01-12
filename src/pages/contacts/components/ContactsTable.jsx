@@ -11,7 +11,8 @@ const ContactsTable = ({
   onSelectAllContacts, 
   onContactClick, 
   sortConfig, 
-  onSort 
+  onSort ,
+  onEditContact,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -26,6 +27,9 @@ const ContactsTable = ({
 
   const handleQuickAction = (e, action, contact) => {
     e?.stopPropagation();
+    if (action === "edit") {
+    onEditContact(contact); // 🔥 yahin se drawer open hoga
+  }
     console.log(`${action} action for contact:`, contact?.name);
   };
 
@@ -66,12 +70,11 @@ const ContactsTable = ({
                 />
               </th>
               {[
-                { key: 'name', label: 'Contact' },
-                { key: 'title', label: 'Title' },
-                { key: 'company', label: 'Company' },
-                { key: 'email', label: 'Email' },
-                { key: 'phone', label: 'Phone' },
-                { key: 'lastContact', label: 'Last Contact' },
+                { key: 'name', label: 'Name' },
+                { key: 'title', label: 'Account Name' },
+                { key: 'company', label: 'Phone Number' },
+                { key: 'email', label: 'Assigned User' },
+               
                 { key: 'status', label: 'Status' }
               ]?.map((column) => (
                 <th
@@ -99,7 +102,6 @@ const ContactsTable = ({
               <tr
                 key={contact?.id}
                 className="hover:bg-muted/30 cursor-pointer transition-colors"
-                onClick={() => onContactClick(contact)}
                 onMouseEnter={() => setHoveredRow(contact?.id)}
                 onMouseLeave={() => setHoveredRow(null)}
               >
@@ -112,31 +114,23 @@ const ContactsTable = ({
                     }}
                   />
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-4" onClick={() => onContactClick(contact)}>
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex-shrink-0">
-                      <Image
-                        src={contact?.avatar}
-                        alt={contact?.avatarAlt}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                   
                     <div>
-                      <div className="font-medium text-foreground">{contact?.name}</div>
-                      <div className="text-sm text-muted-foreground">{contact?.department}</div>
+                      {/* <div className="font-medium text-foreground">{contact?.salutationName}</div> */}
+                      <div className="font-medium text-foreground">{contact?.salutationName}{contact?.name}</div>
+                      <div className="text-sm text-muted-foreground">{contact?.emailAddress}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-4 text-sm text-foreground">{contact?.title}</td>
-                <td className="px-4 py-4 text-sm text-foreground">{contact?.company}</td>
-                <td className="px-4 py-4 text-sm text-primary hover:underline">{contact?.email}</td>
-                <td className="px-4 py-4 text-sm text-foreground">{contact?.phone}</td>
-                <td className="px-4 py-4 text-sm text-muted-foreground">
-                  {formatLastContact(contact?.lastContact)}
-                </td>
+                <td className="px-4 py-4 text-sm text-foreground">{contact?.accountName}</td>
+                <td className="px-4 py-4 text-sm text-foreground">{contact?.phoneNumber}</td>
+                <td className="px-4 py-4 text-sm text-primary hover:underline">{contact?.assignedUserName}</td>
+                
                 <td className="px-4 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(contact?.status)}`}>
-                    {contact?.status}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(contact?.accountIsInactive)}`}>
+                    {(contact?.accountIsInactive)?"InActive":"Active"}
                   </span>
                 </td>
                 <td className="px-4 py-4">

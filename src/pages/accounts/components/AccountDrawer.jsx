@@ -3,6 +3,9 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { createAccount, updateAccount } from "services/account.service";
+import { fetchUser } from "services/user.service";
+import Select from "components/ui/Select";
+import { fetchTeam } from "services/team.service";
 const AccountDrawer = ({
   account,
   isOpen,
@@ -15,6 +18,8 @@ const AccountDrawer = ({
   const [editData, setEditData] = useState(account || {});
   const [drawerMode, setDrawerMode] = useState(mode);
   const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [team, setTeam] = useState([]);
   // Form state for create/edit mode
   const [formData, setFormData] = useState({
     name: "",
@@ -24,7 +29,8 @@ const AccountDrawer = ({
     phoneNumber: "",
     emailAddress: "",
     description: "",
-    team: "",
+    assignedUserId: "",
+    teamId: "",
     billingAddressStreet: "",
     billingAddressCity: "",
     billingAddressState: "",
@@ -112,7 +118,8 @@ const AccountDrawer = ({
         phoneNumber: "",
         emailAddress: "",
         description: "",
-        team: "",
+        assignedUserId: "",
+        teamId: "",
         billingAddressStreet: "",
         billingAddressCity: "",
         billingAddressState: "",
@@ -130,6 +137,13 @@ const AccountDrawer = ({
 
   const handleInputChange = (e) => {
     const { name, value } = e?.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -255,6 +269,35 @@ const AccountDrawer = ({
     return true;
   };
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [usersRes, teamRes] = await Promise.all([
+          fetchUser(),
+          fetchTeam(),
+        ]);
+
+        setUsers(usersRes.list || []);
+        setTeam(teamRes.list || []);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const userOptions = users
+    ?.filter((u) => u?.isActive) // ✅ only active users
+    ?.map((u) => ({
+      value: u.id,
+      label: u.name || u.userName,
+    }));
+  const teamOptions = team?.map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
+
   const handleUpdate = async () => {
     if (!validateForm()) return;
 
@@ -262,7 +305,7 @@ const AccountDrawer = ({
       setIsLoading(true);
 
       const payload = {
-      name: formData.name,
+        name: formData.name,
       };
 
       console.log("UPDATE ACCOUNT PAYLOAD", payload);
@@ -304,11 +347,11 @@ const AccountDrawer = ({
   };
 
   const handleSave = () => {
-  if (drawerMode === "edit") {
-    handleUpdate();
-  } else {
-    handleCreate();
-  }
+    if (drawerMode === "edit") {
+      handleUpdate();
+    } else {
+      handleCreate();
+    }
   };
 
   const handleCancel = () => {
@@ -417,7 +460,8 @@ const AccountDrawer = ({
                   size="sm"
                   onClick={() => {
                     setIsEditing(true);
-                   setDrawerMode("edit");}}
+                    setDrawerMode("edit");
+                  }}
                 >
                   <Icon name="Edit" size={16} className="mr-2" />
                   Edit
@@ -458,7 +502,7 @@ const AccountDrawer = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            {activeTab === "overview" && (drawerMode === "create") && (
+            {activeTab === "overview" && drawerMode === "create" && (
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
@@ -625,24 +669,27 @@ const AccountDrawer = ({
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Assigned User
                       </label>
-                      <Input
-                        name="assignedUserName"
-                        type="text"
-                        value={formData?.assignedUserName}
-                        onChange={handleInputChange}
-                        placeholder="Assigned User"
+                      <Select
+                        name="assignedUserId"
+                        value={formData.assignedUserId || ""}
+                        options={userOptions} // 👉 later API se users
+                        onChange={(value) =>
+                          handleSelectChange("assignedUserId", value)
+                        }
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Teams
                       </label>
-                      <Input
-                        name="team"
-                        type="text"
-                        value={formData?.team}
-                        onChange={handleInputChange}
-                        placeholder="Developer"
+                      <Select
+                        name="teamId"
+                        value={formData.teamId || ""}
+                        options={teamOptions}
+                        onChange={(value) =>
+                          handleSelectChange("teamId", value)
+                        }
+                        placeholder="Select Team"
                       />
                     </div>
                   </div>
@@ -719,10 +766,12 @@ const AccountDrawer = ({
               </div>
             )}
 
-            {activeTab === "overview" && (drawerMode === "view"||drawerMode === "edit") && account && (
-              <div className="space-y-6">
-                {/* Key Metrics */}
-                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {activeTab === "overview" &&
+              (drawerMode === "view" || drawerMode === "edit") &&
+              account && (
+                <div className="space-y-6">
+                  {/* Key Metrics */}
+                  {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-muted/50 rounded-lg p-4">
                     <div className="text-sm text-muted-foreground">
                       Annual Revenue
@@ -749,22 +798,22 @@ const AccountDrawer = ({
                   </div>
                 </div> */}
 
-                {/* Account Details update*/}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Account Details
-                  </h3>
+                  {/* Account Details update*/}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Account Details
+                    </h3>
 
-                  {isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Account Name"
-                        name="name"
-                        value={formData.name || ""}
-                        onChange={handleInputChange}
-                      />
+                    {isEditing ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Account Name"
+                          name="name"
+                          value={formData.name || ""}
+                          onChange={handleInputChange}
+                        />
 
-                      {/* <select
+                        {/* <select
                         name="industry"
                         value={formData.industry}
                         onChange={handleInputChange}
@@ -787,7 +836,7 @@ const AccountDrawer = ({
                         onChange={handleInputChange}
                       /> */}
 
-                      {/* <Input
+                        {/* <Input
                         label="Billing Street"
                         name="billingAddressStreet"
                         value={formData.billingAddressStreet || ""}
@@ -822,50 +871,54 @@ const AccountDrawer = ({
                         value={formData.billingAddressCountry || ""}
                         onChange={handleInputChange}
                       /> */}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Website
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Website
+                          </div>
+                          <div className="text-foreground">
+                            https://techcorp.com
+                          </div>
                         </div>
-                        <div className="text-foreground">
-                          https://techcorp.com
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Phone
+                          </div>
+                          <div className="text-foreground">
+                            +1 (555) 123-4567
+                          </div>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="text-sm text-muted-foreground">
+                            Address
+                          </div>
+                          <div className="text-foreground">
+                            123 Tech Street, San Francisco, CA 94105
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Account Owner
+                          </div>
+                          <div className="text-foreground">
+                            {account?.assignedUserName || "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Last Activity
+                          </div>
+                          <div className="text-foreground">
+                            {formatDate(account?.modifiedAt)}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Phone
-                        </div>
-                        <div className="text-foreground">+1 (555) 123-4567</div>
-                      </div>
-                      <div className="md:col-span-2">
-                        <div className="text-sm text-muted-foreground">
-                          Address
-                        </div>
-                        <div className="text-foreground">
-                          123 Tech Street, San Francisco, CA 94105
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Account Owner
-                        </div>
-                        <div className="text-foreground">{account?.owner}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Last Activity
-                        </div>
-                        <div className="text-foreground">
-                          {formatDate(account?.modifiedAt)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {activeTab === "contacts" && (
               <div className="space-y-4">

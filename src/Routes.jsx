@@ -18,6 +18,7 @@ import Activities from "./pages/activities";
 import Profile from "pages/profile";
 import Login from "./pages/login";
 import ProtectedRoute from "routes/ProtectedRoute";
+import TaskPage from "pages/tasks";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -38,7 +39,7 @@ const Routes = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="/billing" element={<BillingPage />} />
-          <Route path="/deals" element={<DealsPage />} />
+          <Route path="/leads" element={<DealsPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/emails" element={<EmailsPage />} />
@@ -51,7 +52,7 @@ const Routes = () => {
             }
           />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/pipeline" element={<Pipeline />} />
+          <Route path="/tasks" element={<TaskPage />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/activities" element={<Activities />} />
           <Route path="/profile" element={<Profile />} />

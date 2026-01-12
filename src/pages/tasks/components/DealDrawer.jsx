@@ -7,64 +7,89 @@ import toast from "react-hot-toast";
 import Avatar from "react-avatar";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
-import { createLeadActivity, leadStreamById } from "services/leads.service";
+import {
+  createLeadActivity,
+  fetchLeads,
+  leadStreamById,
+} from "services/leads.service";
+import { fetchAccounts } from "services/account.service";
+import { fetchContacts } from "services/contact.service";
 
 const DealDrawer = ({
   deal,
+  selectedIds = [],
   isOpen,
   onClose,
   mode,
   onCreate,
   onUpdate,
+  onBulkUpdate,
   onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
+  const [acc, setAcc] = useState([]);
+  const [lead, setLead] = useState([]);
+  const [contact, setContact] = useState([]);
   const [mockActivities, setmockActivities] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    emailAddress: "",
-    whatsapp: "",
-    addressCity: "",
-    cProjectName: "",
-    cNextContact: "",
-    cQuestion: "",
+    name: "",
     assignedUserId: "",
     teamId: "",
     status: "",
-    source: "",
+    priority: "",
+    startDate: "",
+    dueDate: "",
     description: "",
+    parentName: "",
+    parentType: "",
   });
   useEffect(() => {
     if (mode === "add") {
       setFormData({
-        firstName: formData.firstName || "",
-        lastName: formData.lastName || "",
-        phoneNumber: formData.phoneNumber || "",
-        emailAddress: formData.emailAddress || "",
-        whatsapp: formData.whatsapp || "",
-        addressCity: formData.addressCity || "",
-        cProjectName: formData.cProjectName || "",
-        cNextContact: formData.cNextContact || "",
-
-        cQuestion: formData.cQuestion || "",
-        assignedUserId: formData.assignedUserId || "",
-        teamId: formData.teamId || "",
-        status: formData.status || "",
-        source: formData.source || "",
-        description: formData.description || "",
+        name: "",
+        assignedUserId: "",
+        teamId: "",
+        status: "",
+        priority: "",
+        startDate: "",
+        dueDate: "",
+        description: "",
+        parentName: "", // Account | Lead | Contact (TYPE)
+        parentType: "", // record ID
       });
     } else if (deal) {
-      setFormData(deal);
+      setFormData({
+        name: deal.name || "",
+        assignedUserId: deal.assignedUserId || "",
+        teamId: deal.teamId || "",
+        status: deal.status || "",
+        priority: deal.priority || "",
+        startDate: deal.startDate || "",
+        dueDate: deal.dueDate || "",
+        description: deal.description || "",
+        parentName: deal.parentType || "",
+        parentType: deal.parentId || "",
+      });
     }
   }, [deal, mode]);
+  // mass update
+  const isMassUpdate = mode === "mass-update";
+
+  const [massFields, setMassFields] = useState({
+    status: false,
+    priority: false,
+    assignedUserId: false,
+    dueDate: false,
+  });
+  const toggleMassField = (field) => {
+    setMassFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
   // fetching lead stream from id
   useEffect(() => {
@@ -86,23 +111,22 @@ const DealDrawer = ({
   }, [isOpen, deal?.id]);
 
   const STATUS_OPTIONS = [
-    { value: "New", label: "New" },
-    { value: "Converted", label: "Converted" },
-    { value: "Dead", label: "Dead" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
+    { value: "Not Started", label: "Not Started" },
+    { value: "Started", label: "Started" },
+    { value: "Completed", label: "Completed" },
+    { value: "Cancelled", label: "Cancelled" },
+    { value: "Deferred", label: "Deferred" },
+  ];
+  const Parent_OPTIONS = [
+    { value: "Account", label: "Account" },
+    { value: "Lead", label: "Lead" },
+    { value: "Contact", label: "Contact" },
   ];
   const SOURCE_OPTIONS = [
-    { value: "Call", label: "Call" },
-    { value: "Existing Customer", label: "Existing Customer" },
-    { value: "Facebook", label: "Facebook" },
-    { value: "Import", label: "Import" },
-    { value: "IVR", label: "IVR" },
-    { value: "Web Site", label: "Web Site" },
+    { value: "Low", label: "Low" },
+    { value: "Normal", label: "Normal" },
+    { value: "High", label: "High" },
+    { value: "Urgent", label: "Urgent" },
   ];
 
   // if (!isOpen) return null;
@@ -211,22 +235,71 @@ const DealDrawer = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.name?.trim()) {
+      toast.error("Task name is required");
+      return;
+    }
+
     const payload = {
-      ...formData,
-      cNextContact: toEspoDateTime(formData.cNextContact),
+      // ✅ TASK REQUIRED
+      name: formData.name.trim(),
+      status: formData.status || "Not Started",
+      priority: formData.priority || "Normal",
+
+      assignedUserId: formData.assignedUserId || null,
+
+      // ✅ TASK expects ARRAY
+      teamsIds: formData.teamId ? [formData.teamId] : [],
+
+      // ✅ DATE FORMAT (EspoCRM Task)
+      dateStart: toEspoDateTime(formData.startDate),
+      dateEnd: toEspoDateTime(formData.dueDate),
+
+      description: formData.description || "",
+
+      // ✅ CORRECT parent mapping
+      parentType: formData.parentName || null, // Account
+      parentId: formData.parentType || null, // record ID
+
+      attachmentsIds: [],
+      reminders: [],
     };
+
+    console.log("FINAL TASK PAYLOAD 👉", payload);
+
     try {
       if (mode === "add") {
+        // ✅ CREATE
         await onCreate(payload);
       } else {
+        // ✅ UPDATE (id MUST be passed)
         await onUpdate(deal.id, payload);
       }
 
-      setIsEditing(false);
-      onClose(); // close drawer after success
-    } catch (error) {
-      console.error("Failed to save lead", error);
+      onClose();
+    } catch (err) {
+      console.error("Task creation failed", err);
+      toast.error("Task is not created");
     }
+  };
+  const handleBulkUpdate = async (e) => {
+    e.preventDefault();
+
+    const payload = {};
+
+    if (massFields.status) payload.status = formData.status;
+    if (massFields.priority) payload.priority = formData.priority;
+    if (massFields.assignedUserId)
+      payload.assignedUserId = formData.assignedUserId;
+    if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
+
+    if (!Object.keys(payload).length) {
+      toast.error("Select at least one field to update");
+      return;
+    }
+    onBulkUpdate(selectedIds, payload);
+    onClose();
   };
 
   // activity operation -------
@@ -280,13 +353,20 @@ const DealDrawer = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, teamRes] = await Promise.all([
-          fetchUser(),
-          fetchTeam(),
-        ]);
+        const [usersRes, teamRes, accRes, leadRes, contactRes] =
+          await Promise.all([
+            fetchUser(),
+            fetchTeam(),
+            fetchAccounts(),
+            fetchLeads(),
+            fetchContacts(),
+          ]);
 
         setUsers(usersRes.list || []);
         setTeam(teamRes.list || []);
+        setAcc(accRes.list || []);
+        setLead(leadRes.list || []);
+        setContact(contactRes.list || []);
       } catch (err) {
         console.error("Failed to load data", err);
       }
@@ -314,7 +394,7 @@ const DealDrawer = ({
     }));
   };
   const toEspoDateTime = (value) => {
-    value ? value.replace("T", " ") + ":00" : null;
+    return value ? value.replace("T", " ") + ":00" : null;
   };
 
   useEffect(() => {
@@ -322,6 +402,31 @@ const DealDrawer = ({
       setmockActivities([]);
     }
   }, [isOpen]);
+
+  const getParentTypeOptions = () => {
+    switch (formData.parentName) {
+      case "Account":
+        return acc.map((item) => ({
+          value: item.id,
+          label: item.name,
+        }));
+
+      case "Lead":
+        return lead.map((item) => ({
+          value: item.id,
+          label: item.name,
+        }));
+
+      case "Contact":
+        return contact.map((item) => ({
+          value: item.id,
+          label: item.accountName,
+        }));
+
+      default:
+        return [];
+    }
+  };
   return (
     <>
       {/* Backdrop */}
@@ -341,10 +446,12 @@ const DealDrawer = ({
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
-                {mode === "add"
-                  ? "Add Lead"
+                {isMassUpdate
+                  ? "Mass Update Tasks"
+                  : mode === "add"
+                  ? "Add Task"
                   : isEditing
-                  ? "Edit Lead"
+                  ? "Edit Task"
                   : deal?.name}
               </h2>
               <span
@@ -356,19 +463,22 @@ const DealDrawer = ({
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (isEditing) {
-                    setFormData(deal); // reset on cancel
-                  }
-                  setIsEditing(!isEditing);
-                }}
-              >
-                <Icon name="Edit" size={16} className="mr-1" />
-                {isEditing ? "Cancel" : "Edit"}
-              </Button>
+              {!isMassUpdate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (isEditing) {
+                      setFormData(deal); // reset on cancel
+                    }
+                    setIsEditing(!isEditing);
+                  }}
+                >
+                  <Icon name="Edit" size={16} className="mr-1" />
+                  {isEditing ? "Cancel" : "Edit"}
+                </Button>
+              )}
+
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <Icon name="X" size={20} />
               </Button>
@@ -384,83 +494,11 @@ const DealDrawer = ({
                     {/* Name */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        label="First Name *"
-                        value={formData.firstName || ""}
-                        onChange={(e) =>
-                          handleChange("firstName", e.target.value)
-                        }
-                      />
-                      <Input
-                        label="Last Name"
-                        value={formData.lastName || ""}
-                        onChange={(e) =>
-                          handleChange("lastName", e.target.value)
-                        }
+                        label="Name *"
+                        value={formData.name || ""}
+                        onChange={(e) => handleChange("name", e.target.value)}
                       />
                     </div>
-
-                    {/* Phone & Email */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Phone"
-                        value={formData.phoneNumber || ""}
-                        onChange={(e) =>
-                          handleChange("phoneNumber", e.target.value)
-                        }
-                      />
-                      <Input
-                        label="Email"
-                        value={formData.emailAddress || ""}
-                        onChange={(e) =>
-                          handleChange("emailAddress", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    {/* Whatsapp & City */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Whatsapp"
-                        value={formData.whatsapp || ""}
-                        onChange={(e) =>
-                          handleChange("whatsapp", e.target.value)
-                        }
-                      />
-                      <Input
-                        label="City"
-                        value={formData.addressCity || ""}
-                        onChange={(e) =>
-                          handleChange("addressCity", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    {/* Project & Next Contact */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Project Name"
-                        value={formData.cProjectName || ""}
-                        onChange={(e) =>
-                          handleChange("cProjectName", e.target.value)
-                        }
-                      />
-                      <Input
-                        type="datetime-local"
-                        label="Next Contact"
-                        value={formData.cNextContact || ""}
-                        onChange={(e) =>
-                          handleChange("cNextContact", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <Input
-                      label="cQuestion"
-                      value={formData.cQuestion || ""}
-                      onChange={(e) =>
-                        handleChange("cQuestion", e.target.value)
-                      }
-                    />
                   </div>
 
                   {/* ================= Assigned User ================= */}
@@ -500,12 +538,54 @@ const DealDrawer = ({
                       />
 
                       <Select
-                        label="Source"
-                        value={formData.source || ""}
+                        label="priority"
+                        value={formData.priority || ""}
                         options={SOURCE_OPTIONS}
-                        onChange={(value) => handleChange("source", value)}
+                        onChange={(value) => handleChange("priority", value)}
                       />
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Input
+                          type="datetime-local"
+                          label="Start Date"
+                          value={formData.startDate || ""}
+                          onChange={(e) =>
+                            handleChange("startDate", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          type="datetime-local"
+                          label="Due Date"
+                          value={formData.dueDate || ""}
+                          onChange={(e) =>
+                            handleChange("dueDate", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Select
+                        label="Parent Name"
+                        value={formData.parentName || ""}
+                        options={Parent_OPTIONS}
+                        onChange={(value) => {
+                          handleChange("parentName", value);
+                          handleChange("parentType", ""); // reset child dropdown
+                        }}
+                      />
+
+                      <Select
+                        label="Parent Type"
+                        value={formData.parentType || ""}
+                        options={getParentTypeOptions()}
+                        disabled={!formData.parentName}
+                        onChange={(value) => handleChange("parentType", value)}
+                      />
+                    </div>
+
                     <div className="col-span-2">
                       <textarea
                         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -530,7 +610,7 @@ const DealDrawer = ({
             {mode !== "add" && deal && (
               <>
                 {/* Quick Actions */}
-                <div className="flex items-center space-x-2 p-4 bg-muted/30 border-b border-border">
+                {/* <div className="flex items-center space-x-2 p-4 bg-muted/30 border-b border-border">
                   <Button
                     variant="default"
                     size="sm"
@@ -551,7 +631,7 @@ const DealDrawer = ({
                     <Icon name="Mail" size={16} className="mr-1" />
                     Send Email
                   </Button>
-                </div>
+                </div> */}
 
                 {/* Tabs */}
                 <div className="flex items-center space-x-1 p-4 border-b border-border">
@@ -583,52 +663,52 @@ const DealDrawer = ({
                         <div className="space-y-4">
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              Project name
+                              Name
                             </label>
                             <p className="text-foreground font-medium">
-                              {deal?.cProjectName}
+                              {deal?.name}
                             </p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              Phone Number
+                              Status
                             </label>
                             <p className="text-foreground font-medium text-lg">
-                              {deal?.phoneNumber}
+                              {deal?.status}
                             </p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              City
+                              Priority
                             </label>
                             <p className="text-foreground font-medium">
-                              {deal?.addressCity}
+                              {deal?.priority}
                             </p>
                           </div>
                         </div>
                         <div className="space-y-4">
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              Email
+                              Assigned User
                             </label>
                             <p className="text-foreground font-medium text-lg">
-                              {deal?.emailAddress}
+                              {deal?.assignedUserName}
                             </p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              Whatsapp
+                              Created By
                             </label>
                             <p className="text-foreground font-medium text-lg">
-                              {deal?.website}
+                              {deal?.createdByName}
                             </p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">
-                              Lead Received
+                              Modified By
                             </label>
                             <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.cLeadReceived)}
+                              {deal?.modifiedByName}
                             </p>
                           </div>
                           {/* <div>
@@ -751,7 +831,11 @@ const DealDrawer = ({
                                 }}
                               >
                                 Cancel
-                                <Icon name="XCircle" size={16} className="mr-1" />
+                                <Icon
+                                  name="XCircle"
+                                  size={16}
+                                  className="mr-1"
+                                />
                               </Button>
 
                               <Button
@@ -967,6 +1051,94 @@ const DealDrawer = ({
                     </div>
                   )}
                 </div>
+              </>
+            )}
+
+            {isMassUpdate && (
+              <>
+                <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
+                  Updating {selectedIds.length} selected tasks
+                </p>
+                <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
+                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                    <div className="grid grid-cols-2">
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="checkbox"
+                          checked={massFields.status}
+                          onChange={() => toggleMassField("status")}
+                        />
+                        <Select
+                          label="Status"
+                          value={formData.status}
+                          options={STATUS_OPTIONS}
+                          disabled={!massFields.status}
+                          onChange={(v) => handleChange("status", v)}
+                        />
+                      </div>
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="checkbox"
+                          checked={massFields.priority}
+                          onChange={() => toggleMassField("priority")}
+                        />
+                        <Select
+                          label="Priority"
+                          value={formData.priority}
+                          options={SOURCE_OPTIONS}
+                          disabled={!massFields.priority}
+                          onChange={(v) => handleChange("priority", v)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                    <div className="grid grid-cols-2">
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="checkbox"
+                          checked={massFields.assignedUserId}
+                          onChange={() => toggleMassField("assignedUserId")}
+                        />
+                        <Select
+                          label="Assigned User"
+                          value={formData.assignedUserId}
+                          options={userOptions}
+                          disabled={!massFields.assignedUserId}
+                          onChange={(v) => handleChange("assignedUserId", v)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                    <div className="grid grid-cols-2">
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="checkbox"
+                          checked={massFields.dueDate}
+                          onChange={() => toggleMassField("dueDate")}
+                        />
+                        <Input
+                          type="datetime-local"
+                          label="Due Date"
+                          value={formData.dueDate}
+                          disabled={!massFields.dueDate}
+                          onChange={(e) =>
+                            handleChange("dueDate", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button variant="ghost" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Update {selectedIds.length} Tasks
+                    </Button>
+                  </div>
+                </form>
               </>
             )}
           </div>

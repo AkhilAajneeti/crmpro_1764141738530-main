@@ -1,148 +1,64 @@
-import React, { useState, useMemo } from 'react';
-import Header from '../../components/ui/Header';
-import Sidebar from '../../components/ui/Sidebar';
-import Icon from '../../components/AppIcon';
-import Button from '../../components/ui/Button';
-import ContactsTable from './components/ContactsTable';
-import ContactFilters from './components/ContactFilters';
-import ContactDrawer from './components/ContactDrawer';
-import BulkActions from './components/BulkActions';
-import ContactsPagination from './components/ContactsPagination';
+import React, { useState, useMemo, useEffect } from "react";
+import Header from "../../components/ui/Header";
+import Sidebar from "../../components/ui/Sidebar";
+import Icon from "../../components/AppIcon";
+import Button from "../../components/ui/Button";
+import ContactsTable from "./components/ContactsTable";
+import ContactFilters from "./components/ContactFilters";
+import ContactDrawer from "./components/ContactDrawer";
+import BulkActions from "./components/BulkActions";
+import ContactsPagination from "./components/ContactsPagination";
+import { bulkDeleteContacts, fetchContacts } from "services/contact.service";
 
 const ContactsPage = () => {
+  const [drawerMode, setDrawerMode] = useState(null); // 'view' | 'create'
+  const [mockContacts, setmockContact] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-  const [filters, setFilters] = useState({
-    company: '',
-    role: '',
-    status: ''
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
   });
-
-  // Mock contacts data
-  const mockContacts = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    title: "VP of Sales",
-    company: "TechCorp Solutions",
-    department: "Sales",
-    email: "sarah.johnson@techcorp.com",
-    phone: "+1 (555) 123-4567",
-    avatar: "https://images.unsplash.com/photo-1637562772116-e01cda44fce8",
-    avatarAlt: "Professional headshot of woman with shoulder-length brown hair in navy blazer",
-    status: "Active",
-    lastContact: "2025-01-02"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    title: "CTO",
-    company: "Global Industries",
-    department: "Technology",
-    email: "m.chen@globalind.com",
-    phone: "+1 (555) 234-5678",
-    avatar: "https://images.unsplash.com/photo-1629272039203-7d76fdaf1324",
-    avatarAlt: "Professional headshot of Asian man with short black hair in dark suit",
-    status: "Customer",
-    lastContact: "2024-12-28"
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    title: "Marketing Director",
-    company: "Innovation Labs",
-    department: "Marketing",
-    email: "emily.r@innovationlabs.com",
-    phone: "+1 (555) 345-6789",
-    avatar: "https://images.unsplash.com/photo-1719515862094-c6e9354ee7f8",
-    avatarAlt: "Professional headshot of Hispanic woman with long dark hair in white blouse",
-    status: "Prospect",
-    lastContact: "2024-12-30"
-  },
-  {
-    id: 4,
-    name: "David Thompson",
-    title: "CEO",
-    company: "Digital Dynamics",
-    department: "Executive",
-    email: "david@digitaldynamics.com",
-    phone: "+1 (555) 456-7890",
-    avatar: "https://images.unsplash.com/photo-1735181094336-7fa757df9622",
-    avatarAlt: "Professional headshot of middle-aged man with gray hair in charcoal suit",
-    status: "Active",
-    lastContact: "2025-01-01"
-  },
-  {
-    id: 5,
-    name: "Lisa Wang",
-    title: "Product Manager",
-    company: "Future Systems",
-    department: "Product",
-    email: "lisa.wang@futuresys.com",
-    phone: "+1 (555) 567-8901",
-    avatar: "https://images.unsplash.com/photo-1668049221564-862149a48e10",
-    avatarAlt: "Professional headshot of Asian woman with short black hair in light blue shirt",
-    status: "Inactive",
-    lastContact: "2024-11-15"
-  },
-  {
-    id: 6,
-    name: "Robert Martinez",
-    title: "Sales Manager",
-    company: "Smart Solutions",
-    department: "Sales",
-    email: "r.martinez@smartsol.com",
-    phone: "+1 (555) 678-9012",
-    avatar: "https://images.unsplash.com/photo-1585066047759-3438c34cf676",
-    avatarAlt: "Professional headshot of Hispanic man with beard in navy blue suit",
-    status: "Customer",
-    lastContact: "2024-12-20"
-  },
-  {
-    id: 7,
-    name: "Jennifer Kim",
-    title: "Operations Manager",
-    company: "NextGen Tech",
-    department: "Operations",
-    email: "jennifer.k@nextgentech.com",
-    phone: "+1 (555) 789-0123",
-    avatar: "https://images.unsplash.com/photo-1671741192700-cb7e66a7bd93",
-    avatarAlt: "Professional headshot of Korean woman with long straight hair in black blazer",
-    status: "Prospect",
-    lastContact: "2024-12-25"
-  },
-  {
-    id: 8,
-    name: "James Wilson",
-    title: "Business Analyst",
-    company: "Alpha Enterprises",
-    department: "Analytics",
-    email: "james.wilson@alphaent.com",
-    phone: "+1 (555) 890-1234",
-    avatar: "https://images.unsplash.com/photo-1543587204-e5c16a6ac741",
-    avatarAlt: "Professional headshot of African American man with short hair in gray suit",
-    status: "Active",
-    lastContact: "2024-12-31"
-  }];
-
+  // function for fetchContacts
+  useEffect(() => {
+    const loadContact = async () => {
+      try {
+        const data = await fetchContacts();
+        setmockContact(data.list);
+        console.log(data.list);
+      } catch (error) {
+        console.log("failed to fetch data", error);
+      } finally {
+      }
+    };
+    loadContact();
+  }, []);
+  const [filters, setFilters] = useState({
+    company: "",
+    role: "",
+    status: "",
+  });
 
   // Filter and sort contacts
   const filteredAndSortedContacts = useMemo(() => {
     let filtered = mockContacts?.filter((contact) => {
-      const matchesSearch = searchTerm === '' ||
-      contact?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-      contact?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-      contact?.company?.toLowerCase()?.includes(searchTerm?.toLowerCase());
+      const matchesSearch =
+        searchTerm === "" ||
+        contact?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+        contact?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+        contact?.company?.toLowerCase()?.includes(searchTerm?.toLowerCase());
 
-      const matchesCompany = filters?.company === '' || contact?.company === filters?.company;
-      const matchesRole = filters?.role === '' || contact?.title === filters?.role;
-      const matchesStatus = filters?.status === '' || contact?.status === filters?.status;
+      const matchesCompany =
+        filters?.company === "" || contact?.company === filters?.company;
+      const matchesRole =
+        filters?.role === "" || contact?.title === filters?.role;
+      const matchesStatus =
+        filters?.status === "" || contact?.status === filters?.status;
 
       return matchesSearch && matchesCompany && matchesRole && matchesStatus;
     });
@@ -152,33 +68,39 @@ const ContactsPage = () => {
       const aValue = a?.[sortConfig?.key];
       const bValue = b?.[sortConfig?.key];
 
-      if (sortConfig?.key === 'lastContact') {
+      if (sortConfig?.key === "lastContact") {
         const aDate = new Date(aValue);
         const bDate = new Date(bValue);
-        return sortConfig?.direction === 'asc' ? aDate - bDate : bDate - aDate;
+        return sortConfig?.direction === "asc" ? aDate - bDate : bDate - aDate;
       }
 
-      if (typeof aValue === 'string') {
-        return sortConfig?.direction === 'asc' ?
-        aValue?.localeCompare(bValue) :
-        bValue?.localeCompare(aValue);
+      if (typeof aValue === "string") {
+        return sortConfig?.direction === "asc"
+          ? aValue?.localeCompare(bValue)
+          : bValue?.localeCompare(aValue);
       }
 
-      return sortConfig?.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      return sortConfig?.direction === "asc"
+        ? aValue - bValue
+        : bValue - aValue;
     });
 
     return filtered;
   }, [mockContacts, searchTerm, filters, sortConfig]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedContacts?.length / itemsPerPage);
+  const totalPages = Math.ceil(
+    filteredAndSortedContacts?.length / itemsPerPage
+  );
   const paginatedContacts = filteredAndSortedContacts?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   // Active filters count
-  const activeFiltersCount = Object.values(filters)?.filter((value) => value !== '')?.length;
+  const activeFiltersCount = Object.values(filters)?.filter(
+    (value) => value !== ""
+  )?.length;
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -191,7 +113,8 @@ const ContactsPage = () => {
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
-      direction: prev?.key === key && prev?.direction === 'asc' ? 'desc' : 'asc'
+      direction:
+        prev?.key === key && prev?.direction === "asc" ? "desc" : "asc",
     }));
   };
 
@@ -201,7 +124,7 @@ const ContactsPage = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({ company: '', role: '', status: '' });
+    setFilters({ company: "", role: "", status: "" });
     setCurrentPage(1);
   };
 
@@ -224,6 +147,7 @@ const ContactsPage = () => {
   const handleContactClick = (contact) => {
     setSelectedContact(contact);
     setIsDrawerOpen(true);
+    setDrawerMode("view");
   };
 
   const handleDrawerClose = () => {
@@ -243,33 +167,58 @@ const ContactsPage = () => {
   };
 
   const handleBulkExport = () => {
-    console.log('Exporting contacts:', selectedContacts);
+    console.log("Exporting contacts:", selectedContacts);
     // Implement export functionality
   };
 
   const handleBulkEmail = () => {
-    console.log('Sending bulk email to contacts:', selectedContacts);
+    console.log("Sending bulk email to contacts:", selectedContacts);
     // Implement bulk email functionality
   };
 
   const handleBulkTag = (tag) => {
-    console.log('Adding tag to contacts:', selectedContacts, tag);
+    console.log("Adding tag to contacts:", selectedContacts, tag);
     // Implement bulk tagging functionality
   };
 
-  const handleBulkDelete = () => {
-    console.log('Deleting contacts:', selectedContacts);
-    // Implement bulk delete functionality
-    setSelectedContacts([]);
+  const handleBulkDelete = async () => {
+    if (selectedContacts.length === 0) return;
+
+    const confirmDelete = window.confirm(
+      `Delete ${selectedContacts.length} contacts?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await bulkDeleteContacts(selectedContacts);
+
+      // Remove deleted contacts from UI
+      setmockContact((prev) =>
+        prev.filter((c) => !selectedContacts.includes(c.id))
+      );
+
+      setSelectedContacts([]);
+    } catch (error) {
+      console.error("Bulk delete failed", error);
+      alert("Failed to delete contacts");
+    }
   };
 
   const handleAddContact = () => {
-    console.log('Add new contact');
+    console.log("Add new contact");
     // Implement add contact functionality
+    setSelectedContact(null);
+    setDrawerMode("create");
+    setIsDrawerOpen(true);
   };
-
+const handleEditContact = (contact) => {
+  setSelectedContact(contact);   // 🔥 important
+  setDrawerMode("edit");         // 🔥 edit mode
+  setIsDrawerOpen(true);
+};
   const handleImportContacts = () => {
-    console.log('Import contacts');
+    console.log("Import contacts");
     // Implement import functionality
   };
 
@@ -304,21 +253,30 @@ const ContactsPage = () => {
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Contacts</p>
-                  <p className="text-2xl font-bold text-foreground">{mockContacts?.length}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Contacts
+                  </p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {mockContacts?.length}
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <Icon name="Users" size={24} className="text-primary" />
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Contacts</p>
+                  <p className="text-sm text-muted-foreground">
+                    Active Contacts
+                  </p>
                   <p className="text-2xl font-bold text-foreground">
-                    {mockContacts?.filter((c) => c?.status === 'Active')?.length}
+                    {
+                      mockContacts?.filter((c) => c?.status === "Active")
+                        ?.length
+                    }
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
@@ -326,13 +284,16 @@ const ContactsPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Prospects</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {mockContacts?.filter((c) => c?.status === 'Prospect')?.length}
+                    {
+                      mockContacts?.filter((c) => c?.status === "Prospect")
+                        ?.length
+                    }
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center">
@@ -340,17 +301,24 @@ const ContactsPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Customers</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {mockContacts?.filter((c) => c?.status === 'Customer')?.length}
+                    {
+                      mockContacts?.filter((c) => c?.status === "Customer")
+                        ?.length
+                    }
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
-                  <Icon name="Crown" size={24} className="text-accent-foreground" />
+                  <Icon
+                    name="Crown"
+                    size={24}
+                    className="text-accent-foreground"
+                  />
                 </div>
               </div>
             </div>
@@ -363,8 +331,8 @@ const ContactsPage = () => {
             filters={filters}
             onFilterChange={handleFilterChange}
             activeFiltersCount={activeFiltersCount}
-            onClearFilters={handleClearFilters} />
-
+            onClearFilters={handleClearFilters}
+          />
 
           {/* Bulk Actions */}
           <BulkActions
@@ -372,8 +340,8 @@ const ContactsPage = () => {
             onExport={handleBulkExport}
             onBulkEmail={handleBulkEmail}
             onBulkTag={handleBulkTag}
-            onBulkDelete={handleBulkDelete} />
-
+            onBulkDelete={handleBulkDelete}
+          />
 
           {/* Contacts Table */}
           <ContactsTable
@@ -383,8 +351,9 @@ const ContactsPage = () => {
             onSelectAllContacts={handleSelectAllContacts}
             onContactClick={handleContactClick}
             sortConfig={sortConfig}
-            onSort={handleSort} />
-
+            onSort={handleSort}
+             onEditContact={handleEditContact}
+          />
 
           {/* Pagination */}
           <div className="mt-6">
@@ -394,19 +363,20 @@ const ContactsPage = () => {
               totalItems={filteredAndSortedContacts?.length}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange} />
-
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
           </div>
         </div>
       </main>
       {/* Contact Drawer */}
       <ContactDrawer
+        mode={drawerMode}
         contact={selectedContact}
         isOpen={isDrawerOpen}
-        onClose={handleDrawerClose} />
-
-    </div>);
-
+        onClose={handleDrawerClose}
+      />
+    </div>
+  );
 };
 
 export default ContactsPage;

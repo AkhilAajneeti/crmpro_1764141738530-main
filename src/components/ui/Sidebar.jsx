@@ -28,14 +28,14 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null
     },
     {
-      label: 'Deals',
-      path: '/deals',
+      label: 'Leads',
+      path: '/leads',
       icon: 'Target',
       badge: '12'
     },
     {
-      label: 'Pipeline',
-      path: '/pipeline',
+      label: 'TaskPage',
+      path: '/tasks',
       icon: 'GitBranch',
       badge: null
     },

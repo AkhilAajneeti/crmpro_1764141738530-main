@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
-import { deleteLead } from "services/leads.service";
 
 const DealsTable = ({
   deals,
@@ -82,7 +81,7 @@ const DealsTable = ({
   };
   const handleDelete = async (e, deal) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete lead ${deal?.name}?`);
+    const ok = window.confirm(`Delete Task ${deal?.name}?`);
     if (!ok) return;
 
     await onDelete(deal.id); // 👈 parent ko bol rahe ho
@@ -118,28 +117,11 @@ const DealsTable = ({
                   onClick={() => onSort("name")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Name</span>
+                  <span>Project Name</span>
                   {getSortIcon("name")}
                 </button>
               </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("account")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Project Name</span>
-                  {getSortIcon("Project Name")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("Source")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Source</span>
-                  {getSortIcon("value")}
-                </button>
-              </th>
+
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("Status")}
@@ -151,11 +133,26 @@ const DealsTable = ({
               </th>
               <th className="text-left px-4 py-3">
                 <button
-                  onClick={() => onSort("email")}
+                  onClick={() => onSort("Source")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Next Contact</span>
-                  {getSortIcon("stage")}
+                  <span>Priority</span>
+                  {getSortIcon("value")}
+                </button>
+              </th>
+
+              <th className="text-left px-4 py-3">
+                <span className="text-sm font-medium text-foreground">
+                  Assigned User
+                </span>
+              </th>
+              <th className="text-left px-4 py-3">
+                <button
+                  onClick={() => onSort("createdAt")}
+                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
+                >
+                  <span>Create By</span>
+                  {getSortIcon("closeDate")}
                 </button>
               </th>
               <th className="text-left px-4 py-3">
@@ -163,14 +160,9 @@ const DealsTable = ({
                   onClick={() => onSort("createdAt")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Create At</span>
+                  <span>Modified At</span>
                   {getSortIcon("closeDate")}
                 </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-sm font-medium text-foreground">
-                  Assigned User
-                </span>
               </th>
               <th className="w-24 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">
@@ -202,44 +194,20 @@ const DealsTable = ({
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  <div className="text-foreground">{deal?.cProjectName}</div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="font-medium text-foreground">
-                    {deal?.source}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
                   <div
                     className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
                       deal?.status
                     )}`}
                   >
-                    {/* <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary-foreground">
-                        {deal?.status
-                          ?.split(" ")
-                          ?.map((n) => n?.[0])
-                          ?.join("")}
-                      </span>
-                    </div> */}
                     <span className={`text-sm text-foreg roundunded-full `}>
                       {deal?.status}
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-4">
-                  <span
-                    className={`inline-flex px-1 py-1 text-xs font-medium rounded-full`}
-                  >
-                    {formatDate(deal?.cNextContact)}
-                  </span>
+                <td className="px-2 py-4">
+                  <div className="text-foreground">{deal?.priority}</div>
                 </td>
-                <td className="px-4 py-4">
-                  <div className="text-sm text-foreground">
-                    {formatDate(deal?.createdAt)}
-                  </div>
-                </td>
+
                 <td className="px-4 py-4">
                   <div
                     className={`text-sm font-medium ${getProbabilityColor(
@@ -249,6 +217,18 @@ const DealsTable = ({
                     {deal?.assignedUserName}
                   </div>
                 </td>
+
+                <td className="px-4 py-4">
+                  <div className="text-sm text-foreground">
+                    {formatDate(deal?.createdAt)}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="text-sm text-foreground">
+                    {formatDate(deal?.modifiedAt)}
+                  </div>
+                </td>
+
                 <td className="px-4 py-4">
                   <div
                     className={`flex items-center space-x-1 transition-opacity ${

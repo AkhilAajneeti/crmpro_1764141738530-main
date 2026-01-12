@@ -10,14 +10,14 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import TablePagination from "./components/TablePagination";
 import {
-  createLead,
-  deleteActivity,
-  deleteLead,
-  fetchLeads,
-  updateLead,
-} from "services/leads.service";
+  createTasks,
+  deleteTasks,
+  fetchTasks,
+  updateTasks,
+  bulkDeleteTasks,
+} from "services/tasks.service";
 
-const DealsPage = () => {
+const TaskPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -43,7 +43,7 @@ const DealsPage = () => {
   useEffect(() => {
     const loadContact = async () => {
       try {
-        const data = await fetchLeads();
+        const data = await fetchTasks();
         setLeads(data.list);
         console.log(data.list);
       } catch (error) {
@@ -155,33 +155,80 @@ const DealsPage = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
-    // setIsEditing(false);
+    setMode("view");
   };
 
   const handleCreateLead = async (payload) => {
     try {
-      await createLead(payload); // API
-      toast.success("Lead created successfully");
+      await createTasks(payload); // API
+      toast.success("Task created successfully");
     } catch (err) {
-      console.error("Lead creationd failed", err);
+      console.error("Task creationd failed", err);
     }
   };
 
-  const handleUpdateLead = async (id, payload) => {
-    await updateLead(id, payload);
+  const handleUpdateTasks = async (id, payload) => {
+    await updateTasks(id, payload);
+  };
+  const handleBulkUpdateTasks = async (ids, payload) => {
+    try {
+      toast.loading("Updating tasks...", { id: "bulk-update" });
+
+      await Promise.all(ids.map((id) => updateTasks(id, payload)));
+
+      toast.success(`${ids.length} tasks updated`, { id: "bulk-update" });
+      setSelectedDeals([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Mass update failed", { id: "bulk-update" });
+    }
   };
 
+  //deletion delete
   const handleDeleteLead = async (id) => {
     try {
       toast.loading("Deleting lead...", { id: "delete-lead" });
-      await deleteLead(id); // API call
-      toast.success("Lead deleted successfully", {
-        id: "delete-lead",
+      await deleteTasks(id); // API call
+      toast.success("Task deleted successfully", {
+        id: "delete-task",
       });
     } catch (err) {
       console.error("Delete failed", err);
     }
   };
+  const handleBulkDelete = async () => {
+    if (!selectedDeals.length) {
+      toast.error("Please select at least one task");
+      return;
+    }
+
+    const ok = window.confirm(`Delete ${selectedDeals.length} selected tasks?`);
+    if (!ok) return;
+
+    try {
+      toast.loading("Deleting tasks...", { id: "bulk-delete" });
+
+      await bulkDeleteTasks(selectedDeals);
+
+      // ✅ Remove from UI
+      setLeads((prev) =>
+        prev.filter((task) => !selectedDeals.includes(task.id))
+      );
+
+      // ✅ Clear selection
+      setSelectedDeals([]);
+
+      toast.success("Tasks deleted successfully", {
+        id: "bulk-delete",
+      });
+    } catch (err) {
+      console.error("Bulk delete failed", err);
+      toast.error("Failed to delete tasks", {
+        id: "bulk-delete",
+      });
+    }
+  };
+
   const handleDeleteActivity = async (id) => {
     try {
       await deleteActivity(id); // API call
@@ -190,7 +237,6 @@ const DealsPage = () => {
       console.error("Delete failed", err);
     }
   };
-
 
   const handleSelectDeal = (dealId, isSelected) => {
     if (isSelected) {
@@ -245,8 +291,19 @@ const DealsPage = () => {
   };
 
   const handleBulkAction = (action) => {
-    console.log(`Bulk action ${action} for deals:`, selectedDeals);
-    // Implement bulk actions here
+    if (!selectedDeals.length) {
+      toast.error("Please select at least one task");
+      return;
+    }
+
+    if (action === "delete") {
+      handleBulkDelete();
+    }
+
+    if (action === "massupdate") {
+      setMode("mass-update");
+      setIsDrawerOpen(true);
+    }
   };
 
   const handlePageChange = (page) => {
@@ -282,10 +339,12 @@ const DealsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  Leads
+                  Tasks
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Track and manage your sales opportunities
+                  Easily create, assign, and track tasks to ensure every
+                  activity is completed on time and nothing is missed in your
+                  workflow
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -293,13 +352,9 @@ const DealsPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export
                 </Button>
-                <Button variant="outline">
-                  <Icon name="GitBranch" size={16} className="mr-2" />
-                  Pipeline View
-                </Button>
                 <Button onClick={handleAddLeads}>
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Deal
+                  New Tasks
                 </Button>
               </div>
             </div>
@@ -346,14 +401,15 @@ const DealsPage = () => {
           mode={mode}
           isOpen={isDrawerOpen}
           onCreate={handleCreateLead}
-          onUpdate={handleUpdateLead}
+          onUpdate={handleUpdateTasks}
           onClose={handleDrawerClose}
-           onDelete={handleDeleteActivity}
+          onDelete={handleDeleteActivity}
+          selectedIds={selectedDeals}
+          onBulkUpdate={handleBulkUpdateTasks} // 👈 NEW
         />
-        
       </div>
     </>
   );
 };
 
-export default DealsPage;
+export default TaskPage;
