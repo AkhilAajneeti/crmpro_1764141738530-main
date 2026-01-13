@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Icon from "../../../components/AppIcon";
+import Avatar from "react-avatar";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -8,6 +9,11 @@ import { createContact, updateContact } from "services/contact.service";
 import { fetchAccounts } from "services/account.service";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
+import { contactActivitesById } from "services/contact.service"; // path check
+import {
+  createContactStream,
+  fetchContactStreamById,
+} from "services/contact.service";
 
 const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -16,6 +22,17 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
   const [accounts, setAccounts] = useState([]);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
+
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [expandedActivityId, setExpandedActivityId] = useState(null);
+
+  const [streams, setStreams] = useState([]);
+  const [streamLoading, setStreamLoading] = useState(false);
+  const [showStreamForm, setShowStreamForm] = useState(false);
+  const [streamText, setStreamText] = useState("");
+  const [postingStream, setPostingStream] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       fetchAccounts()
@@ -70,7 +87,6 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
       [name]: value,
     }));
   };
-  
 
   const handleSubmit = async () => {
     try {
@@ -200,7 +216,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
     value: t.id,
     label: t.name,
   }));
-   const handleSelectChange = (name, value) => {
+  const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -234,12 +250,126 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
     }
   };
 
+  useEffect(() => {
+    if (!isOpen || !contact?.id || activeTab !== "activities") return;
+
+    const loadActivities = async () => {
+      try {
+        setActivityLoading(true);
+        const res = await contactActivitesById(contact.id);
+        setActivities(res.list || []);
+      } catch (err) {
+        console.error("Failed to load contact activities", err);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+
+    loadActivities();
+  }, [isOpen, contact?.id, activeTab]);
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "User" },
     { id: "deals", label: "Deals", icon: "Target" },
+    { id: "stream", label: "Stream", icon: "FileText" },
     { id: "activities", label: "Activities", icon: "Clock" },
-    { id: "notes", label: "Notes", icon: "FileText" },
   ];
+  const toggleActivity = (id) => {
+    setExpandedActivityId((prev) => (prev === id ? null : id));
+  };
+
+  useEffect(() => {
+    if (!isOpen || !contact?.id || activeTab !== "stream") return;
+
+    const loadStream = async () => {
+      try {
+        setStreamLoading(true);
+        const res = await fetchContactStreamById(contact.id);
+        setStreams(res.list || []);
+      } catch (err) {
+        console.error("Failed to load contact stream", err);
+      } finally {
+        setStreamLoading(false);
+      }
+    };
+
+    loadStream();
+  }, [isOpen, contact?.id, activeTab]);
+  const getStreamIcon = (type = "") => {
+    switch (type) {
+      case "Post":
+        return "MessageSquare";
+      case "Update":
+        return "RefreshCcw";
+      case "CreateRelated":
+        return "Link";
+      default:
+        return "Activity";
+    }
+  };
+
+  const getStreamIconColor = (type = "") => {
+    switch (type) {
+      case "Post":
+        return "text-indigo-600";
+      case "Update":
+        return "text-blue-600";
+      case "CreateRelated":
+        return "text-purple-600";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const getStreamMessage = (item) => {
+    if (item.type === "Post") return item.post;
+    if (item.type === "Update" && item.data?.value)
+      return `Status updated to ${item.data.value}`;
+    if (item.type === "CreateRelated") return "Activity updated";
+    return "Activity updated";
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "—";
+    const d = new Date(value.replace(" ", "T"));
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const handlePostStream = async (e) => {
+    e.preventDefault();
+
+    if (!streamText.trim()) return;
+
+    try {
+      setPostingStream(true);
+
+      const payload = {
+        post: streamText,
+        parentId: contact.id,
+        parentType: "Contact",
+        type: "Post",
+        isInternal: false,
+        attachmentsIds: [],
+      };
+
+      const newStream = await createContactStream(payload);
+
+      // 🔥 instant UI update
+      setStreams((prev) => [newStream, ...prev]);
+      setStreamText("");
+      setShowStreamForm(false);
+    } catch (err) {
+      console.error("Failed to post stream", err);
+      alert("Failed to post stream");
+    } finally {
+      setPostingStream(false);
+    }
+  };
 
   return (
     <>
@@ -250,7 +380,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
       {/* Drawer */}
       <div
         className={`
-          fixed top-0 right-0 h-full w-full sm:w-96 lg:w-[480px] bg-background border-l border-border z-50
+          fixed top-0 right-0 h-full w-full max-w-2xl bg-background border-l border-border z-50
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
@@ -427,7 +557,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Assigned User
                       </label>
-                      
+
                       <Select
                         name="assignedUserId"
                         value={formData.assignedUserId || ""}
@@ -669,94 +799,293 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                     </div>
                   )}
 
+                  {activeTab === "stream" && (
+                    <div className="p-6 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-foreground">
+                          Recent Stream
+                        </h3>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowStreamForm(true)}
+                        >
+                          <Icon name="Plus" size={16} className="mr-1" />
+                          Add Stream
+                        </Button>
+                      </div>
+
+                      {/* FORM */}
+                      {showStreamForm && (
+                        <form onSubmit={handlePostStream} className="space-y-2">
+                          <textarea
+                            className="w-full px-3 py-2 border border-border rounded-lg"
+                            rows={4}
+                            placeholder="Write your comment..."
+                            value={streamText}
+                            onChange={(e) => setStreamText(e.target.value)}
+                          />
+
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowStreamForm(false);
+                                setStreamText("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+
+                            <Button
+                              type="submit"
+                              size="sm"
+                              disabled={postingStream}
+                            >
+                              {postingStream ? "Posting..." : "Post"}
+                            </Button>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Loader */}
+                      {streamLoading && (
+                        <p className="text-sm text-muted-foreground">
+                          Loading stream…
+                        </p>
+                      )}
+
+                      {/* Stream List */}
+                      {!streamLoading &&
+                        streams.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex space-x-3 p-4 bg-muted/30 rounded-lg group"
+                          >
+                            <Avatar
+                              name={item.createdByName || "System"}
+                              size="36"
+                              round
+                              textSizeRatio={2}
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <h4 className="font-medium text-foreground">
+                                    {item.createdByName || "System"}
+                                  </h4>
+
+                                  <Icon
+                                    name={getStreamIcon(item.type)}
+                                    size={14}
+                                    className={getStreamIconColor(item.type)}
+                                  />
+
+                                  <span className="text-xs text-muted-foreground">
+                                    {item.type}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDateTime(item.createdAt)}
+                                  </span>
+
+                                  <div className="opacity-0 group-hover:opacity-100 transition">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                    >
+                                      <Icon name="Edit" size={14} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive"
+                                    >
+                                      <Icon name="Trash2" size={14} />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {getStreamMessage(item)}
+                              </p>
+
+                              {item.data?.value && (
+                                <span className="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                                  {item.data.value}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+
+                      {!streamLoading && streams.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          No stream activity yet.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {activeTab === "activities" && (
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
+                    <div className="p-6 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
                         <h4 className="font-medium text-foreground">
                           Recent Activities
                         </h4>
+
                         <Button variant="outline" size="sm">
                           <Icon name="Plus" size={16} className="mr-2" />
                           Log Activity
                         </Button>
                       </div>
-                      <div className="space-y-4">
-                        {mockActivities?.map((activity) => (
-                          <div
-                            key={activity?.id}
-                            className="flex items-start space-x-3"
-                          >
-                            <div
-                              className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 ${getActivityColor(
-                                activity?.type
-                              )}`}
-                            >
-                              <Icon
-                                name={getActivityIcon(activity?.type)}
-                                size={16}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h5 className="font-medium text-foreground text-sm">
-                                {activity?.title}
-                              </h5>
-                              <p className="text-xs text-muted-foreground">
-                                {activity?.date} at {activity?.time}
-                                {activity?.duration &&
-                                  ` • ${activity?.duration}`}
-                              </p>
-                              {activity?.outcome && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {activity?.outcome}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
-                  {activeTab === "notes" && (
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <h4 className="font-medium text-foreground mb-3">
-                          Notes
-                        </h4>
-                        <div className="space-y-3">
-                          <Input
-                            placeholder="Add a note about this contact..."
-                            value={newNote}
-                            onChange={(e) => setNewNote(e?.target?.value)}
-                          />
-                          <Button
-                            onClick={handleAddNote}
-                            disabled={!newNote?.trim()}
-                            size="sm"
-                          >
-                            <Icon name="Plus" size={16} className="mr-2" />
-                            Add Note
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        {mockNotes?.map((note) => (
-                          <div
-                            key={note?.id}
-                            className="p-4 border border-border rounded-lg"
-                          >
-                            <p className="text-sm text-foreground mb-2">
-                              {note?.content}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{note?.author}</span>
-                              <span>
-                                {note?.date} at {note?.time}
-                              </span>
+                      {activityLoading && (
+                        <p className="text-sm text-muted-foreground">
+                          Loading activities...
+                        </p>
+                      )}
+
+                      {!activityLoading &&
+                        activities.map((activity) => {
+                          const isOpen = expandedActivityId === activity.id;
+
+                          return (
+                            <div
+                              key={activity.id}
+                              onClick={() => toggleActivity(activity.id)}
+                              className="cursor-pointer rounded-lg bg-muted/30 p-4 transition hover:bg-muted/40"
+                            >
+                              {/* ===== COLLAPSED (LEAD STYLE) ===== */}
+                              <div className="flex gap-3">
+                                <Avatar
+                                  name={activity.assignedUserName || "A"}
+                                  size="36"
+                                  round
+                                  textSizeRatio={2}
+                                />
+
+                                <div className="flex-1">
+                                  {/* Top row */}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium text-foreground">
+                                      {activity.assignedUserName || "User"}
+                                    </span>
+
+                                    <span className="text-sm text-muted-foreground">
+                                      {activity.type}
+                                    </span>
+
+                                    {activity.status && (
+                                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                                        {activity.status}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Meta row */}
+                                  <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                                    {activity.dateStart && (
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="Clock" size={12} />
+                                        {new Date(
+                                          activity.dateStart.replace(" ", "T")
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    )}
+
+                                    {activity.duration && (
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="Timer" size={12} />
+                                        {Math.round(activity.duration / 60)} min
+                                      </span>
+                                    )}
+
+                                    {activity.parentType && (
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="Link" size={12} />
+                                        {activity.parentType}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* ===== EXPANDED ===== */}
+                              <div
+                                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                  isOpen
+                                    ? "max-h-[300px] opacity-100 mt-4"
+                                    : "max-h-0 opacity-0"
+                                }`}
+                              >
+                                <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Start
+                                    </p>
+                                    <p className="font-medium">
+                                      {activity.dateStart &&
+                                        new Date(
+                                          activity.dateStart.replace(" ", "T")
+                                        ).toLocaleString()}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">
+                                      End
+                                    </p>
+                                    <p className="font-medium">
+                                      {activity.dateEnd &&
+                                        new Date(
+                                          activity.dateEnd.replace(" ", "T")
+                                        ).toLocaleString()}
+                                    </p>
+                                  </div>
+
+                                  {activity.assignedUserName && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">
+                                        Assigned To
+                                      </p>
+                                      <p className="font-medium">
+                                        {activity.assignedUserName}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {activity.parentType && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">
+                                        Parent
+                                      </p>
+                                      <p className="font-medium text-primary">
+                                        {activity.parentType}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          );
+                        })}
+
+                      {!activityLoading && activities.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          No activities found for this contact.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

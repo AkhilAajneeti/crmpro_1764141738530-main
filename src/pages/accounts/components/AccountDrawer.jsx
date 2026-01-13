@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
+import Avatar from "react-avatar";
+
 import Input from "../../../components/ui/Input";
-import { createAccount, updateAccount } from "services/account.service";
+import {
+  accActivitesById,
+  createAccount,
+  createAccStream,
+  updateAccount,
+} from "services/account.service";
 import { fetchUser } from "services/user.service";
 import Select from "components/ui/Select";
 import { fetchTeam } from "services/team.service";
+import { fetchAccStreamById } from "services/account.service";
 const AccountDrawer = ({
   account,
   isOpen,
@@ -18,6 +26,15 @@ const AccountDrawer = ({
   const [editData, setEditData] = useState(account || {});
   const [drawerMode, setDrawerMode] = useState(mode);
   const [isLoading, setIsLoading] = useState(false);
+  const [streams, setStreams] = useState([]);
+  const [streamLoading, setStreamLoading] = useState(false);
+  const [showStreamForm, setShowStreamForm] = useState(false);
+  const [streamText, setStreamText] = useState("");
+  const [postingStream, setPostingStream] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [expandedActivityId, setExpandedActivityId] = useState(null);
+
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
   // Form state for create/edit mode
@@ -134,6 +151,55 @@ const AccountDrawer = ({
       });
     }
   }, [account, drawerMode]);
+  useEffect(() => {
+    if (!isOpen || !account?.id || activeTab !== "stream") return;
+
+    const loadStream = async () => {
+      try {
+        setStreamLoading(true);
+        const res = await fetchAccStreamById(account.id);
+        console.log("ACCOUNT STREAM:", res);
+        setStreams(res.list || []);
+      } catch (err) {
+        console.error("Failed to load account stream", err);
+      } finally {
+        setStreamLoading(false);
+      }
+    };
+
+    loadStream();
+  }, [isOpen, account?.id, activeTab]);
+  const formatDateTime = (value) => {
+    if (!value) return "—";
+    const safe = value.replace(" ", "T");
+    const d = new Date(safe);
+    if (isNaN(d.getTime())) return "—";
+
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  useEffect(() => {
+    if (!isOpen || !account?.id || activeTab !== "activities") return;
+
+    const loadActivities = async () => {
+      try {
+        setActivityLoading(true);
+        const res = await accActivitesById(account.id);
+        setActivities(res?.list || []);
+      } catch (err) {
+        console.error("Failed to load activities", err);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+
+    loadActivities();
+  }, [isOpen, account?.id, activeTab]);
 
   const handleInputChange = (e) => {
     const { name, value } = e?.target;
@@ -168,8 +234,8 @@ const AccountDrawer = ({
     { id: "overview", label: "Overview", icon: "Building2" },
     { id: "contacts", label: "Contacts", icon: "Users" },
     { id: "deals", label: "Deals", icon: "Target" },
+    { id: "stream", label: "Stream", icon: "FileText" },
     { id: "activities", label: "Activities", icon: "Calendar" },
-    { id: "notes", label: "Notes", icon: "FileText" },
   ];
 
   const mockContacts = [
@@ -404,6 +470,83 @@ const AccountDrawer = ({
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getStreamIcon = (type = "") => {
+    switch (type) {
+      case "Post":
+        return "MessageSquare";
+      case "Update":
+        return "RefreshCcw";
+      case "CreateRelated":
+        return "Link";
+      default:
+        return "Activity";
+    }
+  };
+
+  const getStreamIconColor = (type = "") => {
+    switch (type) {
+      case "Post":
+        return "text-indigo-600";
+      case "Update":
+        return "text-blue-600";
+      case "CreateRelated":
+        return "text-purple-600";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const getStreamMessage = (item) => {
+    if (item.type === "Post") return item.post;
+    if (item.type === "Update" && item.data?.value)
+      return `Status updated to ${item.data.value}`;
+    if (item.type === "CreateRelated") return "Activity updated";
+    return "Activity updated";
+  };
+  const createStream = async () => {
+    //post activity
+    setShowStreamForm(true);
+  };
+
+  const handlePostStream = async (e) => {
+    e.preventDefault();
+
+    if (!streamText.trim()) {
+      alert("Comment cannot be empty");
+      return;
+    }
+
+    try {
+      setPostingStream(true);
+
+      const payload = {
+        post: streamText,
+        parentId: account.id, // ✅ ACCOUNT ID
+        parentType: "Account", // ✅ IMPORTANT
+        type: "Post",
+        isInternal: false,
+        attachmentsIds: [],
+      };
+
+      const newStream = await createAccStream(payload);
+
+      // 🔥 Instantly update UI
+      setStreams((prev) => [newStream, ...prev]);
+
+      setStreamText("");
+      setShowStreamForm(false);
+    } catch (err) {
+      console.error("Failed to post stream", err);
+      alert("Failed to post activity");
+    } finally {
+      setPostingStream(false);
+    }
+  };
+
+  const toggleActivity = (id) => {
+    setExpandedActivityId((prev) => (prev === id ? null : id));
   };
 
   useEffect(() => {
@@ -771,32 +914,6 @@ const AccountDrawer = ({
               account && (
                 <div className="space-y-6">
                   {/* Key Metrics */}
-                  {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground">
-                      Annual Revenue
-                    </div>
-                    <div className="text-2xl font-semibold text-foreground">
-                      {formatCurrency(account?.revenue)}
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground">
-                      Total Contacts
-                    </div>
-                    <div className="text-2xl font-semibold text-foreground">
-                      {account?.contactCount}
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="text-sm text-muted-foreground">
-                      Deal Value
-                    </div>
-                    <div className="text-2xl font-semibold text-foreground">
-                      {formatCurrency(account?.dealValue)}
-                    </div>
-                  </div>
-                </div> */}
 
                   {/* Account Details update*/}
                   <div className="space-y-4">
@@ -1029,81 +1146,282 @@ const AccountDrawer = ({
               </div>
             )}
 
+            {activeTab === "stream" && (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-foreground">
+                    Recent Stream
+                  </h3>
+
+                  <Button size="sm" variant="outline" onClick={createStream}>
+                    <Icon name="Plus" size={16} className="mr-1" />
+                    Add Stream
+                  </Button>
+                </div>
+
+                {showStreamForm && (
+                  <form onSubmit={handlePostStream} className="space-y-2">
+                    <textarea
+                      className="w-full px-3 py-2 border border-border rounded-lg"
+                      rows={4}
+                      placeholder="Write your comment..."
+                      value={streamText}
+                      onChange={(e) => setStreamText(e.target.value)}
+                    />
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowStreamForm(false);
+                          setStreamText("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+
+                      <Button type="submit" size="sm" disabled={postingStream}>
+                        {postingStream ? "Posting..." : "Post"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Stream List */}
+                {streams?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex space-x-3 p-4 bg-muted/30 rounded-lg group"
+                  >
+                    {/* Avatar */}
+                    <Avatar
+                      name={item.createdByName || "System"}
+                      size="36"
+                      round
+                      textSizeRatio={2}
+                    />
+
+                    {/* Content */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-medium text-foreground">
+                            {item.createdByName || "System"}
+                          </h4>
+
+                          <Icon
+                            name={getStreamIcon(item.type)}
+                            size={14}
+                            className={getStreamIconColor(item.type)}
+                          />
+
+                          <span className="text-xs text-muted-foreground">
+                            {item.type}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDateTime(item.createdAt)}
+                          </span>
+
+                          {/* Actions (hover only) */}
+                          <div className="opacity-0 group-hover:opacity-100 transition">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <Icon name="Edit" size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                            >
+                              <Icon name="Trash2" size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Message */}
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {getStreamMessage(item)}
+                      </p>
+
+                      {/* Status Badge */}
+                      {item.data?.value && (
+                        <span
+                          className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                            item.data.value
+                          )}`}
+                        >
+                          {item.data.value}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {activeTab === "activities" && (
               <div className="space-y-4">
+                {/* Header */}
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-foreground">
-                    Recent Activities
+                    Activities
                   </h3>
+
                   <Button size="sm">
                     <Icon name="Plus" size={16} className="mr-2" />
                     Log Activity
                   </Button>
                 </div>
 
-                <div className="space-y-4">
-                  {mockActivities?.map((activity) => (
+                {activityLoading && (
+                  <p className="text-sm text-muted-foreground">
+                    Loading activities…
+                  </p>
+                )}
+
+                {!activityLoading && activities.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No activities found
+                  </p>
+                )}
+
+                {/* Activity List */}
+                {activities.map((activity) => {
+                  const isOpen = expandedActivityId === activity.id;
+
+                  return (
                     <div
-                      key={activity?.id}
-                      className="flex space-x-4 p-4 border border-border rounded-lg"
+                      key={activity.id}
+                      onClick={() => toggleActivity(activity.id)}
+                      className="cursor-pointer rounded-lg bg-muted/30 p-4 transition hover:bg-muted/50"
                     >
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Icon
-                          name={getActivityIcon(activity?.type)}
-                          size={16}
-                          className="text-primary"
+                      {/* COLLAPSED HEADER */}
+                      <div className="flex gap-3">
+                        <Avatar
+                          name={activity.assignedUserName || "System"}
+                          size="36"
+                          round
                         />
+
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-medium text-foreground">
+                              {activity.name || "Activity"}
+                            </h4>
+
+                            <span className="text-xs text-muted-foreground">
+                              {activity._scope}
+                            </span>
+
+                            {activity.status && (
+                              <span
+                                className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                                  activity.status
+                                )}`}
+                              >
+                                {activity.status}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Icon name="Clock" size={12} />
+                              {formatDateTime(activity.dateStart)}
+                            </span>
+
+                            {activity.duration && (
+                              <span className="flex items-center gap-1">
+                                <Icon name="Timer" size={12} />
+                                {Math.round(activity.duration / 60)} min
+                              </span>
+                            )}
+
+                            {activity.parentType && (
+                              <span className="flex items-center gap-1">
+                                <Icon name="Link" size={12} />
+                                {activity.parentType}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-foreground">
-                          {activity?.title}
-                        </div>
-                        <div className="text-sm text-muted-foreground mb-2">
-                          {formatDate(activity?.date)} at {activity?.time}
-                          {activity?.duration && ` • ${activity?.duration}`}
-                        </div>
-                        <div className="text-sm text-foreground">
-                          {activity?.outcome}
+
+                      {/* EXPANDED CONTENT */}
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          isOpen
+                            ? "max-h-[500px] opacity-100 mt-4"
+                            : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Direction
+                            </p>
+                            <p className="font-medium">
+                              {activity.direction || "—"}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Assigned User
+                            </p>
+                            <p className="font-medium">
+                              {activity.assignedUserName || "—"}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Start
+                            </p>
+                            <p className="font-medium">
+                              {formatDateTime(activity.dateStart)}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">End</p>
+                            <p className="font-medium">
+                              {formatDateTime(activity.dateEnd)}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Created
+                            </p>
+                            <p className="font-medium">
+                              {formatDateTime(activity.createdAt)}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Parent
+                            </p>
+                            <p className="font-medium text-primary">
+                              {activity.parentType}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "notes" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Notes
-                  </h3>
-                  <Button size="sm">
-                    <Icon name="Plus" size={16} className="mr-2" />
-                    Add Note
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {mockNotes?.map((note) => (
-                    <div
-                      key={note?.id}
-                      className="p-4 border border-border rounded-lg"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-medium text-foreground">
-                          {note?.author}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatDate(note?.date)} at {note?.time}
-                        </div>
-                      </div>
-                      <div className="text-foreground whitespace-pre-line">
-                        {note?.content}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             )}
           </div>

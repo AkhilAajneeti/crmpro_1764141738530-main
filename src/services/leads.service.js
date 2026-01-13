@@ -126,7 +126,7 @@ export const deleteActivity = async (id) => {
   return res.json();
 };
 
-//create activity
+//create strean
 export const createLeadActivity = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
@@ -174,30 +174,3 @@ export const leadActivitesById = async (id) => {
   }
   return await res.json();
 };
-// export const leadActivitesById = async (id) => {
-//   console.log(id);
-//   const token = localStorage.getItem("auth_token");
-//   console.log("AUTH TOKEN:", token); // 🔍 debug
-//   const res = await fetch(
-//     `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
-//     {
-//       method: "GET",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Accept: "application/json",
-//         token: token,
-//       },
-//     }
-//   );
-
-//   console.log(res);
-//   if (!res.ok) {
-//     console.log("STATUS:", res.status);
-//     if (res.status === 401 || res.status === 403) {
-//       localStorage.clear();
-//       window.location.href = "/login";
-//     }
-//     throw new Error("Failed to fetch User's Activties");
-//   }
-//   return await res.json();
-// };
