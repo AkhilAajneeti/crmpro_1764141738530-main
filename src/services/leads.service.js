@@ -80,8 +80,8 @@ export const bulkDeleteleads = async (ids = []) => {
   return Promise.all(ids.map((id) => deleteLead(id)));
 };
 
-// --------------Activity-----------
-//fetch by activity
+// --------------Stream-----------
+//fetch by Streams
 export const leadStreamById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
@@ -144,3 +144,60 @@ export const createLeadActivity = async (payload) => {
   // EspoCRM returns array
   return text ? JSON.parse(text) : null;
 };
+
+// Meet call related Activities
+
+export const leadActivitesById = async (id) => {
+  console.log(id);
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+    }
+  );
+
+  console.log(res);
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch User's Activties");
+  }
+  return await res.json();
+};
+// export const leadActivitesById = async (id) => {
+//   console.log(id);
+//   const token = localStorage.getItem("auth_token");
+//   console.log("AUTH TOKEN:", token); // 🔍 debug
+//   const res = await fetch(
+//     `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
+//     {
+//       method: "GET",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Accept: "application/json",
+//         token: token,
+//       },
+//     }
+//   );
+
+//   console.log(res);
+//   if (!res.ok) {
+//     console.log("STATUS:", res.status);
+//     if (res.status === 401 || res.status === 403) {
+//       localStorage.clear();
+//       window.location.href = "/login";
+//     }
+//     throw new Error("Failed to fetch User's Activties");
+//   }
+//   return await res.json();
+// };

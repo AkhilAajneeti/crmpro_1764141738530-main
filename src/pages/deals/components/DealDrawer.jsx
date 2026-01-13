@@ -7,7 +7,11 @@ import toast from "react-hot-toast";
 import Avatar from "react-avatar";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
-import { createLeadActivity, leadStreamById } from "services/leads.service";
+import {
+  createLeadActivity,
+  leadActivitesById,
+  leadStreamById,
+} from "services/leads.service";
 
 const DealDrawer = ({
   deal,
@@ -22,10 +26,12 @@ const DealDrawer = ({
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
-  const [mockActivities, setmockActivities] = useState([]);
+  const [mockStream, setmockStream] = useState([]);
+  const [mockActivities, setActivities] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
+  const [expandedActivityId, setExpandedActivityId] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -66,25 +72,6 @@ const DealDrawer = ({
     }
   }, [deal, mode]);
 
-  // fetching lead stream from id
-  useEffect(() => {
-    if (!isOpen || !deal?.id) return;
-
-    const loadStream = async () => {
-      try {
-        const id = deal?.id;
-        const res = await leadStreamById(id);
-        console.log("LEAD DETAIL RESPONSE:", res);
-        setmockActivities(res.list || []);
-      } catch (err) {
-        console.error("Failed to fetch streams", err);
-        toast.error("Failed to load activity");
-      }
-    };
-
-    loadStream();
-  }, [isOpen, deal?.id]);
-
   const STATUS_OPTIONS = [
     { value: "New", label: "New" },
     { value: "Converted", label: "Converted" },
@@ -104,7 +91,9 @@ const DealDrawer = ({
     { value: "IVR", label: "IVR" },
     { value: "Web Site", label: "Web Site" },
   ];
-
+  const toggleActivity = (id) => {
+    setExpandedActivityId((prev) => (prev === id ? null : id));
+  };
   // if (!isOpen) return null;
 
   const formatDate = (date) => {
@@ -121,6 +110,23 @@ const DealDrawer = ({
       year: "numeric",
     });
   };
+  const formatDateTime = (value) => {
+  if (!value) return "—";
+
+  const safe = value.replace(" ", "T"); // EspoCRM fix
+  const date = new Date(safe);
+
+  if (isNaN(date.getTime())) return "—";
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 
   const getStageColor = (stage) => {
     const colors = {
@@ -139,8 +145,8 @@ const DealDrawer = ({
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
-    { id: "activities", label: "Activities", icon: "Calendar" },
-    { id: "notes", label: "Notes", icon: "FileText" },
+    { id: "Stream", label: "Stream", icon: "Calendar" },
+    { id: "Activity", label: "Activity", icon: "FileText" },
   ];
 
   const getActivityIcon = (type) => {
@@ -194,6 +200,13 @@ const DealDrawer = ({
       }
       return "Lead updated";
     }
+    if (activity._scope === "Call") {
+      return `${activity.direction || "Call"} call scheduled`;
+    }
+
+    if (activity._scope === "Meeting") {
+      return "Meeting scheduled";
+    }
 
     return "Activity updated";
   };
@@ -230,9 +243,27 @@ const DealDrawer = ({
   };
 
   // activity operation -------
+  // fetching lead stream from id
+  useEffect(() => {
+    if (!isOpen || !deal?.id) return;
+
+    const loadStream = async () => {
+      try {
+        const id = deal?.id;
+        const res = await leadStreamById(id);
+        console.log("LEAD DETAIL RESPONSE:", res);
+        setmockStream(res.list || []);
+      } catch (err) {
+        console.error("Failed to fetch streams", err);
+        toast.error("Failed to load activity");
+      }
+    };
+
+    loadStream();
+  }, [isOpen, deal?.id]);
   const handleDelete = async (e, activity) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete Activity ${activity?.createdByName}?`);
+    const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
   };
@@ -263,7 +294,7 @@ const DealDrawer = ({
       const newActivity = await createLeadActivity(payload);
 
       // 🔥 UI update instantly
-      setmockActivities((prev) => [newActivity, ...prev]);
+      setmockStream((prev) => [newActivity, ...prev]);
 
       setActivityText("");
       setActivityForm(false);
@@ -296,6 +327,7 @@ const DealDrawer = ({
   }, []);
 
   const userOptions = users
+
     ?.filter((u) => u?.isActive) // ✅ only active users
     ?.map((u) => ({
       value: u.id,
@@ -314,12 +346,33 @@ const DealDrawer = ({
     }));
   };
   const toEspoDateTime = (value) => {
-    value ? value.replace("T", " ") + ":00" : null;
+    return value ? value.replace("T", " ") + ":00" : null;
   };
+
+  // meeting , call , activities
+  // activity operation -------
+  // fetching lead stream from id
+  useEffect(() => {
+    if (!isOpen || !deal?.id) return;
+
+    const loadActivity = async () => {
+      try {
+        const id = deal?.id;
+        const res = await leadActivitesById(id);
+        console.log("LEAD DETAIL RESPONSE:", res);
+        setActivities(res.list || []);
+      } catch (err) {
+        console.error("Failed to fetch streams", err);
+        toast.error("Failed to load activity");
+      }
+    };
+
+    loadActivity();
+  }, [isOpen, deal?.id]);
 
   useEffect(() => {
     if (!isOpen) {
-      setmockActivities([]);
+      setmockStream([]);
     }
   }, [isOpen]);
   return (
@@ -545,11 +598,11 @@ const DealDrawer = ({
                     onClick={handleScheduleActivity}
                   >
                     <Icon name="Calendar" size={16} className="mr-1" />
-                    Schedule Activity
+                    Schedule Call
                   </Button>
                   <Button variant="outline" size="sm">
                     <Icon name="Mail" size={16} className="mr-1" />
-                    Send Email
+                    Schedule Meeting
                   </Button>
                 </div>
 
@@ -713,11 +766,11 @@ const DealDrawer = ({
                     </div>
                   )}
 
-                  {activeTab === "activities" && (
+                  {activeTab === "Stream" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium text-foreground">
-                          Recent Activities
+                          Recent Stream
                         </h3>
                         <Button
                           variant="outline"
@@ -725,7 +778,7 @@ const DealDrawer = ({
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Add Activity
+                          Add Stream
                         </Button>
                       </div>
                       <div className="space-y-4">
@@ -751,7 +804,11 @@ const DealDrawer = ({
                                 }}
                               >
                                 Cancel
-                                <Icon name="XCircle" size={16} className="mr-1" />
+                                <Icon
+                                  name="XCircle"
+                                  size={16}
+                                  className="mr-1"
+                                />
                               </Button>
 
                               <Button
@@ -765,7 +822,7 @@ const DealDrawer = ({
                             </div>
                           </form>
                         )}
-                        {mockActivities?.map((activity) => (
+                        {mockStream?.map((activity) => (
                           <div
                             key={activity.id}
                             className="flex space-x-3 p-4 bg-muted/30 rounded-lg"
@@ -917,53 +974,134 @@ const DealDrawer = ({
                     </div>
                   )}
 
-                  {activeTab === "notes" && (
+                  {activeTab === "Activity" && (
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-foreground">
-                          Notes
-                        </h3>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Plus" size={16} className="mr-1" />
-                          Add Note
-                        </Button>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="p-4 bg-muted/30 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">
-                              Meeting Notes - Discovery Call
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Nov 1, 2025
-                            </span>
+                      {mockActivities?.map((activity) => (
+                        <div
+                          key={activity.id}
+                          onClick={() => toggleActivity(activity.id)}
+                          className={`cursor-pointer rounded-lg p-4 transition-all duration-300${
+                            expandedActivityId === activity.id
+                              ? "bg-muted shadow-sm"
+                              : "bg-muted/30 hover:bg-muted"
+                          }`}
+                        >
+                          {/*  */}
+                          <div className="flex space-x-3">
+                            <Avatar
+                              name={activity.name || "System"}
+                              size="36"
+                              round
+                              textSizeRatio={2}
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-medium text-foreground">
+                                  {activity.name || "Activity"}
+                                </h4>
+
+                                <span className="text-xs text-muted-foreground">
+                                  {activity._scope}
+                                </span>
+
+                                {activity.status && (
+                                  <span
+                                    className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                                      activity.status
+                                    )}`}
+                                  >
+                                    {activity.status}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Icon name="Clock" size={12} />
+                                  {formatDate(activity.dateStart)}
+                                </span>
+
+                                {activity.duration && (
+                                  <span className="flex items-center gap-1">
+                                    <Icon name="Timer" size={12} />
+                                    {Math.round(activity.duration / 60)} min
+                                  </span>
+                                )}
+
+                                {activity.parentType && (
+                                  <span className="flex items-center gap-1">
+                                    <Icon name="Link" size={12} />
+                                    {activity.parentType}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Key requirements identified:\n• Integration with
-                            existing ERP system\n• Multi-location support\n•
-                            Advanced reporting capabilities\n• 24/7 customer
-                            support\n\nNext steps: Prepare technical proposal
-                            with integration timeline.
-                          </p>
-                        </div>
-                        <div className="p-4 bg-muted/30 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">
-                              Competitive Analysis
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Oct 28, 2025
-                            </span>
+
+                          {/*  */}
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              expandedActivityId === activity.id
+                                ? "max-h-[600px] opacity-100 mt-4"
+                                : "max-h-0 opacity-0"
+                            }`}
+                          >
+                            <div className="border-t pt-4 text-sm text-muted-foreground">
+                              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                <div>
+                                  <p className="text-xs">Direction</p>
+                                  <p className="font-medium text-foreground">
+                                    {activity.direction}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Assigned User</p>
+                                  <p className="font-medium text-foreground">
+                                    {activity.assignedUserName}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Date Start</p>
+                                  <p className="font-medium text-foreground">
+                                    {formatDateTime(activity.dateStart)}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Date End</p>
+                                  <p className="font-medium text-foreground">
+                                    {formatDateTime(activity.dateEnd)}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Duration</p>
+                                  <p className="font-medium text-foreground">
+                                    {Math.round(activity.duration / 60)} min
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Parent</p>
+                                  <p className="font-medium text-primary">
+                                    {activity.parentType}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs">Created</p>
+                                  <p className="font-medium text-foreground">
+                                    {formatDate(activity.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Currently evaluating our solution against
-                            CompetitorX and CompetitorY. Our advantages: better
-                            integration capabilities, superior customer support,
-                            competitive pricing. Need to emphasize ROI in
-                            proposal.
-                          </p>
                         </div>
-                      </div>
+                      ))}
                     </div>
                   )}
                 </div>

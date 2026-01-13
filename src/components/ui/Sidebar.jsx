@@ -34,9 +34,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: '12'
     },
     {
-      label: 'TaskPage',
+      label: 'Task',
       path: '/tasks',
-      icon: 'GitBranch',
+      icon: 'ListChecks',
       badge: null
     },
     {
