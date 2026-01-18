@@ -215,8 +215,8 @@ const AccountsPage = () => {
               </p>
             </div>
 
-            <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-              <Button variant="outline" onClick={handleExportAccount}>
+            <div className="flex items-center flex-wrap space-x-3 mt-4 sm:mt-0">
+              <Button className="hidden" variant="outline" onClick={handleExportAccount}>
                 <Icon name="Upload" size={16} className="mr-2" />
                 Export
               </Button>

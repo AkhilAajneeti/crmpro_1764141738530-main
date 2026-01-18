@@ -293,10 +293,10 @@ const DealsPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export
                 </Button>
-                <Button variant="outline">
+                {/* <Button variant="outline">
                   <Icon name="GitBranch" size={16} className="mr-2" />
                   Pipeline View
-                </Button>
+                </Button> */}
                 <Button onClick={handleAddLeads}>
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Deal

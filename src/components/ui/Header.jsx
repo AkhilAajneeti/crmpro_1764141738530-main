@@ -88,12 +88,13 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
             {/* Mobile Logo - Only visible on mobile */}
             <div className="flex items-center space-x-3 lg:hidden">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              {/* <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Icon name="Zap" size={20} color="white" />
-              </div>        <div className="flex items-center space-x-2">
-                <span className="text-lg font-semibold text-foreground">CRMPro</span>
+              </div>       */}
+                <div className="flex items-center space-x-2">
+                <span className="text-lg font-semibold text-foreground">CRM</span>
                 <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
-                  v2.1
+                  ACL
                 </span>
               </div>
             </div>
@@ -101,61 +102,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
-            {/* Help Dropdown */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleHelpDropdownToggle}
-                className="relative"
-                aria-label="Help and support"
-              >
-                <Icon name="HelpCircle" size={20} />
-              </Button>
 
-              {isHelpDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-50"
-                    onClick={handleDropdownClose}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 bg-popover border border-border rounded-lg shadow-elevation-2 z-60">
-                    <div className="py-1">
-                      <button
-                        onClick={() => console.log('Documentation clicked')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
-                        <Icon name="Book" size={16} className="mr-3" />
-                        Documentation
-                      </button>
-                      <button
-                        onClick={() => console.log('Keyboard shortcuts clicked')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
-                        <Icon name="Keyboard" size={16} className="mr-3" />
-                        Keyboard Shortcuts
-                      </button>
-                      <button
-                        onClick={() => console.log('Contact support clicked')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
-                        <Icon name="MessageCircle" size={16} className="mr-3" />
-                        Contact Support
-                      </button>
-                      <div className="border-t border-border my-1" />
-                      <button
-                        onClick={() => console.log('What\'s new clicked')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
-                        <Icon name="Sparkles" size={16} className="mr-3" />
-                        What's New
-                        <span className="ml-auto w-2 h-2 bg-accent rounded-full" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
 
             {/* Notifications */}
             <Button

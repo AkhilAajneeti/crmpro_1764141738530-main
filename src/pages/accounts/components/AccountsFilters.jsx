@@ -61,7 +61,7 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount }) => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3 flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
             <Select
               options={industryOptions}
               value={activeFilters?.industry || ''}
