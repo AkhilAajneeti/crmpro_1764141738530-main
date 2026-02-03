@@ -15,7 +15,14 @@ import {
   fetchContactStreamById,
 } from "services/contact.service";
 
-const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
+const ContactDrawer = ({
+  mode,
+  contact,
+  isOpen,
+  onClose,
+  contactDetail,
+  onBulkUpdate,
+}) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [newNote, setNewNote] = useState("");
   const [isLoading, setLoading] = useState(false);
@@ -32,6 +39,17 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
   const [showStreamForm, setShowStreamForm] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [postingStream, setPostingStream] = useState(false);
+  const [massFields, setMassFields] = useState({
+    assignedUserId: false,
+    teamId: false,
+  });
+  const isMassUpdate = mode === "mass-update";
+  const toggleMassField = (field) => {
+    setMassFields((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -106,6 +124,8 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
         addressState: formData.addressState,
         addressPostalCode: formData.addressPostalCode,
         addressCountry: formData.addressCountry,
+        assignedUserId: formData.assignedUserId,
+        teamId: formData.teamId,
       };
       console.log(payload);
       if (mode === "edit") {
@@ -121,72 +141,6 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
     }
   };
 
-  const mockDeals = [
-    {
-      id: 1,
-      name: "Enterprise Software License",
-      value: 125000,
-      stage: "Proposal",
-      probability: 75,
-      closeDate: "2025-01-15",
-    },
-    {
-      id: 2,
-      name: "Cloud Migration Project",
-      value: 85000,
-      stage: "Qualified",
-      probability: 60,
-      closeDate: "2025-02-28",
-    },
-  ];
-
-  const mockActivities = [
-    {
-      id: 1,
-      type: "call",
-      title: "Follow-up call regarding proposal",
-      date: "2025-01-02",
-      time: "2:30 PM",
-      duration: "25 min",
-      outcome: "Positive response, scheduling demo next week",
-    },
-    {
-      id: 2,
-      type: "email",
-      title: "Sent pricing proposal",
-      date: "2024-12-28",
-      time: "10:15 AM",
-      outcome: "Proposal delivered successfully",
-    },
-    {
-      id: 3,
-      type: "meeting",
-      title: "Initial discovery meeting",
-      date: "2024-12-20",
-      time: "3:00 PM",
-      duration: "45 min",
-      outcome: "Identified key requirements and pain points",
-    },
-  ];
-
-  const mockNotes = [
-    {
-      id: 1,
-      content:
-        "Very interested in our enterprise solution. Mentioned budget approval process takes 2-3 weeks. Key decision maker but needs CFO sign-off for deals over $100k.",
-      author: "Sarah Johnson",
-      date: "2025-01-02",
-      time: "3:45 PM",
-    },
-    {
-      id: 2,
-      content:
-        "Prefers email communication over phone calls. Available for meetings on Tuesdays and Thursdays after 2 PM EST.",
-      author: "Mike Chen",
-      date: "2024-12-28",
-      time: "11:30 AM",
-    },
-  ];
   const TYPE = ["Mr.", "Ms.", "Mrs.", "Dr."];
   useEffect(() => {
     const loadData = async () => {
@@ -270,7 +224,6 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "User" },
-    { id: "deals", label: "Deals", icon: "Target" },
     { id: "stream", label: "Stream", icon: "FileText" },
     { id: "activities", label: "Activities", icon: "Clock" },
   ];
@@ -370,6 +323,23 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
       setPostingStream(false);
     }
   };
+  const handleBulkUpdate = (e) => {
+    e.preventDefault();
+
+    const payload = {};
+
+    if (massFields.assignedUserId)
+      payload.assignedUserId = formData.assignedUserId;
+    if (massFields.teamId) payload.teamId = formData.teamId;
+
+    if (!Object.keys(payload).length) {
+      toast.error("Select at least one field");
+      return;
+    }
+
+    onBulkUpdate(payload);
+    onClose();
+  };
 
   return (
     <>
@@ -388,12 +358,13 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-semibold text-foreground flex gap-2">
+              <Icon name="Users" size={24} className="text-primary" />
               {mode === "create"
                 ? "Add Contact"
                 : mode === "edit"
-                ? "Edit Contact"
-                : "Contact Details"}
+                  ? "Edit Contact"
+                  : "Contact Details"}
             </h2>
             <Button
               variant="ghost"
@@ -608,41 +579,56 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
               </div>
             )}
 
-            {/* VIEW CONTACT */}
-            {mode === "view" && contact && (
-              <>
-                {/* Contact Info */}
-                <div className="p-6 border-b border-border">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-muted flex-shrink-0">
-                      <Image
-                        src={contact?.avatar}
-                        alt={contact?.avatarAlt}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-foreground">
-                        {contact?.name}
-                      </h3>
-                      <p className="text-muted-foreground">{contact?.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {contact?.company}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-3">
-                        <Button variant="outline" size="sm">
-                          <Icon name="Phone" size={16} className="mr-2" />
-                          Call
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Mail" size={16} className="mr-2" />
-                          Email
-                        </Button>
-                      </div>
-                    </div>
+            {isMassUpdate && (
+              <form className="p-6 space-y-6" onSubmit={handleBulkUpdate}>
+                <h3 className="text-lg font-semibold">Mass Update Contacts</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Assigned User */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.assignedUserId}
+                      onChange={() => toggleMassField("assignedUserId")}
+                    />
+                    <Select
+                      placeholder="Assigned User"
+                      value={formData.assignedUserId}
+                      options={userOptions}
+                      disabled={!massFields.assignedUserId}
+                      onChange={(v) => handleSelectChange("assignedUserId", v)}
+                    />
+                  </div>
+
+                  {/* Team */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.teamId}
+                      onChange={() => toggleMassField("teamId")}
+                    />
+                    <Select
+                      placeholder="Team"
+                      value={formData.teamId}
+                      options={teamOptions}
+                      disabled={!massFields.teamId}
+                      onChange={(v) => handleSelectChange("teamId", v)}
+                    />
                   </div>
                 </div>
 
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="ghost" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Update Contacts</Button>
+                </div>
+              </form>
+            )}
+
+            {/* VIEW CONTACT */}
+            {mode === "view" && contact && (
+              <>
                 {/* Tabs */}
                 <div className="border-b border-border">
                   <nav className="flex space-x-1 px-6">
@@ -670,131 +656,153 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                 <div className="flex-1 overflow-y-auto">
                   {activeTab === "overview" && (
                     <div className="p-6 space-y-6">
-                      <div>
-                        <h4 className="font-medium text-foreground mb-3">
-                          Contact Information
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <Icon
-                              name="Mail"
-                              size={16}
-                              className="text-muted-foreground"
-                            />
+                      {/* CONTACT INFORMATION */}
+                      <div className="border border-border rounded-xl p-6">
+                        {/* Email */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Name
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {contact?.name || "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Email
+                            </p>
+                            <a
+                              href={`mailto:${contact?.emailAddress}`}
+                              className="text-sm text-primary hover:underline"
+                            >
+                              {contact?.emailAddress || "—"}
+                            </a>
+                          </div>
+                          {/* Phone */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Phone
+                            </p>
+                            <span className="text-sm text-foreground">
+                              {contact?.phoneNumber || "—"}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Account Name
+                            </p>
                             <span className="text-sm text-primary hover:underline cursor-pointer">
-                              {contact?.email}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Icon
-                              name="Phone"
-                              size={16}
-                              className="text-muted-foreground"
-                            />
-                            <span className="text-sm text-foreground">
-                              {contact?.phone}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Icon
-                              name="Building2"
-                              size={16}
-                              className="text-muted-foreground"
-                            />
-                            <span className="text-sm text-foreground">
-                              {contact?.company}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Icon
-                              name="MapPin"
-                              size={16}
-                              className="text-muted-foreground"
-                            />
-                            <span className="text-sm text-foreground">
-                              New York, NY
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-foreground mb-3">
-                          Relationship Status
-                        </h4>
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                            contact?.status === "Active"
-                              ? "bg-success/10 text-success border-success/20"
-                              : contact?.status === "Customer"
-                              ? "bg-primary/10 text-primary border-primary/20"
-                              : contact?.status === "Prospect"
-                              ? "bg-warning/10 text-warning border-warning/20"
-                              : "bg-muted text-muted-foreground border-border"
-                          }`}
-                        >
-                          {contact?.status}
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-foreground mb-3">
-                          Tags
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-accent/10 text-accent-foreground text-xs rounded-md border border-accent/20">
-                            Decision Maker
-                          </span>
-                          <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md border border-primary/20">
-                            Enterprise
-                          </span>
-                          <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs rounded-md border border-secondary/20">
-                            High Value
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "deals" && (
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-foreground">
-                          Associated Deals
-                        </h4>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Plus" size={16} className="mr-2" />
-                          Add Deal
-                        </Button>
-                      </div>
-                      <div className="space-y-4">
-                        {mockDeals?.map((deal) => (
-                          <div
-                            key={deal?.id}
-                            className="p-4 border border-border rounded-lg"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h5 className="font-medium text-foreground">
-                                  {deal?.name}
-                                </h5>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  ${deal?.value?.toLocaleString()} •{" "}
-                                  {deal?.probability}% probability
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Close date:{" "}
-                                  {new Date(
-                                    deal.closeDate
-                                  )?.toLocaleDateString()}
-                                </p>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.values(
+                                  contactDetail?.accountsNames || {},
+                                ).length ? (
+                                  Object.values(
+                                    contactDetail.accountsNames,
+                                  ).map((name) => (
+                                    <span
+                                      key={name}
+                                      className="text-sm text-primary hover:underline cursor-pointer"
+                                    >
+                                      {name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
                               </div>
-                              <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md border border-primary/20">
-                                {deal?.stage}
-                              </span>
-                            </div>
+                            </span>
                           </div>
-                        ))}
+                        </div>
+                        {/* Address */}
+                        <div className="pt-5">
+                          <p className="text-sm text-muted-foreground">
+                            Address
+                          </p>
+                          <span className="text-sm text-foreground leading-relaxed">
+                            {contact?.addressStreet && (
+                              <>
+                                {contact.addressStreet}, <br />
+                              </>
+                            )}
+                            {contact?.addressCity}, {contact?.addressState}{" "}
+                            {contact?.addressPostalCode} <br />
+                            {contact?.addressCountry}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* RELATIONSHIP / META */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h4 className="font-medium text-foreground mb-3">
+                          Details
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Assigned User */}
+                          <div>
+                            <p className=" text-muted-foreground ">
+                              Assigned User{" "}
+                            </p>
+                            <span className="text-sm text-foreground text-primary">
+                              {contact?.assignedUserName || "—"}
+                            </span>
+                          </div>
+                          {/* Assigned team */}
+                          <div>
+                            <p className=" text-muted-foreground ">Team </p>
+                            <span className="text-sm text-foreground text-primary">
+                              {contactDetail?.teamsNames
+                                ? Object.values(contactDetail.teamsNames).join(
+                                    ", ",
+                                  )
+                                : "—"}
+                            </span>
+                          </div>
+
+                          {/* Created */}
+                          <div className="">
+                            <p className=" text-muted-foreground text-primary">
+                              Created{" "}
+                            </p>
+                            <span className="text-sm text-foreground">
+                              {formatDateTime(contact?.createdAt)}
+                              <span className="text-muted-foreground">
+                                <br />
+                                {contact?.createdByName}
+                              </span>
+                            </span>
+                          </div>
+
+                          {/* Modified */}
+                          <div className="">
+                            <p className=" text-muted-foreground text-primary">
+                              Modified{" "}
+                            </p>
+                            <span className="text-sm text-foreground">
+                              {contact?.modifiedAt
+                                ? new Date(
+                                    contact.modifiedAt.replace(" ", "T"),
+                                  ).toLocaleString()
+                                : "—"}
+                              <span className="text-muted-foreground">
+                                <br /> {contact?.modifiedByName}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* DESCRIPTION */}
+                      <div>
+                        <h4 className="font-medium text-foreground mb-3">
+                          Description
+                        </h4>
+                        <p className="text-sm text-foreground">
+                          {contact?.description}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -999,7 +1007,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                                       <span className="flex items-center gap-1">
                                         <Icon name="Clock" size={12} />
                                         {new Date(
-                                          activity.dateStart.replace(" ", "T")
+                                          activity.dateStart.replace(" ", "T"),
                                         ).toLocaleDateString()}
                                       </span>
                                     )}
@@ -1037,7 +1045,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                                     <p className="font-medium">
                                       {activity.dateStart &&
                                         new Date(
-                                          activity.dateStart.replace(" ", "T")
+                                          activity.dateStart.replace(" ", "T"),
                                         ).toLocaleString()}
                                     </p>
                                   </div>
@@ -1049,7 +1057,7 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                                     <p className="font-medium">
                                       {activity.dateEnd &&
                                         new Date(
-                                          activity.dateEnd.replace(" ", "T")
+                                          activity.dateEnd.replace(" ", "T"),
                                         ).toLocaleString()}
                                     </p>
                                   </div>
@@ -1244,14 +1252,30 @@ const ContactDrawer = ({ mode, contact, isOpen, onClose }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
+                        Assigned User
+                      </label>
+
+                      <Select
+                        name="assignedUserId"
+                        value={formData.assignedUserId || ""}
+                        options={userOptions} // 👉 later API se users
+                        onChange={(value) =>
+                          handleSelectChange("assignedUserId", value)
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Teams
                       </label>
-                      <Input
-                        name="team"
-                        value={formData?.team}
-                        onChange={handleInputChange}
-                        type="text"
-                        placeholder="Developer"
+                      <Select
+                        name="teamId"
+                        value={formData.teamId || ""}
+                        options={teamOptions}
+                        onChange={(value) =>
+                          handleSelectChange("teamId", value)
+                        }
+                        placeholder="Select Team"
                       />
                     </div>
                   </div>

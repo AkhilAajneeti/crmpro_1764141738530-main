@@ -19,6 +19,28 @@ export const fetchContacts = async () => {
   return await res.json();
 };
 
+export const fetchContactById = async (id) => {
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Contact/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token, // ✅ backend expects this
+    },
+  });
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch Contacts By ID's");
+  }
+  console.log(res);
+  return await res.json();
+};
+
 export const createContact = async (payload) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Contact", {

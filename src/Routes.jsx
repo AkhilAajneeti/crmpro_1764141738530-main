@@ -5,20 +5,19 @@ import ErrorBoundary from "components/ErrorBoundary";
 import NotFound from "pages/NotFound";
 import Settings from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
-import BillingPage from "./pages/billing";
 import DealsPage from "./pages/deals";
 import ContactsPage from "./pages/contacts";
 import LoginPage from "./pages/login";
 import EmailsPage from "./pages/emails";
 import AccountsPage from "./pages/accounts";
 import Dashboard from "./pages/dashboard";
-import Pipeline from "./pages/pipeline";
 import Reports from "./pages/reports";
 import Activities from "./pages/activities";
 import Profile from "pages/profile";
 import Login from "./pages/login";
 import ProtectedRoute from "routes/ProtectedRoute";
 import TaskPage from "pages/tasks";
+import MeetingPage from "pages/meeting";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -38,7 +37,7 @@ const Routes = () => {
           />
           <Route path="/settings" element={<Settings />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
-          <Route path="/billing" element={<BillingPage />} />
+
           <Route path="/leads" element={<DealsPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -56,6 +55,7 @@ const Routes = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/activities" element={<Activities />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/meeting" element={<MeetingPage />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

@@ -8,19 +8,16 @@ import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
-import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
+import { deleteActivity } from "services/leads.service";
 import {
-  createLead,
-  deleteActivity,
-  deleteLead,
-  fetchLeads,
-  fetchLeadsById,
-  updateLead,
-} from "services/leads.service";
-import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
+  createMeeting,
+  deleteMeeting,
+  fetchMeeting,
+  updateMeeting,
+} from "services/meeting.service";
 
-const DealsPage = () => {
+const MeetingPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -29,9 +26,6 @@ const DealsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
-  const [leadsDetails, setLeadsDetails] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -47,9 +41,9 @@ const DealsPage = () => {
   });
 
   useEffect(() => {
-    const loadContact = async () => {
+    const loadMeeting = async () => {
       try {
-        const data = await fetchLeads();
+        const data = await fetchMeeting();
         setLeads(data.list);
         console.log(data.list);
       } catch (error) {
@@ -57,48 +51,9 @@ const DealsPage = () => {
       } finally {
       }
     };
-    loadContact();
+    loadMeeting();
   }, []);
   // Mock deals data
-  useEffect(() => {
-    if (!selectedDeal?.id || mode !== "view") return;
-
-    fetchLeadsById(selectedDeal.id)
-      .then(setLeadsDetails)
-      .catch((err) => console.error("Failed to fetch lead detail", err));
-  }, [selectedDeal?.id, mode]);
-
-  const exportLeadsToCSV = (rows, fileName = "leads_export") => {
-    if (!rows || rows.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-
-    const exportData = rows.map((lead) => ({
-      Name: lead?.name || "",
-      Email: lead?.emailAddress || "",
-      Phone: lead?.phoneNumber || "",
-      Status: lead?.status || "",
-      Source: lead?.source || "",
-      "Project Name": lead?.cProjectName || "",
-      "Assigned User": lead?.assignedUserName || "",
-      "Next Contact": lead?.cNextContact || "",
-      "Created At": lead?.createdAt || "",
-    }));
-
-    const csv = Papa.unparse(exportData);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.csv`;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   // Filter and sort deals
   const filteredAndSortedDeals = useMemo(() => {
@@ -185,7 +140,7 @@ const DealsPage = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleAddLeads = () => {
+  const handleAddMeeting = () => {
     setSelectedDeal(null);
     setMode("add");
     setIsDrawerOpen(true);
@@ -200,26 +155,27 @@ const DealsPage = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
-    setLeadsDetails(null);
+    // setIsEditing(false);
   };
-  const handleCreateLead = async (payload) => {
+
+  const handleCreateMeeting = async (payload) => {
     try {
-      await createLead(payload); // API
-      toast.success("Lead created successfully");
+      await createMeeting(payload); // API
+      toast.success("Meeting created successfully");
     } catch (err) {
-      console.error("Lead creationd failed", err);
+      console.error("Meeting creationd failed", err);
     }
   };
 
-  const handleUpdateLead = async (id, payload) => {
-    await updateLead(id, payload);
+  const handleUpdateMeeting = async (id, payload) => {
+    await updateMeeting(id, payload);
   };
 
-  const handleDeleteLead = async (id) => {
+  const handleDeleteMeeting = async (id) => {
     try {
-      toast.loading("Deleting lead...", { id: "delete-lead" });
-      await deleteLead(id); // API call
-      toast.success("Lead deleted successfully", {
+      toast.loading("Deleting meeting...", { id: "delete-lead" });
+      await deleteMeeting(id); // API call
+      toast.success("Meeting deleted successfully", {
         id: "delete-lead",
       });
     } catch (err) {
@@ -286,69 +242,10 @@ const DealsPage = () => {
     });
     setCurrentPage(1);
   };
+
   const handleBulkAction = (action) => {
-    if (action === "mass-update") {
-      if (!selectedDeals.length) {
-        toast.error("Select at least one lead");n;
-      }
-      setSelectedDeal(null);
-      setLeadsDetails(null);
-      setMode("mass-update");
-      setIsDrawerOpen(true);
-
-      return;
-    }
-
-    if (action === "export") {
-      if (!selectedDeals.length) {
-        toast.error("Select at least one lead");
-        return;
-      }
-
-      const selectedRows = filteredAndSortedDeals.filter((deal) =>
-        selectedDeals.includes(deal.id),
-      );
-
-      exportLeadsToCSV(selectedRows, "selected_leads");
-      return;
-    }
-
-    if (action === "delete") {
-      if (!selectedDeals.length) {
-        toast.error("Select at least one lead");
-        return;
-      }
-
-      setShowDeleteConfirm(true);
-      return;
-    }
-
-    if (action === "stage" || action === "owner") {
-      // later mass update drawer
-    }
-  };
-  const handleConfirmBulkDelete = async () => {
-    try {
-      toast.loading("Deleting leads...", { id: "bulk-delete" });
-
-      await Promise.all(selectedDeals.map((id) => deleteLead(id)));
-
-      setLeads((prev) =>
-        prev.filter((lead) => !selectedDeals.includes(lead.id)),
-      );
-
-      setSelectedDeals([]);
-      setShowDeleteConfirm(false);
-
-      toast.success("Selected leads deleted", {
-        id: "bulk-delete",
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete leads", {
-        id: "bulk-delete",
-      });
-    }
+    console.log(`Bulk action ${action} for deals:`, selectedDeals);
+    // Implement bulk actions here
   };
 
   const handlePageChange = (page) => {
@@ -359,27 +256,6 @@ const DealsPage = () => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
   };
-  const handleBulkUpdateLeads = async (payload) => {
-    try {
-      toast.loading("Updating leads...", { id: "bulk-update" });
-
-      await Promise.all(selectedDeals.map((id) => updateLead(id, payload)));
-
-      toast.success(`${selectedDeals.length} leads updated`, {
-        id: "bulk-update",
-      });
-
-      // refresh UI
-      const data = await fetchLeads();
-      setLeads(data.list);
-
-      setSelectedDeals([]);
-      setIsDrawerOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Mass update failed", { id: "bulk-update" });
-    }
-  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -389,7 +265,7 @@ const DealsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Leads - Aajneeti Connect ltd</title>
+        <title>Meetings - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
@@ -405,26 +281,24 @@ const DealsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  Leads
+                  Meetings
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Track and manage your sales opportunities
+                  Track and manage your meetings
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
-                  }
-                >
+                <Button variant="outline">
                   <Icon name="Download" size={16} className="mr-2" />
-                  Export All
+                  Export
                 </Button>
-
-                <Button onClick={handleAddLeads}>
+                {/* <Button variant="outline">
+                  <Icon name="GitBranch" size={16} className="mr-2" />
+                  Pipeline View
+                </Button> */}
+                <Button onClick={handleAddMeeting}>
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Deal
+                  New Meeting
                 </Button>
               </div>
             </div>
@@ -450,7 +324,7 @@ const DealsPage = () => {
               onSort={handleSort}
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
-              onDelete={handleDeleteLead}
+              onDelete={handleDeleteMeeting}
             />
 
             {/* Pagination */}
@@ -462,33 +336,22 @@ const DealsPage = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
-
-            {/* Deal Drawer */}
-            <DealDrawer
-              leadsDetails={leadsDetails}
-              deal={selectedDeal}
-              mode={mode}
-              isOpen={isDrawerOpen}
-              onCreate={handleCreateLead}
-              onUpdate={handleUpdateLead}
-              onClose={handleDrawerClose}
-              onDelete={handleDeleteActivity}
-              onBulkUpdate={handleBulkUpdateLeads}
-              selectedIds={selectedDeals}
-            />
-
-            <ConfirmDeleteModal
-              open={showDeleteConfirm}
-              title="Delete Selected Leads"
-              description={`Are you sure you want to delete ${selectedDeals.length} lead(s)? This action cannot be undone.`}
-              onCancel={() => setShowDeleteConfirm(false)}
-              onConfirm={handleConfirmBulkDelete}
-            />
           </div>
         </main>
+
+        {/* Deal Drawer */}
+        <DealDrawer
+          deal={selectedDeal}
+          mode={mode}
+          isOpen={isDrawerOpen}
+          onCreate={handleCreateMeeting}
+          onUpdate={handleUpdateMeeting}
+          onClose={handleDrawerClose}
+          onDelete={handleDeleteActivity}
+        />
       </div>
     </>
   );
 };
 
-export default DealsPage;
+export default MeetingPage;

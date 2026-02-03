@@ -40,6 +40,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null
     },
     {
+      label: 'Meeting',
+      path: '/meeting',
+      icon: 'Projector',
+      badge: null
+    },
+    {
       label: 'Activities',
       path: '/activities',
       icon: 'Calendar',

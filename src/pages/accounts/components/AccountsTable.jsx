@@ -1,10 +1,15 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { Checkbox } from "../../../components/ui/Checkbox";
-const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
+const AccountsTable = ({
+  accounts,
+  onRowClick,
+  onBulkAction,
+  onSelectionChange,
+}) => {
   // do some changes
 
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -26,9 +31,9 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
   const columns = [
     { key: "company", label: "Account Name", sortable: true },
     { key: "industry", label: "Industry", sortable: true },
-    { key: "revenue", label: "Annual Revenue", sortable: true },
+    // { key: "revenue", label: "Annual Revenue", sortable: true },
     { key: "contacts", label: "Type", sortable: true },
-    { key: "dealValue", label: "Deal Value", sortable: true },
+    // { key: "dealValue", label: "Deal Value", sortable: true },
     { key: "lastActivity", label: "Last Activity", sortable: true },
     { key: "actions", label: "Actions", sortable: false },
   ];
@@ -158,6 +163,9 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
       year: "numeric",
     });
   };
+  useEffect(() => {
+    onSelectionChange(Array.from(selectedRows));
+  }, [selectedRows]);
 
   const isAllSelected =
     paginatedData?.length > 0 && selectedRows?.size === paginatedData?.length;
@@ -205,66 +213,20 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export
                 </Button>
+                <Button
+                  variant="Action"
+                  size="sm"
+                  onClick={() =>
+                    onBulkAction("mass-update", Array.from(selectedRows))
+                  }
+                >
+                  <Icon name="Edit" size={16} className="mr-2" />
+                  Mass Update
+                </Button>
               </div>
             )}
-
-            <Button variant="outline" size="sm">
-              <Icon name="Settings2" size={16} className="mr-2" />
-              Columns
-            </Button>
           </div>
         </div>
-
-        {/* Column Filters */}
-        {/* <div className=" grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Input
-            type="text"
-            placeholder="Filter company..."
-            value={columnFilters?.company || ""}
-            onChange={(e) => handleColumnFilter("company", e?.target?.value)}
-            className="text-sm"
-          />
-          <Input
-            type="text"
-            placeholder="Filter industry..."
-            value={columnFilters?.industry || ""}
-            onChange={(e) => handleColumnFilter("industry", e?.target?.value)}
-            className="text-sm"
-          />
-          <Input
-            type="text"
-            placeholder="Filter revenue..."
-            value={columnFilters?.revenue || ""}
-            onChange={(e) => handleColumnFilter("revenue", e?.target?.value)}
-            className="text-sm"
-          />
-          <Input
-            type="text"
-            placeholder="Filter contacts..."
-            value={columnFilters?.contacts || ""}
-            onChange={(e) => handleColumnFilter("contacts", e?.target?.value)}
-            className="text-sm"
-          />
-          <Input
-            type="text"
-            placeholder="Filter deal value..."
-            value={columnFilters?.dealValue || ""}
-            onChange={(e) => handleColumnFilter("dealValue", e?.target?.value)}
-            className="text-sm"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setColumnFilters({});
-              setGlobalFilter("");
-            }}
-            className="text-muted-foreground"
-          >
-            <Icon name="X" size={16} className="mr-2" />
-            Clear
-          </Button>
-        </div> */}
       </div>
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
@@ -349,19 +311,11 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                 {visibleColumns?.industry && (
                   <td className="p-4 text-foreground">{account?.industry}</td>
                 )}
-                {visibleColumns?.revenue && (
-                  <td className="p-4 text-foreground">
-                    {formatCurrency(account?.revenue)}
-                  </td>
-                )}
+
                 {visibleColumns?.contacts && (
                   <td className="p-4 text-foreground">{account?.type}</td>
                 )}
-                {visibleColumns?.dealValue && (
-                  <td className="p-4 text-foreground">
-                    {formatCurrency(account?.dealValue)}
-                  </td>
-                )}
+
                 {visibleColumns?.lastActivity && (
                   <td className="p-4 text-muted-foreground">
                     {formatDate(account?.modifiedAt)}
@@ -373,12 +327,19 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onRowClick(account)}
+                        onClick={() => onRowClick(account, "edit")}
                       >
                         <Icon name="Edit" size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon">
-                        <Icon name="MoreHorizontal" size={16} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-red-50"
+                        onClick={() =>
+                          onBulkAction("delete", Array.from(selectedRows))
+                        }
+                      >
+                        <Icon name="Trash2" size={16} />
                       </Button>
                     </div>
                   </td>
@@ -394,12 +355,11 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
         {paginatedData?.map((account) => (
           <div
             key={account?.id}
-            onClick={() => onRowClick(account)}
             className="p-4 border-b border-border last:border-b-0 bg-background hover:bg-muted/30 transition rounded-none"
           >
             {/* Top Row */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-5">
                 <Checkbox
                   checked={selectedRows?.has(account?.id)}
                   onChange={(e) =>
@@ -408,7 +368,7 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
                   onClick={(e) => e.stopPropagation()}
                 />
 
-                <div>
+                <div onClick={() => onRowClick(account)}>
                   {/* Account Name */}
                   <h4 className="font-semibold text-foreground leading-tight">
                     {account?.name}
@@ -426,14 +386,14 @@ const AccountsTable = ({ accounts, onRowClick, onBulkAction }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={(e) => e.stopPropagation()}
+                onClick={() => onRowClick(account, "edit")}
               >
-                <Icon name="MoreVertical" size={18} />
+                <Icon name="Edit" size={16} />
               </Button>
             </div>
 
             {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
+            <div className="flex flex-wrap items-center gap-3 ms-4 mt-3">
               {account?.industry && (
                 <span className="px-2 py-0.5 text-xs rounded-md bg-primary/10 text-primary">
                   {account?.industry}

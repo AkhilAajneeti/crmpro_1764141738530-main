@@ -18,6 +18,15 @@ const DealsTable = ({
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })?.format(amount);
+  };
+
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
@@ -118,11 +127,11 @@ const DealsTable = ({
                   onClick={() => onSort("account")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Project Name</span>
+                  <span>Parent</span>
                   {getSortIcon("Project Name")}
                 </button>
               </th>
-              <th className="text-left px-4 py-3">
+              {/* <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("Source")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
@@ -130,7 +139,7 @@ const DealsTable = ({
                   <span>Source</span>
                   {getSortIcon("value")}
                 </button>
-              </th>
+              </th> */}
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("Status")}
@@ -140,7 +149,7 @@ const DealsTable = ({
                   {getSortIcon("owner")}
                 </button>
               </th>
-              <th className="text-left px-4 py-3">
+              {/* <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("email")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
@@ -148,13 +157,13 @@ const DealsTable = ({
                   <span>Next Contact</span>
                   {getSortIcon("stage")}
                 </button>
-              </th>
+              </th> */}
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("createdAt")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Create At</span>
+                  <span>Start Date</span>
                   {getSortIcon("closeDate")}
                 </button>
               </th>
@@ -193,13 +202,13 @@ const DealsTable = ({
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  <div className="text-foreground">{deal?.cProjectName}</div>
+                  <div className="text-foreground">{deal?.parentName}</div>
                 </td>
-                <td className="px-4 py-4">
+                {/* <td className="px-4 py-4">
                   <div className="font-medium text-foreground">
                     {deal?.source}
                   </div>
-                </td>
+                </td> */}
                 <td className="px-4 py-4">
                   <div
                     className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
@@ -219,16 +228,16 @@ const DealsTable = ({
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-4">
+                {/* <td className="px-4 py-4">
                   <span
                     className={`inline-flex px-1 py-1 text-xs font-medium rounded-full`}
                   >
                     {formatDate(deal?.cNextContact)}
                   </span>
-                </td>
+                </td> */}
                 <td className="px-4 py-4">
                   <div className="text-sm text-foreground">
-                    {formatDate(deal?.createdAt)}
+                    {formatDate(deal?.dateStart)}
                   </div>
                 </td>
                 <td className="px-4 py-4">
@@ -271,7 +280,7 @@ const DealsTable = ({
         </table>
       </div>
       {/* Mobile Cards */}
-
+   
       <div className="md:hidden">
         {paginatedDeals?.map((deal) => (
           <div

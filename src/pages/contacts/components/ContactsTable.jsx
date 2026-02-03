@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
-import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 
@@ -13,6 +12,7 @@ const ContactsTable = ({
   sortConfig,
   onSort,
   onEditContact,
+  onDeleteContact,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -156,24 +156,8 @@ const ContactsTable = ({
                 </td>
                 <td className="px-4 py-4">
                   <div
-                    className={`flex items-center justify-center space-x-1 transition-opacity ${hoveredRow === contact?.id ? "opacity-100" : "opacity-0"}`}
+                    className={`flex items-center justify-center space-x-1 transition-opacity`}
                   >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleQuickAction(e, "call", contact)}
-                    >
-                      <Icon name="Phone" size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleQuickAction(e, "email", contact)}
-                    >
-                      <Icon name="Mail" size={14} />
-                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -181,6 +165,17 @@ const ContactsTable = ({
                       onClick={(e) => handleQuickAction(e, "edit", contact)}
                     >
                       <Icon name="Edit" size={14} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteContact(contact.id);
+                      }}
+                    >
+                      <Icon name="Trash" size={14} />
                     </Button>
                   </div>
                 </td>

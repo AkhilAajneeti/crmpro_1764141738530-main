@@ -1,47 +1,52 @@
-import React from 'react';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
+import React, { useEffect, useState } from "react";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
+import { fetchAccounts } from "services/account.service";
+import { fetchUser } from "services/user.service";
 
-const ContactFilters = ({ 
-  searchTerm, 
-  onSearchChange, 
-  filters, 
-  onFilterChange, 
+const ContactFilters = ({
+  searchTerm,
+  onSearchChange,
+  filters,
+  onFilterChange,
   activeFiltersCount,
-  onClearFilters 
+  onClearFilters,
 }) => {
-  const companyOptions = [
-    { value: '', label: 'All Companies' },
-    { value: 'TechCorp Solutions', label: 'TechCorp Solutions' },
-    { value: 'Global Industries', label: 'Global Industries' },
-    { value: 'Innovation Labs', label: 'Innovation Labs' },
-    { value: 'Digital Dynamics', label: 'Digital Dynamics' },
-    { value: 'Future Systems', label: 'Future Systems' },
-    { value: 'Smart Solutions', label: 'Smart Solutions' },
-    { value: 'NextGen Tech', label: 'NextGen Tech' },
-    { value: 'Alpha Enterprises', label: 'Alpha Enterprises' }
-  ];
+  const [accounts, setAccounts] = useState([]);
+  const [assignUser, setAssignUser] = useState([]);
+  useEffect(() => {
+ 
+      fetchAccounts()
+        .then((res) => setAccounts(res.list || []))
+        .catch((err) => console.error("Account fetch failed", err));
 
-  const roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'CEO', label: 'CEO' },
-    { value: 'CTO', label: 'CTO' },
-    { value: 'VP Sales', label: 'VP Sales' },
-    { value: 'Marketing Director', label: 'Marketing Director' },
-    { value: 'Sales Manager', label: 'Sales Manager' },
-    { value: 'Product Manager', label: 'Product Manager' },
-    { value: 'Operations Manager', label: 'Operations Manager' },
-    { value: 'Business Analyst', label: 'Business Analyst' }
-  ];
+  }, []);
+  useEffect(() => {
+ 
+      fetchUser()
+        .then((res) => setAssignUser(res.list || []))
+        .catch((err) => console.error("User fetch failed", err));
+
+  }, []);
+
+  const accountOptions = accounts.map((acc) => ({
+  value: acc.id,        // 👈 important (ID use karo)
+  label: acc.name,
+}));
+  const assignUserOptions = assignUser.map((acc) => ({
+  value: acc.id,        // 👈 important (ID use karo)
+  label: acc.name,
+}));
+
 
   const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'Active', label: 'Active' },
-    { value: 'Inactive', label: 'Inactive' },
-    { value: 'Prospect', label: 'Prospect' },
-    { value: 'Customer', label: 'Customer' }
+    { value: "", label: "All Statuses" },
+    { value: "Active", label: "Active" },
+    { value: "Inactive", label: "Inactive" },
+    { value: "Prospect", label: "Prospect" },
+    { value: "Customer", label: "Customer" },
   ];
 
   return (
@@ -50,10 +55,10 @@ const ContactFilters = ({
         {/* Search */}
         <div className="flex-1 max-w-md">
           <div className="relative">
-            <Icon 
-              name="Search" 
-              size={20} 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" 
+            <Icon
+              name="Search"
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
             />
             <Input
               type="search"
@@ -68,26 +73,26 @@ const ContactFilters = ({
         {/* Filters */}
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
           <Select
-            placeholder="Company"
-            options={companyOptions}
-            value={filters?.company}
-            onChange={(value) => onFilterChange('company', value)}
+            placeholder="Account"
+            options={accountOptions}
+            value={filters?.accounts}
+            onChange={(value) => onFilterChange("accounts", value)}
             className="w-full sm:w-48"
           />
-          
+
           <Select
-            placeholder="Role"
-            options={roleOptions}
-            value={filters?.role}
-            onChange={(value) => onFilterChange('role', value)}
+            placeholder="Assign User"
+            options={assignUserOptions}
+            value={filters?.assignUser}
+            onChange={(value) => onFilterChange("assignUser", value)}
             className="w-full sm:w-40"
           />
-          
+
           <Select
             placeholder="Status"
             options={statusOptions}
             value={filters?.status}
-            onChange={(value) => onFilterChange('status', value)}
+            onChange={(value) => onFilterChange("status", value)}
             className="w-full sm:w-36"
           />
 
@@ -112,7 +117,7 @@ const ContactFilters = ({
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
               Company: {filters?.company}
               <button
-                onClick={() => onFilterChange('company', '')}
+                onClick={() => onFilterChange("company", "")}
                 className="ml-1.5 hover:text-primary/80"
               >
                 <Icon name="X" size={12} />
@@ -123,7 +128,7 @@ const ContactFilters = ({
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
               Role: {filters?.role}
               <button
-                onClick={() => onFilterChange('role', '')}
+                onClick={() => onFilterChange("role", "")}
                 className="ml-1.5 hover:text-secondary/80"
               >
                 <Icon name="X" size={12} />
@@ -134,7 +139,7 @@ const ContactFilters = ({
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent-foreground border border-accent/20">
               Status: {filters?.status}
               <button
-                onClick={() => onFilterChange('status', '')}
+                onClick={() => onFilterChange("status", "")}
                 className="ml-1.5 hover:opacity-80"
               >
                 <Icon name="X" size={12} />

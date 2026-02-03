@@ -7,7 +7,14 @@ import Button from "../../components/ui/Button";
 import AccountsTable from "./components/AccountsTable";
 import AccountsFilters from "./components/AccountsFilters";
 import AccountDrawer from "./components/AccountDrawer";
-import { deleteAccount, fetchAccounts } from "services/account.service";
+import {
+  createAccount,
+  deleteAccount,
+  fetchAccounts,
+  updateAccount,
+} from "services/account.service";
+import toast from "react-hot-toast";
+import ImportModel from "./components/ImportModel";
 
 const AccountsPage = () => {
   const [mockAccounts, setmockAccounts] = useState([]);
@@ -16,10 +23,14 @@ const AccountsPage = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [drawerMode, setDrawerMode] = useState("view");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [selectedAccountIds, setSelectedAccountIds] = useState([]);
+
   const [filters, setFilters] = useState({
     industry: "",
-    revenue: "",
-    region: "",
+    type: "",
+    activityDate: "",
   });
   useEffect(() => {
     const loadAccount = async () => {
@@ -47,40 +58,70 @@ const AccountsPage = () => {
       setLoading(false);
     }
   };
+  const getDateRangeByFilter = (filter) => {
+    const now = new Date();
+    let start = null;
+    let end = new Date();
 
-  // Filter accounts based on active filters
+    switch (filter) {
+      case "today":
+        start = new Date();
+        start.setHours(0, 0, 0, 0);
+        break;
+
+      case "yesterday":
+        start = new Date();
+        start.setDate(start.getDate() - 1);
+        start.setHours(0, 0, 0, 0);
+
+        end = new Date(start);
+        end.setHours(23, 59, 59, 999);
+        break;
+
+      case "last_7_days":
+        start = new Date();
+        start.setDate(start.getDate() - 7);
+        break;
+
+      case "current_month":
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+
+      case "last_month":
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        break;
+
+      default:
+        return null;
+    }
+
+    return { startDate: start, endDate: end };
+  };
   const filteredAccounts = useMemo(() => {
     return mockAccounts?.filter((account) => {
+      // Industry
       if (
-        filters?.industry &&
-        account?.industry?.toLowerCase() !== filters?.industry
+        filters.industry &&
+        account?.industry?.toLowerCase() !== filters.industry
       ) {
         return false;
       }
 
-      if (filters?.revenue) {
-        const revenue = parseFloat(account?.revenue?.replace(/[$,]/g, ""));
-        switch (filters?.revenue) {
-          case "0-1M":
-            if (revenue >= 1000000) return false;
-            break;
-          case "1M-10M":
-            if (revenue < 1000000 || revenue >= 10000000) return false;
-            break;
-          case "10M-50M":
-            if (revenue < 10000000 || revenue >= 50000000) return false;
-            break;
-          case "50M-100M":
-            if (revenue < 50000000 || revenue >= 100000000) return false;
-            break;
-          case "100M+":
-            if (revenue < 100000000) return false;
-            break;
-        }
+      // Type
+      if (filters.type && account?.type?.toLowerCase() !== filters.type) {
+        return false;
       }
 
-      if (filters?.region && account?.region !== filters?.region) {
-        return false;
+      // Date filter (Created At)
+      if (filters.activityDate) {
+        const range = getDateRangeByFilter(filters.activityDate);
+        if (!range) return true;
+
+        const createdAt = new Date(account.createdAt);
+        if (createdAt < range.startDate || createdAt > range.endDate) {
+          return false;
+        }
       }
 
       return true;
@@ -95,10 +136,10 @@ const AccountsPage = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleRowClick = (account) => {
+  const handleRowClick = (account, mode = "view") => {
     setSelectedAccount(account);
     setIsDrawerOpen(true);
-    setDrawerMode("view");
+    setDrawerMode(mode);
   };
 
   const handleDrawerClose = () => {
@@ -107,31 +148,32 @@ const AccountsPage = () => {
     setDrawerMode("view");
   };
 
-  const handleBulkAction = async (action, ids) => {
-    if (action !== "delete") return;
-
-    const validIds = ids.filter(Boolean); // remove undefined/null
-
-    if (validIds.length === 0) {
-      alert("No valid account IDs");
-      return;
-    }
-
-    if (!window.confirm(`Delete ${validIds.length} accounts?`)) return;
-
-    try {
-      console.log("DELETE IDS:", ids);
-
-      for (const id of validIds) {
-        await deleteAccount(id);
+  const handleBulkAction = (action, ids) => {
+    if (action === "mass-update") {
+      if (!ids.length) {
+        alert("Select at least one account");
+        return;
       }
 
-      setmockAccounts((prev) =>
-        prev.filter((acc) => !validIds.includes(acc.id))
-      );
-    } catch (error) {
-      console.error("Bulk delete failed:", error);
-      alert("Failed to delete accounts");
+      setSelectedAccount(null);
+      setDrawerMode("mass-update");
+      setIsDrawerOpen(true);
+      setSelectedAccountIds(ids);
+      return;
+    }
+    if (action === "export") {
+      // 1️⃣ Agar kuch selected hai → sirf wahi export
+      const accountsToExport =
+        ids && ids.length > 0
+          ? filteredAccounts.filter((acc) => ids.includes(acc.id))
+          : filteredAccounts;
+
+      if (!accountsToExport.length) {
+        toast.error("No accounts to export");
+        return;
+      }
+
+      handleExportAccount(accountsToExport);
     }
   };
 
@@ -145,14 +187,10 @@ const AccountsPage = () => {
 
     setIsDrawerOpen(true);
   };
-
-  const handleExportAccount = () => {
+  // handle exports (bulk and indivisual)
+  const handleExportAccount = (account) => {
     try {
-      if (!filteredAccounts || filteredAccounts.length === 0) {
-        alert("No Account To Export");
-        return;
-      }
-      const exportData = filteredAccounts.map((account) => ({
+      const exportData = account.map((account) => ({
         Name: account?.name || "",
         Industry: account?.industry || "",
         Website: account?.website || "",
@@ -194,7 +232,96 @@ const AccountsPage = () => {
       alert("Failed to export accounts. Please try again.");
     }
   };
+  const handleImportAccounts = async (rows) => {
+    try {
+      toast.loading("Importing accounts...", { id: "import" });
 
+      let success = 0;
+      let failed = 0;
+      const failedRows = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+
+        try {
+          const payload = {
+            name: row.Name?.trim(),
+            industry: row.Industry || "",
+            website: row.Website || "",
+            phoneNumber: row.Phone?.toString() || "",
+            type: row.Type?.toLowerCase() || "",
+            description: row.Description || "",
+
+            // 🔥 usually required
+            status: "active",
+            source: "import",
+          };
+
+          // 🔒 frontend validation
+          if (!payload.name) {
+            failed++;
+            failedRows.push({
+              row: i + 1,
+              reason: "Name is missing",
+            });
+            continue;
+          }
+
+          await createAccount(payload);
+          success++;
+        } catch (err) {
+          console.error("❌ Import API error (full):", err);
+
+          console.error("❌ response:", err?.response);
+          console.error("❌ response data:", err?.response?.data);
+          console.error("❌ status:", err?.response?.status);
+
+          failedRows.push({
+            row: i + 1,
+            name: row.Name,
+            error:
+              err?.response?.data?.message ||
+              err?.response?.data?.error ||
+              `HTTP ${err?.response?.status || "Unknown"}`,
+          });
+        }
+      }
+      if (failedRows.length) {
+        console.group("❌ Account Import Failed Rows");
+        console.table(failedRows);
+        console.groupEnd();
+      }
+
+      toast.success(`Imported ${success} accounts (${failed} failed)`, {
+        id: "import",
+      });
+
+      handleAccountSuccess();
+    } catch (err) {
+      toast.error("Import failed", { id: "import" });
+    }
+  };
+
+  const handleBulkUpdateAccounts = async (ids, payload) => {
+    try {
+      toast.loading("Updating accounts...", { id: "bulk-update" });
+
+      await Promise.all(ids.map((id) => updateAccount(id, payload)));
+
+      toast.success(`${ids.length} accounts updated`, {
+        id: "bulk-update",
+      });
+
+      handleAccountSuccess();
+      setSelectedAccountIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Mass update failed", { id: "bulk-update" });
+    }
+  };
+  const handleAddActivity = (newActivity) => {
+    setActivities((prev) => [newActivity, ...prev]);
+  };
   return (
     <div className="min-h-screen bg-background">
       <Header
@@ -216,11 +343,19 @@ const AccountsPage = () => {
             </div>
 
             <div className="flex items-center flex-wrap space-x-3 mt-4 sm:mt-0">
-              <Button className="hidden" variant="outline" onClick={handleExportAccount}>
+              <Button
+                className="hidden"
+                variant="outline"
+                onClick={handleExportAccount}
+              >
                 <Icon name="Upload" size={16} className="mr-2" />
                 Export
               </Button>
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsQuickAddOpen(true)}
+              >
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
               </Button>
@@ -243,6 +378,7 @@ const AccountsPage = () => {
             accounts={filteredAccounts}
             onRowClick={handleRowClick}
             onBulkAction={handleBulkAction}
+            onSelectionChange={setSelectedAccountIds}
           />
         </div>
       </main>
@@ -253,6 +389,15 @@ const AccountsPage = () => {
         onClose={handleDrawerClose}
         onSuccess={handleAccountSuccess}
         mode={drawerMode}
+        onBulkUpdate={handleBulkUpdateAccounts}
+        selectedIds={selectedAccountIds}
+      />
+
+      {/* Quick Add Activity Modal */}
+      <ImportModel
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        onImport={handleImportAccounts}
       />
     </div>
   );

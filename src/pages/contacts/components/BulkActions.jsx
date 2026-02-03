@@ -3,7 +3,7 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
 
-const BulkActions = ({ selectedCount, onExport, onBulkEmail, onBulkTag, onBulkDelete }) => {
+const BulkActions = ({ selectedCount, onExport, onBulkEmail, onBulkTag, onBulkDelete,onMassUpdate }) => {
   const [showActions, setShowActions] = useState(false);
 
   if (selectedCount === 0) return null;
@@ -59,17 +59,6 @@ const BulkActions = ({ selectedCount, onExport, onBulkEmail, onBulkTag, onBulkDe
             Send Email
           </Button>
 
-          {/* Add Tags */}
-          <div className="relative">
-            <Select
-              placeholder="Add Tag"
-              options={tagOptions}
-              value=""
-              onChange={handleBulkTag}
-              className="w-32"
-            />
-          </div>
-
           {/* More Actions */}
           <div className="relative">
             <Button
@@ -78,7 +67,6 @@ const BulkActions = ({ selectedCount, onExport, onBulkEmail, onBulkTag, onBulkDe
               onClick={() => setShowActions(!showActions)}
               className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-primary-foreground/30"
             >
-              <Icon name="MoreHorizontal" size={16} className="mr-2" />
               More
               <Icon name="ChevronDown" size={14} className="ml-1" />
             </Button>
@@ -93,34 +81,15 @@ const BulkActions = ({ selectedCount, onExport, onBulkEmail, onBulkTag, onBulkDe
                   <div className="py-1">
                     <button
                       onClick={() => {
-                        console.log('Bulk assign to user');
+                         onMassUpdate();
                         setShowActions(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
                     >
                       <Icon name="UserPlus" size={16} className="mr-3" />
-                      Assign to User
+                      Mass Update
                     </button>
-                    <button
-                      onClick={() => {
-                        console.log('Bulk change status');
-                        setShowActions(false);
-                      }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                    >
-                      <Icon name="RefreshCw" size={16} className="mr-3" />
-                      Change Status
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('Bulk add to campaign');
-                        setShowActions(false);
-                      }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                    >
-                      <Icon name="Target" size={16} className="mr-3" />
-                      Add to Campaign
-                    </button>
+                    
                     <div className="border-t border-border my-1" />
                     <button
                       onClick={() => {

@@ -1,7 +1,7 @@
-export const fetchLeads = async () => {
+export const fetchMeeting = async () => {
   const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Lead", {
+  const res = await fetch("https://gateway.aajneetiadvertising.com/Meeting", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -18,31 +18,11 @@ export const fetchLeads = async () => {
   }
   return await res.json();
 };
-export const fetchLeadsById = async (id) => {
-  const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      token: token, // ✅ backend expects this
-    },
-  });
-  if (!res.ok) {
-    console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
-    }
-    throw new Error("Failed to fetch accounts by id");
-  }
-  return await res.json();
-};
 
-export const createLead = async (payload) => {
+export const createMeeting = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Lead", {
+  const res = await fetch("https://gateway.aajneetiadvertising.com/Meeting", {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -57,11 +37,11 @@ export const createLead = async (payload) => {
   return text ? JSON.parse(text) : null;
 };
 
-export const updateLead = async (id, payload) => {
+export const updateMeeting = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   console.log(id, payload);
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}`,
+    `https://gateway.aajneetiadvertising.com/Meeting/${id}`,
     {
       method: "PUT",
       headers: {
@@ -70,44 +50,44 @@ export const updateLead = async (id, payload) => {
         token: token,
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   const text = await res.text();
-  console.log("response from contact.service.js", res);
+  console.log("response from meeting.service.js", res);
   if (!res.ok) {
-    throw new Error(text || "Lead update failed");
+    throw new Error(text || "Meeting update failed");
   }
 
   return text ? JSON.parse(text) : null;
 };
 
-export const deleteLead = async (id) => {
+export const deleteMeeting = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}`,
+    `https://gateway.aajneetiadvertising.com/Meeting/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
-    }
+    },
   );
   if (!res.ok) {
-    throw new Error("Failed to delete contact");
+    throw new Error("Failed to delete Meeting");
   }
   return res.json();
 };
-export const bulkDeleteleads = async (ids = []) => {
-  return Promise.all(ids.map((id) => deleteLead(id)));
+export const bulkDeleteMeeting = async (ids = []) => {
+  return Promise.all(ids.map((id) => deleteMeeting(id)));
 };
 
 // --------------Stream-----------
 //fetch by Streams
-export const leadStreamById = async (id) => {
+export const meetingStreamById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
+    `https://gateway.aajneetiadvertising.com/Meeting/${id}/stream`,
     {
       method: "GET",
       headers: {
@@ -115,7 +95,7 @@ export const leadStreamById = async (id) => {
         Accept: "application/json",
         token: token,
       },
-    }
+    },
   );
 
   console.log(res);
@@ -138,7 +118,7 @@ export const deleteActivity = async (id) => {
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
-    }
+    },
   );
   if (!res.ok) {
     throw new Error("Failed to delete Activity");
@@ -147,7 +127,7 @@ export const deleteActivity = async (id) => {
 };
 
 //create strean
-export const createLeadActivity = async (payload) => {
+export const createMeetingActivity = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
@@ -180,7 +160,7 @@ export const leadActivitesById = async (id) => {
         Accept: "application/json",
         token: token,
       },
-    }
+    },
   );
 
   console.log(res);

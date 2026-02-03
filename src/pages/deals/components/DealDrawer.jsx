@@ -21,6 +21,9 @@ const DealDrawer = ({
   onCreate,
   onUpdate,
   onDelete,
+  leadsDetails,
+  onBulkUpdate,
+  selectedIds = [],
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
@@ -72,6 +75,21 @@ const DealDrawer = ({
     }
   }, [deal, mode]);
 
+  const [massFields, setMassFields] = useState({
+    assignedUserId: false,
+    status: false,
+    source: false,
+    teamId: false,
+    cNextContact: false,
+  });
+
+  const toggleMassField = (field) => {
+    setMassFields((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
   const STATUS_OPTIONS = [
     { value: "New", label: "New" },
     { value: "Converted", label: "Converted" },
@@ -94,7 +112,8 @@ const DealDrawer = ({
   const toggleActivity = (id) => {
     setExpandedActivityId((prev) => (prev === id ? null : id));
   };
-  // if (!isOpen) return null;
+  const showForm = mode === "add" || isEditing;
+  const isMassUpdate = mode === "mass-update";
 
   const formatDate = (date) => {
     if (!date) return "—";
@@ -111,22 +130,21 @@ const DealDrawer = ({
     });
   };
   const formatDateTime = (value) => {
-  if (!value) return "—";
+    if (!value) return "—";
 
-  const safe = value.replace(" ", "T"); // EspoCRM fix
-  const date = new Date(safe);
+    const safe = value.replace(" ", "T"); // EspoCRM fix
+    const date = new Date(safe);
 
-  if (isNaN(date.getTime())) return "—";
+    if (isNaN(date.getTime())) return "—";
 
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const getStageColor = (stage) => {
     const colors = {
@@ -211,13 +229,6 @@ const DealDrawer = ({
     return "Activity updated";
   };
 
-  const handleStageAdvance = () => {
-    console.log("Advancing stage for deal:", deal?.id);
-  };
-
-  const handleScheduleActivity = () => {
-    console.log("Scheduling activity for deal:", deal?.id);
-  };
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -241,7 +252,29 @@ const DealDrawer = ({
       console.error("Failed to save lead", error);
     }
   };
+  const handleBulkUpdate = (e) => {
+    e.preventDefault();
 
+    const payload = {};
+
+    if (massFields.assignedUserId)
+      payload.assignedUserId = formData.assignedUserId;
+
+    if (massFields.cNextContact)
+      payload.cNextContact = toEspoDateTime(formData.cNextContact);
+
+    if (massFields.status) payload.status = formData.status;
+
+    if (massFields.source) payload.source = formData.source;
+
+    if (!Object.keys(payload).length) {
+      toast.error("Select at least one field");
+      return;
+    }
+
+    onBulkUpdate(payload);
+    onClose();
+  };
   // activity operation -------
   // fetching lead stream from id
   useEffect(() => {
@@ -327,7 +360,6 @@ const DealDrawer = ({
   }, []);
 
   const userOptions = users
-
     ?.filter((u) => u?.isActive) // ✅ only active users
     ?.map((u) => ({
       value: u.id,
@@ -338,7 +370,6 @@ const DealDrawer = ({
     label: t.name,
   }));
 
-  const showForm = mode === "add" || isEditing;
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -346,11 +377,17 @@ const DealDrawer = ({
     }));
   };
   const toEspoDateTime = (value) => {
-    return value ? value.replace("T", " ") + ":00" : null;
+    if (!value) return null;
+
+    // already Espo format → do nothing
+    if (value.includes(" ")) {
+      return value;
+    }
+
+    // from datetime-local input
+    return value.replace("T", " ") + ":00";
   };
 
-  // meeting , call , activities
-  // activity operation -------
   // fetching lead stream from id
   useEffect(() => {
     if (!isOpen || !deal?.id) return;
@@ -375,6 +412,7 @@ const DealDrawer = ({
       setmockStream([]);
     }
   }, [isOpen]);
+  const leadData = leadsDetails || deal;
   return (
     <>
       {/* Backdrop */}
@@ -394,41 +432,44 @@ const DealDrawer = ({
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
-                {mode === "add"
-                  ? "Add Lead"
-                  : isEditing
-                  ? "Edit Lead"
-                  : deal?.name}
+                {mode === "mass-update"
+                  ? `Mass Update (${selectedIds.length}) Leads`
+                  : mode === "add"
+                    ? "Add Lead"
+                    : isEditing
+                      ? "Edit Lead"
+                      : deal?.name}
               </h2>
               <span
                 className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStageColor(
-                  deal?.status
+                  deal?.status,
                 )}`}
               >
-                {deal?.stage}
+                {mode !== "mass-update" && deal && <span>{deal.status}</span>}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (isEditing) {
-                    setFormData(deal); // reset on cancel
-                  }
-                  setIsEditing(!isEditing);
-                }}
-              >
-                <Icon name="Edit" size={16} className="mr-1" />
-                {isEditing ? "Cancel" : "Edit"}
-              </Button>
+              {mode !== "mass-update" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (isEditing) setFormData(deal);
+                    setIsEditing(!isEditing);
+                  }}
+                >
+                  <Icon name="Edit" size={16} className="mr-1" />
+                  {isEditing ? "Cancel" : "Edit"}
+                </Button>
+              )}
+
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <Icon name="X" size={20} />
               </Button>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {showForm && (
+            {showForm && !isMassUpdate && (
               <div className="p-6">
                 {/* Lead Form Here */}
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -580,32 +621,65 @@ const DealDrawer = ({
                 </form>
               </div>
             )}
-            {mode !== "add" && deal && (
-              <>
-                {/* Quick Actions */}
-                <div className="flex items-center space-x-2 p-4 bg-muted/30 border-b border-border">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleStageAdvance}
-                  >
-                    <Icon name="ArrowRight" size={16} className="mr-1" />
-                    Advance Stage
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleScheduleActivity}
-                  >
-                    <Icon name="Calendar" size={16} className="mr-1" />
-                    Schedule Call
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Icon name="Mail" size={16} className="mr-1" />
-                    Schedule Meeting
-                  </Button>
+            {/* mass upadte */}
+            {isMassUpdate && (
+              <form className="space-y-6 p-5" onSubmit={handleBulkUpdate}>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Mass Update Leads
+                </h3>
+
+                <p className="text-sm text-muted-foreground">
+                  Updating {selectedIds.length} selected Leads
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Assigned User */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.assignedUserId}
+                      onChange={() => toggleMassField("assignedUserId")}
+                    />
+                    <Select
+                      label="Assigned User"
+                      value={formData.assignedUserId}
+                      options={userOptions}
+                      disabled={!massFields.assignedUserId}
+                      onChange={(v) => handleChange("assignedUserId", v)}
+                    />
+                  </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Team */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.teamId}
+                      onChange={() => toggleMassField("teamId")}
+                    />
+                    <Select
+                      label="Team"
+                      value={formData.teamId}
+                      options={teamOptions}
+                      disabled={!massFields.teamId}
+                      onChange={(v) => handleChange("teamId", v)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="ghost" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Update {selectedIds.length} Accounts
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {mode !== "add" && mode !== "edit" && deal && (
+              <>
                 {/* Tabs */}
                 <div className="flex items-center space-x-1 p-4 border-b border-border">
                   {tabs?.map((tab) => (
@@ -631,138 +705,154 @@ const DealDrawer = ({
                 <div className="flex-1 overflow-y-auto p-6">
                   {activeTab === "overview" && (
                     <div className="space-y-6">
-                      {/* Deal Info */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
+                      {/* ================= Overview ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Name */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Project name
-                            </label>
+                            <p className="text-sm text-muted-foreground">
+                              Name
+                            </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cProjectName}
+                              {deal?.name || "—"}
                             </p>
                           </div>
+
+                          {/* Phone */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Phone Number
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.phoneNumber}
+                            <p className="text-sm text-muted-foreground">
+                              Phone
                             </p>
+                            {deal?.phoneNumber ? (
+                              <a
+                                href={`tel:${deal.phoneNumber}`}
+                                className="text-primary hover:underline"
+                              >
+                                {deal.phoneNumber}
+                              </a>
+                            ) : (
+                              <p className="text-foreground">—</p>
+                            )}
                           </div>
+
+                          {/* Email */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              City
-                            </label>
-                            <p className="text-foreground font-medium">
-                              {deal?.addressCity}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               Email
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.emailAddress}
                             </p>
+                            {deal?.emailAddress ? (
+                              <a
+                                href={`mailto:${deal.emailAddress}`}
+                                className="text-primary hover:underline break-all"
+                              >
+                                {deal.emailAddress}
+                              </a>
+                            ) : (
+                              <p className="text-foreground">—</p>
+                            )}
                           </div>
+
+                          {/* WhatsApp */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               Whatsapp
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.website}
                             </p>
+                            {deal?.phoneNumber ? (
+                              <a
+                                href={`https://wa.me/${deal.phoneNumber.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                wa.me/{deal.phoneNumber.replace(/\D/g, "")}
+                              </a>
+                            ) : (
+                              <p className="text-foreground">—</p>
+                            )}
                           </div>
+
+                          {/* City */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Lead Received
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.cLeadReceived)}
+                            <p className="text-sm text-muted-foreground">
+                              City
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.addressCity || "—"}
                             </p>
                           </div>
-                          {/* <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Assigned User
-                            </label>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                <span className="text-xs font-medium text-primary-foreground">
-                                  {deal?.owner
-                                    ?.split(" ")
-                                    ?.map((n) => n?.[0])
-                                    ?.join("")}
-                                </span>
-                              </div>
-                              <span className="text-foreground">
-                                {deal?.assignedUserName}
-                              </span>
-                            </div>
-                          </div> */}
-                          {/* <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Close Date
-                            </label>
-                            <p className="text-foreground">
-                              {formatDate(deal?.closeDate)}
+
+                          {/* Next Contact */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Next Contact
                             </p>
-                          </div> */}
-                          {/* {isEditing && (
-                            <div>
-                              <Select
-                                label="Stage"
-                                options={stageOptions}
-                                value={deal?.stage}
-                                onChange={(value) =>
-                                  console.log("Stage changed to:", value)
-                                }
-                              />
-                            </div>
-                          )} */}
-                        </div>
-                      </div>
-                      <hr />
-                      <div className="grid grid-cols-1 gap-6">
-                        <div>
-                          <label htmlFor="">Description</label>
-                          <p className="text-foreground mt-1">
-                            {deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
-                        </div>
-                        <div>
-                          <label htmlFor="">Preference</label>
-                          <p className="text-foreground mt-1">
-                            {deal?.cQuestion ||
-                              `Enterprise software solution for ${deal?.cQuestion} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.cNextContact
+                                ? formatDateTime(deal.cNextContact)
+                                : "—"}
+                            </p>
+                          </div>
+
+                          {/* Project Name */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Project Name
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.cProjectName || "—"}
+                            </p>
+                          </div>
+
+                          {/* Preference */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Preference
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.cQuestion || "—"}
+                            </p>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Description */}
-                      {/* <div>
-                        <label className="text-sm font-medium text-muted-foreground">
-                          Description
-                        </label>
-                        {isEditing ? (
-                          <textarea
-                            className="w-full mt-1 p-3 border border-border rounded-lg resize-none"
-                            rows={4}
-                            defaultValue={
-                              deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`
-                            }
-                          />
-                        ) : (
-                          <p className="text-foreground mt-1">
-                            {deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
-                        )}
-                      </div> */}
+                      {/* ================= Details ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h3 className="text-base font-semibold text-foreground mb-6">
+                          Details
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Status */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Status
+                            </p>
+                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                              {deal?.status || "—"}
+                            </span>
+                          </div>
+
+                          {/* Source */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Source
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.source || "—"}
+                            </p>
+                          </div>
+
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              Description
+                            </p>
+                            <p className="text-foreground leading-relaxed mt-1">
+                              {deal?.description || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -852,7 +942,7 @@ const DealDrawer = ({
                                     name={getActivityIcon(activity.type)}
                                     size={14}
                                     className={getActivityIconColor(
-                                      activity.type
+                                      activity.type,
                                     )}
                                   />
 
@@ -898,7 +988,7 @@ const DealDrawer = ({
                               {activity?.data?.value && (
                                 <span
                                   className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                    activity.data.value
+                                    activity.data.value,
                                   )}`}
                                 >
                                   {activity.data.value}
@@ -908,7 +998,7 @@ const DealDrawer = ({
                               {activity?.data?.statusValue && (
                                 <span
                                   className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                    activity.data.statusValue
+                                    activity.data.statusValue,
                                   )}`}
                                 >
                                   {activity.data.statusValue}
@@ -922,51 +1012,75 @@ const DealDrawer = ({
                   )}
 
                   {activeTab === "AssignedUsers" && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-foreground">
-                          Assigned User
-                        </h3>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Plus" size={16} className="mr-1" />
-                          Add Contact
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6">
+                      {/* ================= Assigned User ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Assigned User */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Name
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.assignedUserName}
+                            <p className="text-sm text-muted-foreground">
+                              Assigned User
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {leadData?.assignedUserName || "—"}
                             </p>
                           </div>
 
+                          {/* Followers */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
+                              Followers
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {leadsDetails?.followersNames ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {Object.entries(
+                                    leadsDetails.followersNames,
+                                  ).map(([id, name]) => (
+                                    <span
+                                      key={id}
+                                      className="text-sm text-primary font-medium"
+                                    >
+                                      {name}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span>—</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ================= Audit Information ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h3 className="text-base font-semibold text-foreground mb-6">
+                          Audit Information
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Created */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
                               Created
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.createdAt)} :{" "}
-                              {deal?.createdByName}
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.createdAt
+                                ? `${formatDateTime(deal.createdAt)} by ${deal?.createdByName || "—"}`
+                                : "—"}
                             </p>
                           </div>
+
+                          {/* Modified */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Modified
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.modifiedAt)} :{" "}
-                              {deal?.modifiedByName}
+                            <p className="text-sm text-muted-foreground">
+                              Last Modified
                             </p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Follower
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.followersNames}
+                            <p className="text-foreground font-medium">
+                              {deal?.modifiedAt
+                                ? `${formatDateTime(deal.modifiedAt)} by ${deal?.modifiedByName || "—"}`
+                                : "—"}
                             </p>
                           </div>
                         </div>
@@ -1008,7 +1122,7 @@ const DealDrawer = ({
                                 {activity.status && (
                                   <span
                                     className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                      activity.status
+                                      activity.status,
                                     )}`}
                                   >
                                     {activity.status}

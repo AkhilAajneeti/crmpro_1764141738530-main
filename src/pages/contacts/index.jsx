@@ -8,7 +8,14 @@ import ContactFilters from "./components/ContactFilters";
 import ContactDrawer from "./components/ContactDrawer";
 import BulkActions from "./components/BulkActions";
 import ContactsPagination from "./components/ContactsPagination";
-import { bulkDeleteContacts, fetchContacts } from "services/contact.service";
+import toast from "react-hot-toast";
+import {
+  bulkDeleteContacts,
+  deleteContact,
+  fetchContactById,
+  fetchContacts,
+  updateContact,
+} from "services/contact.service";
 
 const ContactsPage = () => {
   const [drawerMode, setDrawerMode] = useState(null); // 'view' | 'create'
@@ -20,6 +27,7 @@ const ContactsPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [contactDetail, setContactDetail] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -38,68 +46,68 @@ const ContactsPage = () => {
     };
     loadContact();
   }, []);
+  useEffect(() => {
+    if (!isDrawerOpen || !selectedContact?.id || drawerMode !== "view") return;
+
+    const loadContactDetail = async () => {
+      try {
+        const res = await fetchContactById(selectedContact.id);
+        setContactDetail(res);
+      } catch (err) {
+        console.error("Failed to fetch contact detail", err);
+      }
+    };
+
+    loadContactDetail();
+  }, [isDrawerOpen, selectedContact?.id, drawerMode]);
+  useEffect(() => {
+    if (mockContacts.length > 0) {
+      console.log("SAMPLE CONTACT 👉", mockContacts[0]);
+    }
+  }, [mockContacts]);
+
   const [filters, setFilters] = useState({
-    company: "",
-    role: "",
+    accounts: "",
+    assignUser: "",
     status: "",
   });
 
-  // Filter and sort contacts
   const filteredAndSortedContacts = useMemo(() => {
-    let filtered = mockContacts?.filter((contact) => {
+    return mockContacts.filter((contact) => {
       const matchesSearch =
         searchTerm === "" ||
-        contact?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-        contact?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-        contact?.company?.toLowerCase()?.includes(searchTerm?.toLowerCase());
+        contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.emailAddress
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        contact.accountName?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCompany =
-        filters?.company === "" || contact?.company === filters?.company;
+        filters.accounts === "" || contact.accountId === filters.accounts;
+
       const matchesRole =
-        filters?.role === "" || contact?.title === filters?.role;
+        filters.assignUser === "" ||
+        contact.assignedUserId === filters.assignUser;
+
       const matchesStatus =
-        filters?.status === "" || contact?.status === filters?.status;
+        filters.status === "" || contact.status === filters.status;
 
       return matchesSearch && matchesCompany && matchesRole && matchesStatus;
     });
-
-    // Sort contacts
-    filtered?.sort((a, b) => {
-      const aValue = a?.[sortConfig?.key];
-      const bValue = b?.[sortConfig?.key];
-
-      if (sortConfig?.key === "lastContact") {
-        const aDate = new Date(aValue);
-        const bDate = new Date(bValue);
-        return sortConfig?.direction === "asc" ? aDate - bDate : bDate - aDate;
-      }
-
-      if (typeof aValue === "string") {
-        return sortConfig?.direction === "asc"
-          ? aValue?.localeCompare(bValue)
-          : bValue?.localeCompare(aValue);
-      }
-
-      return sortConfig?.direction === "asc"
-        ? aValue - bValue
-        : bValue - aValue;
-    });
-
-    return filtered;
-  }, [mockContacts, searchTerm, filters, sortConfig]);
+  }, [mockContacts, searchTerm, filters]);
 
   // Pagination
   const totalPages = Math.ceil(
-    filteredAndSortedContacts?.length / itemsPerPage
+    filteredAndSortedContacts?.length / itemsPerPage,
   );
   const paginatedContacts = filteredAndSortedContacts?.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // Active filters count
   const activeFiltersCount = Object.values(filters)?.filter(
-    (value) => value !== ""
+    (value) => value !== "",
   )?.length;
 
   const handleMenuToggle = () => {
@@ -124,7 +132,7 @@ const ContactsPage = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({ company: "", role: "", status: "" });
+    setFilters({ accounts: "", assignUser: "", status: "" });
     setCurrentPage(1);
   };
 
@@ -153,6 +161,7 @@ const ContactsPage = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedContact(null);
+    setContactDetail(null);
   };
 
   const handlePageChange = (page) => {
@@ -185,7 +194,7 @@ const ContactsPage = () => {
     if (selectedContacts.length === 0) return;
 
     const confirmDelete = window.confirm(
-      `Delete ${selectedContacts.length} contacts?`
+      `Delete ${selectedContacts.length} contacts?`,
     );
 
     if (!confirmDelete) return;
@@ -195,7 +204,7 @@ const ContactsPage = () => {
 
       // Remove deleted contacts from UI
       setmockContact((prev) =>
-        prev.filter((c) => !selectedContacts.includes(c.id))
+        prev.filter((c) => !selectedContacts.includes(c.id)),
       );
 
       setSelectedContacts([]);
@@ -212,15 +221,69 @@ const ContactsPage = () => {
     setDrawerMode("create");
     setIsDrawerOpen(true);
   };
-const handleEditContact = (contact) => {
-  setSelectedContact(contact);   // 🔥 important
-  setDrawerMode("edit");         // 🔥 edit mode
-  setIsDrawerOpen(true);
-};
+  const handleEditContact = (contact) => {
+    setSelectedContact(contact); // 🔥 important
+    setDrawerMode("edit"); // 🔥 edit mode
+    setIsDrawerOpen(true);
+  };
   const handleImportContacts = () => {
     console.log("Import contacts");
     // Implement import functionality
   };
+  const handleDeleteContact = async (id) => {
+    if (!id) return;
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this contact?",
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteContact(id);
+      toast.success("Contact deleted successfully");
+
+      setmockContact((prev) => prev.filter((c) => c.id !== id));
+
+      // agar paginatedContacts derive ho raha hai → auto update ho jayega
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete contact");
+    }
+  };
+  const handleBulkUpdateContact = async (payload) => {
+    if (!selectedContacts.length) return;
+
+    try {
+      toast.loading("Updating contacts...", { id: "bulk-update" });
+
+      // 🔁 update each contact
+      await Promise.all(
+        selectedContacts.map((id) => updateContact(id, payload)),
+      );
+
+      // 🔄 update local state
+      setmockContact((prev) =>
+        prev.map((c) =>
+          selectedContacts.includes(c.id) ? { ...c, ...payload } : c,
+        ),
+      );
+
+      toast.success(`${selectedContacts.length} contacts updated`, {
+        id: "bulk-update",
+      });
+
+      setSelectedContacts([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Mass update failed", { id: "bulk-update" });
+    }
+  };
+  const handleMassUpdate = () => {
+  if (selectedContacts.length === 0) return;
+
+  setDrawerMode("mass-update");
+  setIsDrawerOpen(true);
+};
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,7 +337,7 @@ const handleEditContact = (contact) => {
                   </p>
                   <p className="text-2xl font-bold text-foreground">
                     {
-                      mockContacts?.filter((c) => c?.status === "Active")
+                      mockContacts?.filter((c) => c?.accountIsInactive == false)
                         ?.length
                     }
                   </p>
@@ -341,6 +404,7 @@ const handleEditContact = (contact) => {
             onBulkEmail={handleBulkEmail}
             onBulkTag={handleBulkTag}
             onBulkDelete={handleBulkDelete}
+            onMassUpdate={handleMassUpdate}
           />
 
           {/* Contacts Table */}
@@ -352,7 +416,8 @@ const handleEditContact = (contact) => {
             onContactClick={handleContactClick}
             sortConfig={sortConfig}
             onSort={handleSort}
-             onEditContact={handleEditContact}
+            onEditContact={handleEditContact}
+            onDeleteContact={handleDeleteContact}
           />
 
           {/* Pagination */}
@@ -370,10 +435,12 @@ const handleEditContact = (contact) => {
       </main>
       {/* Contact Drawer */}
       <ContactDrawer
+        contactDetail={contactDetail}
         mode={drawerMode}
         contact={selectedContact}
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}
+        onBulkUpdate={handleBulkUpdateContact}
       />
     </div>
   );
