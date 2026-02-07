@@ -18,14 +18,6 @@ const DealsTable = ({
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })?.format(amount);
-  };
 
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
@@ -42,14 +34,9 @@ const DealsTable = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Invalid: "bg-gray-100 text-gray-700",
+      Planned: "bg-blue-100 text-blue-800",
+      "Not Held": "bg-red-100 text-red-800",
+      Held: "bg-green-100 text-green-800",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";
@@ -131,15 +118,6 @@ const DealsTable = ({
                   {getSortIcon("Project Name")}
                 </button>
               </th>
-              {/* <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("Source")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Source</span>
-                  {getSortIcon("value")}
-                </button>
-              </th> */}
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("Status")}
@@ -149,15 +127,6 @@ const DealsTable = ({
                   {getSortIcon("owner")}
                 </button>
               </th>
-              {/* <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("email")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Next Contact</span>
-                  {getSortIcon("stage")}
-                </button>
-              </th> */}
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("createdAt")}
@@ -215,14 +184,7 @@ const DealsTable = ({
                       deal?.status,
                     )}`}
                   >
-                    {/* <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary-foreground">
-                        {deal?.status
-                          ?.split(" ")
-                          ?.map((n) => n?.[0])
-                          ?.join("")}
-                      </span>
-                    </div> */}
+                    
                     <span className={`text-sm text-foreg roundunded-full `}>
                       {deal?.status}
                     </span>

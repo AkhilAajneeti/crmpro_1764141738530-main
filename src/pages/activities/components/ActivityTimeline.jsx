@@ -67,35 +67,12 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
           )}
 
           <div className="flex items-start space-x-4">
-            {/* Activity icon */}
-            <div
-              className={`
-                flex-shrink-0 w-12 h-12 rounded-full border-2 border-background shadow-sm
-                flex items-center justify-center
-                ${activity?.completed ? "bg-success text-success-foreground" : "bg-muted"}
-              `}
-            >
-              <Icon
-                name={
-                  activity?.completed
-                    ? "Check"
-                    : getActivityIcon(activity?.type)
-                }
-                size={20}
-                className={
-                  activity?.completed
-                    ? "text-success-foreground"
-                    : getActivityColor(activity?.type)
-                }
-              />
-            </div>
-
             {/* Activity content */}
             <div className="flex-1 min-w-0">
               <div className="bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex items-center space-x-2 mb-1">
                       <span
                         className={`
                           px-2 py-1 text-xs font-medium rounded-full capitalize
@@ -106,10 +83,10 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
                           ${activity?.type === "note" ? "bg-gray-100 text-gray-800" : ""}
                         `}
                       >
-                        {activity?.type}
+                        {activity?.parentType}
                       </span>
 
-                      {activity?.priority && (
+                      {activity?.parentName && (
                         <span
                           className={`
                             px-2 py-1 text-xs font-medium rounded-full
@@ -118,60 +95,37 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
                             ${activity?.priority === "low" ? "bg-gray-100 text-gray-800" : ""}
                           `}
                         >
-                          {activity?.priority} priority
+                          {activity?.parentName}
                         </span>
                       )}
 
-                      {isOverdue(activity?.dueDate, activity?.completed) && (
+                      {isOverdue(activity?.dueDate) && (
                         <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
                           Overdue
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-sm font-medium text-foreground mb-1">
-                      {activity?.title}
+                    <h3 className="text-sm font-medium text-foreground mb-2">
+                      Created By {activity?.createdByName}
                     </h3>
-
-                    {activity?.description && (
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {activity?.description}
-                      </p>
-                    )}
-
                     <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Icon name="Calendar" size={14} />
-                        <span>{formatDate(activity?.dueDate)}</span>
+                        <span>Created At {activity?.createdAt}</span>
                       </div>
-
-                      {activity?.contact && (
-                        <div className="flex items-center space-x-1">
-                          <Icon name="User" size={14} />
-                          <span>{activity?.contact}</span>
-                        </div>
-                      )}
-
-                      {activity?.account && (
-                        <div className="flex items-center space-x-1">
-                          <Icon name="Building2" size={14} />
-                          <span>{activity?.account}</span>
-                        </div>
-                      )}
-
                       <div className="flex items-center space-x-1">
-                        <Icon name="User" size={14} />
-                        <span>Assigned to {activity?.owner}</span>
+                        <Icon name="Calendar" size={14} />
+                        <span>
+                          Modified At {formatDate(activity?.modifiedAt)}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <h3>
+                          Assign User {activity?.data?.assignedUserName}
+                        </h3>
                       </div>
                     </div>
-
-                    {activity?.notes && (
-                      <div className="mt-3 p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
-                          {activity?.notes}
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   {/* Quick actions */}

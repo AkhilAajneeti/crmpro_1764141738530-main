@@ -11,11 +11,14 @@ import DealDrawer from "./components/DealDrawer";
 import TablePagination from "./components/TablePagination";
 import { deleteActivity } from "services/leads.service";
 import {
+  bulkDeleteMeeting,
   createMeeting,
   deleteMeeting,
   fetchMeeting,
+  fetchMeetingById,
   updateMeeting,
 } from "services/meeting.service";
+import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 
 const MeetingPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,6 +28,7 @@ const MeetingPage = () => {
   const [leads, setLeads] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
   const [sortConfig, setSortConfig] = useState({
     key: "name",
@@ -32,10 +36,8 @@ const MeetingPage = () => {
   });
   const [filters, setFilters] = useState({
     search: "",
-    stage: "",
-    owner: "",
-    minValue: "",
-    maxValue: "",
+    status: "",
+    assignUser: "",
     closeDateFrom: "",
     closeDateTo: "",
   });
@@ -54,7 +56,21 @@ const MeetingPage = () => {
     loadMeeting();
   }, []);
   // Mock deals data
+  const handleDealClick = async (deal) => {
+    try {
+      setMode("view");
+      setIsDrawerOpen(true);
 
+      // 🔥 fetch task detail by ID
+      const data = await fetchMeetingById(deal.id);
+
+      // ✅ pass fetched task to drawer
+      setSelectedDeal(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load task details");
+    }
+  };
   // Filter and sort deals
   const filteredAndSortedDeals = useMemo(() => {
     let filtered = leads?.filter((deal) => {
@@ -63,26 +79,13 @@ const MeetingPage = () => {
       const matchesSearch =
         !search ||
         deal?.name?.toLowerCase()?.includes(search) ||
-        deal?.emailAddress?.toLowerCase()?.includes(search) ||
-        deal?.phoneNumber?.includes(search) ||
-        deal?.accountName?.toLowerCase()?.includes(search);
+        deal?.parentName?.toLowerCase()?.includes(search);
 
       const matchesStatus =
         !filters?.status || deal?.status === filters?.status;
-
-      const matchesSource =
-        !filters?.source || deal?.source === filters?.source;
-
-      const matchesOwner =
-        !filters?.owner || deal?.assignedUserName === filters?.owner;
-
-      const matchesMinValue =
-        !filters?.minValue ||
-        (deal?.opportunityAmount ?? 0) >= Number(filters?.minValue);
-
-      const matchesMaxValue =
-        !filters?.maxValue ||
-        (deal?.opportunityAmount ?? 0) <= Number(filters?.maxValue);
+      const matchesAssignUser =
+        !filters.assignUser ||
+        String(deal.assignedUserId) === String(filters.assignUser);
 
       const matchesCreatedFrom =
         !filters?.closeDateFrom ||
@@ -95,10 +98,7 @@ const MeetingPage = () => {
       return (
         matchesSearch &&
         matchesStatus &&
-        matchesSource &&
-        matchesOwner &&
-        matchesMinValue &&
-        matchesMaxValue &&
+        matchesAssignUser &&
         matchesCreatedFrom &&
         matchesCreatedTo
       );
@@ -146,12 +146,6 @@ const MeetingPage = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleDealClick = (deal) => {
-    setSelectedDeal(deal);
-    setMode("view");
-    setIsDrawerOpen(true);
-  };
-
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
@@ -174,14 +168,18 @@ const MeetingPage = () => {
   const handleDeleteMeeting = async (id) => {
     try {
       toast.loading("Deleting meeting...", { id: "delete-lead" });
-      await deleteMeeting(id); // API call
+      await deleteMeeting(id);
+
+      setLeads((prev) => prev.filter((m) => m.id !== id));
+
       toast.success("Meeting deleted successfully", {
         id: "delete-lead",
       });
     } catch (err) {
-      console.error("Delete failed", err);
+      toast.error("Delete failed", { id: "delete-lead" });
     }
   };
+
   const handleDeleteActivity = async (id) => {
     try {
       await deleteActivity(id); // API call
@@ -244,8 +242,53 @@ const MeetingPage = () => {
   };
 
   const handleBulkAction = (action) => {
-    console.log(`Bulk action ${action} for deals:`, selectedDeals);
-    // Implement bulk actions here
+    if (action === "mass-update") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+      setSelectedDeal(null);
+
+      setMode("mass-update");
+      setIsDrawerOpen(true);
+
+      return;
+    }
+
+    if (action === "delete") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+
+      setShowDeleteConfirm(true);
+      return;
+    }
+  };
+  const handleConfirmBulkDelete = async () => {
+    try {
+      toast.loading("Deleting meetings...", { id: "bulk-delete" });
+
+      // ✅ ONE CALL, FULL ARRAY
+      await bulkDeleteMeeting(selectedDeals);
+
+      // ✅ UI se remove
+      setLeads((prev) =>
+        prev.filter((meeting) => !selectedDeals.includes(meeting.id)),
+      );
+
+      setSelectedDeals([]);
+      setShowDeleteConfirm(false);
+
+      toast.success("Selected meetings deleted", {
+        id: "bulk-delete",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete meetings", {
+        id: "bulk-delete",
+      });
+    }
   };
 
   const handlePageChange = (page) => {
@@ -255,6 +298,26 @@ const MeetingPage = () => {
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
+  };
+  const handleBulkUpdateMeet = async (payload) => {
+    try {
+      toast.loading("Updating meeting...", { id: "bulk-update" });
+
+      await Promise.all(selectedDeals.map((id) => updateMeeting(id, payload)));
+
+      toast.success(`${selectedDeals.length} leads updated`, {
+        id: "bulk-update",
+      });
+
+      const data = await fetchMeeting();
+      setLeads(data.list);
+
+      setSelectedDeals([]);
+      setIsDrawerOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Mass update failed", { id: "bulk-update" });
+    }
   };
 
   // Reset page when filters change
@@ -288,14 +351,6 @@ const MeetingPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button variant="outline">
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Export
-                </Button>
-                {/* <Button variant="outline">
-                  <Icon name="GitBranch" size={16} className="mr-2" />
-                  Pipeline View
-                </Button> */}
                 <Button onClick={handleAddMeeting}>
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Meeting
@@ -342,12 +397,21 @@ const MeetingPage = () => {
         {/* Deal Drawer */}
         <DealDrawer
           deal={selectedDeal}
+          selectedIds={selectedDeals}
           mode={mode}
           isOpen={isDrawerOpen}
           onCreate={handleCreateMeeting}
           onUpdate={handleUpdateMeeting}
           onClose={handleDrawerClose}
           onDelete={handleDeleteActivity}
+          onBulkUpdate={handleBulkUpdateMeet}
+        />
+        <ConfirmDeleteModal
+          open={showDeleteConfirm}
+          title="Delete Selected Leads"
+          description={`Are you sure you want to delete ${selectedDeals.length} lead(s)? This action cannot be undone.`}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleConfirmBulkDelete}
         />
       </div>
     </>

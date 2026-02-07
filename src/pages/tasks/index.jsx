@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
+import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
 import {
   createTasks,
@@ -15,6 +16,8 @@ import {
   fetchTasks,
   updateTasks,
   bulkDeleteTasks,
+  fetchTasksById,
+  deleteActivity,
 } from "services/tasks.service";
 
 const TaskPage = () => {
@@ -32,10 +35,9 @@ const TaskPage = () => {
   });
   const [filters, setFilters] = useState({
     search: "",
-    stage: "",
-    owner: "",
-    minValue: "",
-    maxValue: "",
+    status: "",
+    priority: "",
+    assignUser: "",
     closeDateFrom: "",
     closeDateTo: "",
   });
@@ -54,6 +56,22 @@ const TaskPage = () => {
     loadContact();
   }, []);
   // Mock deals data
+const handleDealClick = async (deal) => {
+  try {
+    setMode("view");
+    setIsDrawerOpen(true);
+
+    // 🔥 fetch task detail by ID
+    const data = await fetchTasksById(deal.id);
+
+    // ✅ pass fetched task to drawer
+    setSelectedDeal(data);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load task details");
+  }
+};
+
 
   // Filter and sort deals
   const filteredAndSortedDeals = useMemo(() => {
@@ -70,19 +88,12 @@ const TaskPage = () => {
       const matchesStatus =
         !filters?.status || deal?.status === filters?.status;
 
-      const matchesSource =
-        !filters?.source || deal?.source === filters?.source;
+      const matchesPriority =
+        !filters?.priority || deal?.priority === filters?.priority;
 
-      const matchesOwner =
-        !filters?.owner || deal?.assignedUserName === filters?.owner;
-
-      const matchesMinValue =
-        !filters?.minValue ||
-        (deal?.opportunityAmount ?? 0) >= Number(filters?.minValue);
-
-      const matchesMaxValue =
-        !filters?.maxValue ||
-        (deal?.opportunityAmount ?? 0) <= Number(filters?.maxValue);
+      const matchesAssignUser =
+        !filters.assignUser ||
+        String(deal.assignedUserId) === String(filters.assignUser);
 
       const matchesCreatedFrom =
         !filters?.closeDateFrom ||
@@ -95,10 +106,8 @@ const TaskPage = () => {
       return (
         matchesSearch &&
         matchesStatus &&
-        matchesSource &&
-        matchesOwner &&
-        matchesMinValue &&
-        matchesMaxValue &&
+        matchesPriority &&
+        matchesAssignUser &&
         matchesCreatedFrom &&
         matchesCreatedTo
       );
@@ -132,6 +141,38 @@ const TaskPage = () => {
 
   const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
 
+  const exportLeadsToCSV = (rows, fileName = "leads_export") => {
+    if (!rows || rows.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = rows.map((lead) => ({
+      Name: lead?.name || "",
+      Email: lead?.emailAddress || "",
+      Phone: lead?.phoneNumber || "",
+      Status: lead?.status || "",
+      Source: lead?.source || "",
+      "Project Name": lead?.cProjectName || "",
+      "Assigned User": lead?.assignedUserName || "",
+      "Next Contact": lead?.cNextContact || "",
+      "Created At": lead?.createdAt || "",
+    }));
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -146,11 +187,6 @@ const TaskPage = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleDealClick = (deal) => {
-    setSelectedDeal(deal);
-    setMode("view");
-    setIsDrawerOpen(true);
-  };
 
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
@@ -212,7 +248,7 @@ const TaskPage = () => {
 
       // ✅ Remove from UI
       setLeads((prev) =>
-        prev.filter((task) => !selectedDeals.includes(task.id))
+        prev.filter((task) => !selectedDeals.includes(task.id)),
       );
 
       // ✅ Clear selection
@@ -257,7 +293,7 @@ const TaskPage = () => {
         ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
         ?.map((deal) => deal?.id);
       setSelectedDeals(
-        selectedDeals?.filter((id) => !currentPageDeals?.includes(id))
+        selectedDeals?.filter((id) => !currentPageDeals?.includes(id)),
       );
     }
   };
@@ -280,10 +316,9 @@ const TaskPage = () => {
   const handleClearFilters = () => {
     setFilters({
       search: "",
-      stage: "",
-      owner: "",
-      minValue: "",
-      maxValue: "",
+      status: "",
+      priority: "",
+      assignUser: "",
       closeDateFrom: "",
       closeDateTo: "",
     });
@@ -293,6 +328,19 @@ const TaskPage = () => {
   const handleBulkAction = (action) => {
     if (!selectedDeals.length) {
       toast.error("Please select at least one task");
+      return;
+    }
+    if (action === "export") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+
+      const selectedRows = filteredAndSortedDeals.filter((deal) =>
+        selectedDeals.includes(deal.id),
+      );
+
+      exportLeadsToCSV(selectedRows, "selected_leads");
       return;
     }
 
@@ -348,9 +396,14 @@ const TaskPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button variant="outline">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
+                  }
+                >
                   <Icon name="Download" size={16} className="mr-2" />
-                  Export
+                  Export All
                 </Button>
                 <Button onClick={handleAddLeads}>
                   <Icon name="Plus" size={16} className="mr-2" />

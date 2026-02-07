@@ -17,15 +17,6 @@ const DealsTable = ({
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })?.format(amount);
-  };
-
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
@@ -41,14 +32,21 @@ const DealsTable = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Invalid: "bg-gray-100 text-gray-700",
+      Started: "bg-blue-100 text-blue-800",
+      Completed: "bg-green-100 text-green-800",
+      Deffered: "bg-orange-100 text-danger-800",
+      Canceled: "bg-purple-100 text-purple-800",
+      "Not Started": "bg-gray-100 text-gray-700",
+    };
+
+    return colors?.[stage] || "bg-gray-100 text-gray-800";
+  };
+  const getPrioriyColor = (stage) => {
+    const colors = {
+      Low: "bg-blue-100 text-blue-800",
+      Normal: "bg-green-100 text-green-800",
+      High: "bg-orange-100 text-danger-800",
+      Urgent: "bg-purple-100 text-purple-800",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";
@@ -117,7 +115,7 @@ const DealsTable = ({
                   onClick={() => onSort("name")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Project Name</span>
+                  <span>Name</span>
                   {getSortIcon("name")}
                 </button>
               </th>
@@ -205,7 +203,13 @@ const DealsTable = ({
                   </div>
                 </td>
                 <td className="px-2 py-4">
-                  <div className="text-foreground">{deal?.priority}</div>
+                  <div
+                    className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getPrioriyColor(
+                      deal?.priority,
+                    )}`}
+                  >
+                    {deal?.priority}
+                  </div>
                 </td>
 
                 <td className="px-4 py-4">

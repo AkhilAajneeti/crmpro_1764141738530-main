@@ -678,7 +678,7 @@ const DealDrawer = ({
               </form>
             )}
 
-            {mode !== "add" && mode !== "edit" && deal && (
+            {!showForm && !isMassUpdate && deal && (
               <>
                 {/* Tabs */}
                 <div className="flex items-center space-x-1 p-4 border-b border-border">

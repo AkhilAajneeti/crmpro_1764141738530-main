@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
+import { fetchUser } from "services/user.service";
 
 const DealsFilters = ({
   filters,
@@ -14,24 +15,32 @@ const DealsFilters = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
-
-  const stageOptions = [
-    { value: "", label: "All Stages" },
+  const [assignUser, setAssignUser] = useState([]);
+  const statusOptions = [
+    { value: "", label: "All Status" },
     { value: "New", label: "New" },
+    { value: "Converted", label: "Converted" },
+    { value: "Dead", label: "Dead" },
+    { value: "Call Later", label: "Call Later" },
+    { value: "Call Not Connecting", label: "Call Not Connecting" },
+    { value: "Call Not Picked", label: "Call Not Picked" },
+    { value: "Follow up", label: "Follow up" },
+    { value: "Interested", label: "Interested" },
+    { value: "Not Interested", label: "Not Interested" },
+    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
+    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
+    { value: "Site Visit Done", label: "Site Visit Done" },
+    { value: "Invalid", label: "Invalid" },
     { value: "Qualified", label: "Qualified" },
-    { value: "Proposal", label: "Proposal" },
-    { value: "Negotiation", label: "Negotiation" },
-    { value: "Won", label: "Won" },
-    { value: "Lost", label: "Lost" },
+    { value: "Broker", label: "Broker" },
   ];
-
-  const ownerOptions = [
-    { value: "", label: "All Owners" },
-    { value: "Sarah Johnson", label: "Sarah Johnson" },
-    { value: "Michael Chen", label: "Michael Chen" },
-    { value: "Emily Rodriguez", label: "Emily Rodriguez" },
-    { value: "David Kim", label: "David Kim" },
-    { value: "Lisa Thompson", label: "Lisa Thompson" },
+  const sourceOptions = [
+    { value: "Call", label: "Call" },
+    { value: "Existing Customer", label: "Existing Customer" },
+    { value: "Facebook", label: "Facebook" },
+    { value: "Import", label: "Import" },
+    { value: "IVR", label: "IVR" },
+    { value: "Web Site", label: "Web Site" },
   ];
 
   const bulkActions = [
@@ -47,6 +56,12 @@ const DealsFilters = ({
     });
   };
 
+  useEffect(() => {
+    fetchUser()
+      .then((res) => setAssignUser(res.list || []))
+      .catch((err) => console.error("User fetch failed", err));
+  }, []);
+
   const handleBulkActionSelect = (action) => {
     onBulkAction(action);
     setShowBulkActions(false);
@@ -55,7 +70,10 @@ const DealsFilters = ({
   const activeFiltersCount = Object.values(filters)?.filter(
     (value) => value !== "" && value !== null && value !== undefined,
   )?.length;
-
+  const assignUserOptions = assignUser.map((acc) => ({
+    value: acc.id, // 👈 important (ID use karo)
+    label: acc.name,
+  }));
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       {/* Header Row */}
@@ -159,36 +177,30 @@ const DealsFilters = ({
         />
 
         <Select
-          placeholder="Stage"
-          options={stageOptions}
-          value={filters?.stage || ""}
-          onChange={(value) => handleFilterChange("stage", value)}
+          placeholder="Status"
+          options={statusOptions}
+          value={filters?.status || ""}
+          onChange={(value) => handleFilterChange("status", value)}
+        />
+
+        <Input
+          placeholder="Project Name"
+          value={filters?.projectName || ""}
+          onChange={(e) => handleFilterChange("projectName", e.target.value)}
         />
 
         <Select
-          placeholder="Owner"
-          options={ownerOptions}
-          value={filters?.owner || ""}
-          onChange={(value) => handleFilterChange("owner", value)}
-          searchable
+          placeholder="Source"
+          options={sourceOptions}
+          value={filters?.source || ""}
+          onChange={(value) => handleFilterChange("source", value)}
         />
-
-        <div className="flex space-x-2">
-          <Input
-            type="number"
-            placeholder="Min value"
-            value={filters?.minValue || ""}
-            onChange={(e) => handleFilterChange("minValue", e?.target?.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            placeholder="Max value"
-            value={filters?.maxValue || ""}
-            onChange={(e) => handleFilterChange("maxValue", e?.target?.value)}
-            className="flex-1"
-          />
-        </div>
+        <Select
+          placeholder="Assign User"
+          options={assignUserOptions}
+          value={filters?.assignUser || ""}
+          onChange={(value) => handleFilterChange("assignUser", value)}
+        />
       </div>
       {/* Advanced Filters Toggle */}
       <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">

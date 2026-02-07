@@ -38,10 +38,10 @@ const DealsPage = () => {
   });
   const [filters, setFilters] = useState({
     search: "",
-    stage: "",
-    owner: "",
-    minValue: "",
-    maxValue: "",
+    status: "",
+    projectName: "",
+    source: "",
+    assignUser: "",
     closeDateFrom: "",
     closeDateTo: "",
   });
@@ -118,16 +118,14 @@ const DealsPage = () => {
       const matchesSource =
         !filters?.source || deal?.source === filters?.source;
 
-      const matchesOwner =
-        !filters?.owner || deal?.assignedUserName === filters?.owner;
+      const matchesprojectName =
+        !filters?.projectName ||
+        deal?.cProjectName
+          ?.toLowerCase()
+          .includes(filters.projectName.toLowerCase());
 
-      const matchesMinValue =
-        !filters?.minValue ||
-        (deal?.opportunityAmount ?? 0) >= Number(filters?.minValue);
-
-      const matchesMaxValue =
-        !filters?.maxValue ||
-        (deal?.opportunityAmount ?? 0) <= Number(filters?.maxValue);
+      const matchesAssignUser =
+        !filters?.assignUser || deal?.assignedUserId === filters?.assignUser;
 
       const matchesCreatedFrom =
         !filters?.closeDateFrom ||
@@ -141,9 +139,8 @@ const DealsPage = () => {
         matchesSearch &&
         matchesStatus &&
         matchesSource &&
-        matchesOwner &&
-        matchesMinValue &&
-        matchesMaxValue &&
+        matchesprojectName &&
+        matchesAssignUser &&
         matchesCreatedFrom &&
         matchesCreatedTo
       );
@@ -289,7 +286,8 @@ const DealsPage = () => {
   const handleBulkAction = (action) => {
     if (action === "mass-update") {
       if (!selectedDeals.length) {
-        toast.error("Select at least one lead");n;
+        toast.error("Select at least one lead");
+        n;
       }
       setSelectedDeal(null);
       setLeadsDetails(null);

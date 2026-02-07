@@ -18,6 +18,26 @@ export const fetchMeeting = async () => {
   }
   return await res.json();
 };
+export const fetchMeetingById = async (id) => {
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Meeting/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token, // ✅ backend expects this
+    },
+  });
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch meeting by id");
+  }
+  return await res.json();
+};
 
 export const createMeeting = async (payload) => {
   console.log(payload);
@@ -127,7 +147,7 @@ export const deleteActivity = async (id) => {
 };
 
 //create strean
-export const createMeetingActivity = async (payload) => {
+export const createMeetingStream = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {

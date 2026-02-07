@@ -7,14 +7,13 @@ import toast from "react-hot-toast";
 import Avatar from "react-avatar";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
-import {
-  createLeadActivity,
-  fetchLeads,
-  leadStreamById,
-} from "services/leads.service";
+import { fetchLeads } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
 import { fetchContacts } from "services/contact.service";
-import { createMeetingActivity, meetingStreamById } from "services/meeting.service";
+import {
+  createMeetingStream,
+  meetingStreamById,
+} from "services/meeting.service";
 
 const DealDrawer = ({
   deal,
@@ -34,7 +33,7 @@ const DealDrawer = ({
   const [acc, setAcc] = useState([]);
   const [lead, setLead] = useState([]);
   const [contact, setContact] = useState([]);
-  const [mockActivities, setmockActivities] = useState([]);
+  const [mockStream, setmockStream] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
@@ -94,8 +93,8 @@ const DealDrawer = ({
 
   const [massFields, setMassFields] = useState({
     status: false,
-    priority: false,
     assignedUserId: false,
+    startDate: false,
     dueDate: false,
   });
   const toggleMassField = (field) => {
@@ -111,7 +110,7 @@ const DealDrawer = ({
         const id = deal?.id;
         const res = await meetingStreamById(id);
         console.log("LEAD DETAIL RESPONSE:", res);
-        setmockActivities(res.list || []);
+        setmockStream(res.list || []);
       } catch (err) {
         console.error("Failed to fetch streams", err);
         toast.error("Failed to load activity");
@@ -159,14 +158,9 @@ const DealDrawer = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Invalid: "bg-gray-100 text-gray-700",
+      Planned: "bg-blue-100 text-blue-800",
+      "Not Held": "bg-red-100 text-red-800",
+      Held: "bg-green-100 text-green-800",
     };
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
@@ -174,8 +168,7 @@ const DealDrawer = ({
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
-    { id: "activities", label: "Activities", icon: "Calendar" },
-    { id: "notes", label: "Notes", icon: "FileText" },
+    { id: "stream", label: "Stream", icon: "Calendar" },
   ];
 
   const getActivityIcon = (type) => {
@@ -207,6 +200,22 @@ const DealDrawer = ({
         return "text-gray-500";
     }
   };
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Not Started":
+        return "bg-gray-100 text-gray-700";
+      case "Started":
+        return "bg-blue-100 text-blue-700";
+      case "Completed":
+        return "bg-green-100 text-green-700";
+      case "Cancelled":
+        return "bg-red-100 text-red-700";
+      case "Deferred":
+        return "bg-yellow-100 text-yellow-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
   const getActivityMessage = (activity) => {
     const { type, post, data, createdByName } = activity;
@@ -233,13 +242,6 @@ const DealDrawer = ({
     return "Activity updated";
   };
 
-  const handleStageAdvance = () => {
-    console.log("Advancing stage for deal:", deal?.id);
-  };
-
-  const handleScheduleActivity = () => {
-    console.log("Scheduling activity for deal:", deal?.id);
-  };
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -300,16 +302,17 @@ const DealDrawer = ({
     const payload = {};
 
     if (massFields.status) payload.status = formData.status;
-    if (massFields.priority) payload.priority = formData.priority;
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
+    if (massFields.startDate)
+      payload.startDate = toEspoDateTime(formData.startDate);
     if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
 
     if (!Object.keys(payload).length) {
       toast.error("Select at least one field to update");
       return;
     }
-    onBulkUpdate(selectedIds, payload);
+    onBulkUpdate(payload);
     onClose();
   };
 
@@ -320,10 +323,7 @@ const DealDrawer = ({
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
   };
-  const createActivity = async () => {
-    //post activity
-    setActivityForm(true);
-  };
+
   const handlePostActivity = async (e) => {
     e.preventDefault();
 
@@ -338,16 +338,16 @@ const DealDrawer = ({
       const payload = {
         post: activityText,
         parentId: deal.id, // 👈 ID PAYLOAD me
-        parentType: "Lead", // 👈 MUST
+        parentType: "Meeting", // 👈 MUST
         type: "Post",
         isInternal: false,
         attachmentsIds: [],
       };
 
-      const newActivity = await createMeetingActivity(payload);
+      const newActivity = await createMeetingStream(payload);
 
       // 🔥 UI update instantly
-      setmockActivities((prev) => [newActivity, ...prev]);
+      setmockStream((prev) => [newActivity, ...prev]);
 
       setActivityText("");
       setActivityForm(false);
@@ -416,12 +416,26 @@ const DealDrawer = ({
   const toEspoDateTime = (value) => {
     return value ? value.replace("T", " ") + ":00" : null;
   };
+  const createStream = async () => {
+    //post activity
+    setActivityForm(true);
+  };
 
   useEffect(() => {
     if (!isOpen) {
-      setmockActivities([]);
+      setmockStream([]);
     }
   }, [isOpen]);
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds <= 0) return "—";
+
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+
+    if (hrs && mins) return `${hrs}h ${mins}m`;
+    if (hrs) return `${hrs}h`;
+    return `${mins}m`;
+  };
 
   const getParentTypeOptions = () => {
     switch (formData.parentName) {
@@ -479,7 +493,7 @@ const DealDrawer = ({
                   deal?.status,
                 )}`}
               >
-                {deal?.stage}
+                {deal?.status}
               </span>
             </div>
             <div className="flex items-center space-x-2">
@@ -671,32 +685,8 @@ const DealDrawer = ({
                 </form>
               </div>
             )}
-            {mode !== "add" && deal && (
+            {mode !== "add" && deal && !isEditing && (
               <>
-                {/* Quick Actions */}
-                {/* <div className="flex items-center space-x-2 p-4 bg-muted/30 border-b border-border">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleStageAdvance}
-                  >
-                    <Icon name="ArrowRight" size={16} className="mr-1" />
-                    Advance Stage
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleScheduleActivity}
-                  >
-                    <Icon name="Calendar" size={16} className="mr-1" />
-                    Schedule Activity
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Icon name="Mail" size={16} className="mr-1" />
-                    Send Email
-                  </Button>
-                </div> */}
-
                 {/* Tabs */}
                 <div className="flex items-center space-x-1 p-4 border-b border-border">
                   {tabs?.map((tab) => (
@@ -722,142 +712,203 @@ const DealDrawer = ({
                 <div className="flex-1 overflow-y-auto p-6">
                   {activeTab === "overview" && (
                     <div className="space-y-6">
-                      {/* Deal Info */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
+                      {/* ================= Overview ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Name */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               Name
-                            </label>
+                            </p>
                             <p className="text-foreground font-medium">
-                              {deal?.name}
+                              {deal?.name || "—"}
                             </p>
                           </div>
+
+                          {/* Phone */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
+                              Parent Name
+                            </p>
+                            {deal?.parentName ? (
+                              <p className="text-primary hover:underline">
+                                {deal.parentName}
+                              </p>
+                            ) : (
+                              <p className="text-foreground">—</p>
+                            )}
+                          </div>
+
+                          {/* Email */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
                               Status
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.status}
                             </p>
+                            {deal?.status ? (
+                              <p className="text-primary hover:underline break-all">
+                                {deal.status}
+                              </p>
+                            ) : (
+                              <p className="text-foreground">—</p>
+                            )}
                           </div>
+
+                          {/* Duration */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Priority
-                            </label>
+                            <p className="text-sm text-muted-foreground">
+                              Duration
+                            </p>
                             <p className="text-foreground font-medium">
-                              {deal?.priority}
+                              {formatDuration(deal?.duration)}
                             </p>
                           </div>
-                        </div>
-                        <div className="space-y-4">
+
+                          {/* Next Contact */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Assigned User
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.assignedUserName}
+                            <p className="text-sm text-muted-foreground">
+                              Date Start
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.dateStart
+                                ? formatDate(deal.dateStart)
+                                : "—"}
                             </p>
                           </div>
+
+                          {/* Next Contact */}
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Created By
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.createdByName}
+                            <p className="text-sm text-muted-foreground">
+                              Date Complete
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.dateEnd ? formatDate(deal.dateEnd) : "—"}
                             </p>
                           </div>
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Modified By
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.modifiedByName}
-                            </p>
-                          </div>
-                          {/* <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Assigned User
-                            </label>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                <span className="text-xs font-medium text-primary-foreground">
-                                  {deal?.owner
-                                    ?.split(" ")
-                                    ?.map((n) => n?.[0])
-                                    ?.join("")}
-                                </span>
-                              </div>
-                              <span className="text-foreground">
-                                {deal?.assignedUserName}
-                              </span>
-                            </div>
-                          </div> */}
-                          {/* <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Close Date
-                            </label>
-                            <p className="text-foreground">
-                              {formatDate(deal?.closeDate)}
-                            </p>
-                          </div> */}
-                          {/* {isEditing && (
-                            <div>
-                              <Select
-                                label="Stage"
-                                options={stageOptions}
-                                value={deal?.stage}
-                                onChange={(value) =>
-                                  console.log("Stage changed to:", value)
-                                }
-                              />
-                            </div>
-                          )} */}
-                        </div>
-                      </div>
-                      <hr />
-                      <div className="grid grid-cols-1 gap-6">
-                        <div>
-                          <label htmlFor="">Description</label>
-                          <p className="text-foreground mt-1">
-                            {deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
-                        </div>
-                        <div>
-                          <label htmlFor="">Preference</label>
-                          <p className="text-foreground mt-1">
-                            {deal?.cQuestion ||
-                              `Enterprise software solution for ${deal?.cQuestion} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
                         </div>
                       </div>
 
-                      {/* Description */}
-                      {/* <div>
-                        <label className="text-sm font-medium text-muted-foreground">
-                          Description
-                        </label>
-                        {isEditing ? (
-                          <textarea
-                            className="w-full mt-1 p-3 border border-border rounded-lg resize-none"
-                            rows={4}
-                            defaultValue={
-                              deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`
-                            }
-                          />
-                        ) : (
-                          <p className="text-foreground mt-1">
-                            {deal?.description ||
-                              `Enterprise software solution for ${deal?.account} to streamline their operations and improve efficiency. This deal includes implementation, training, and ongoing support services.`}
-                          </p>
-                        )}
-                      </div> */}
+                      {/* ================= Details ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h3 className="text-base font-semibold text-foreground mb-6">
+                          Details
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Status */}
+                          {/* Project Name */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Created By
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.createdByName || "—"}
+                            </p>
+                          </div>
+
+                          {/* Preference */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Created At
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.createdAt
+                                ? formatDate(deal.createdAt)
+                                : "—"}
+                            </p>
+                          </div>
+
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              Description
+                            </p>
+                            <p className="text-foreground leading-relaxed mt-1">
+                              {deal?.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {activeTab === "activities" && (
+                  {activeTab === "AssignedUsers" && (
+                    <div className="space-y-6">
+                      {/* ================= Assigned User ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Assigned User */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Assigned User
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.assignedUserName || "—"}
+                            </p>
+                          </div>
+
+                          {/* Followers */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Followers
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.followersNames ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {Object.entries(deal.followersNames).map(
+                                    ([id, name]) => (
+                                      <span
+                                        key={id}
+                                        className="text-sm text-primary font-medium"
+                                      >
+                                        {name}
+                                      </span>
+                                    ),
+                                  )}
+                                </div>
+                              ) : (
+                                <span>—</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ================= Audit Information ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h3 className="text-base font-semibold text-foreground mb-6">
+                          Audit Information
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Created */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Created
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.createdAt
+                                ? `${formatDate(deal.createdAt)} by ${deal?.createdByName || "—"}`
+                                : "—"}
+                            </p>
+                          </div>
+
+                          {/* Modified */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Last Modified
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.modifiedAt
+                                ? `${formatDate(deal.modifiedAt)} by ${deal?.modifiedByName || "—"}`
+                                : "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "stream" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium text-foreground">
@@ -866,10 +917,10 @@ const DealDrawer = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={createActivity}
+                          onClick={createStream}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Add Activity
+                          Add Stream
                         </Button>
                       </div>
                       <div className="space-y-4">
@@ -913,19 +964,19 @@ const DealDrawer = ({
                             </div>
                           </form>
                         )}
-                        {mockActivities?.map((activity) => (
+                        {mockStream?.map((stream) => (
                           <div
-                            key={activity.id}
+                            key={stream.id}
                             className="flex space-x-3 p-4 bg-muted/30 rounded-lg"
                           >
                             {/* AVATAR */}
                             <Avatar
-                              name={activity.createdByName || "System"}
+                              name={stream.createdByName || "System"}
                               size="36"
                               round
                               textSizeRatio={2}
                               color={
-                                activity.createdById === "system"
+                                stream.createdById === "system"
                                   ? "#9CA3AF"
                                   : undefined
                               }
@@ -936,24 +987,24 @@ const DealDrawer = ({
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
                                   <h4 className="font-medium text-foreground">
-                                    {activity.createdByName || "System"}
+                                    {stream.createdByName || "System"}
                                   </h4>
 
                                   <Icon
-                                    name={getActivityIcon(activity.type)}
+                                    name={getActivityIcon(stream.type)}
                                     size={14}
                                     className={getActivityIconColor(
-                                      activity.type,
+                                      stream.type,
                                     )}
                                   />
 
                                   <span className="text-xs text-muted-foreground">
-                                    {activity.type}
+                                    {stream.type}
                                   </span>
                                 </div>
 
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDate(activity.createdAt)}
+                                  {formatDate(stream.createdAt)}
                                 </span>
                                 <div
                                   className={`flex items-center space-x-1 transition-opacity`}
@@ -972,7 +1023,7 @@ const DealDrawer = ({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={(e) => handleDelete(e, activity)}
+                                    onClick={(e) => handleDelete(e, stream)}
                                     className="h-8 w-8 text-destructive hover:text-destructive"
                                   >
                                     <Icon name="Trash2" size={14} />
@@ -982,135 +1033,32 @@ const DealDrawer = ({
 
                               {/* MESSAGE */}
                               <p className="text-sm text-muted-foreground mt-1">
-                                {getActivityMessage(activity)}
+                                {getActivityMessage(stream)}
                               </p>
 
                               {/* STATUS BADGE */}
-                              {activity?.data?.value && (
+                              {stream?.data?.value && (
                                 <span
-                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                    activity.data.value,
+                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStatusColor(
+                                    stream.data.value,
                                   )}`}
                                 >
-                                  {activity.data.value}
+                                  {stream.data.value}
                                 </span>
                               )}
 
-                              {activity?.data?.statusValue && (
+                              {stream?.data?.statusValue && (
                                 <span
-                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                    activity.data.statusValue,
+                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStatusColor(
+                                    stream.data.statusValue,
                                   )}`}
                                 >
-                                  {activity.data.statusValue}
+                                  {stream.data.statusValue}
                                 </span>
                               )}
                             </div>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "AssignedUsers" && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-foreground">
-                          Assigned User
-                        </h3>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Plus" size={16} className="mr-1" />
-                          Add Contact
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Name
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.assignedUserName}
-                            </p>
-                          </div>
-
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Created
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.createdAt)} :{" "}
-                              {deal?.createdByName}
-                            </p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Modified
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {formatDate(deal?.modifiedAt)} :{" "}
-                              {deal?.modifiedByName}
-                            </p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                              Follower
-                            </label>
-                            <p className="text-foreground font-medium text-lg">
-                              {deal?.followersNames}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "notes" && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-foreground">
-                          Notes
-                        </h3>
-                        <Button variant="outline" size="sm">
-                          <Icon name="Plus" size={16} className="mr-1" />
-                          Add Note
-                        </Button>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="p-4 bg-muted/30 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">
-                              Meeting Notes - Discovery Call
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Nov 1, 2025
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Key requirements identified:\n• Integration with
-                            existing ERP system\n• Multi-location support\n•
-                            Advanced reporting capabilities\n• 24/7 customer
-                            support\n\nNext steps: Prepare technical proposal
-                            with integration timeline.
-                          </p>
-                        </div>
-                        <div className="p-4 bg-muted/30 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">
-                              Competitive Analysis
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Oct 28, 2025
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Currently evaluating our solution against
-                            CompetitorX and CompetitorY. Our advantages: better
-                            integration capabilities, superior customer support,
-                            competitive pricing. Need to emphasize ROI in
-                            proposal.
-                          </p>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -1143,24 +1091,6 @@ const DealDrawer = ({
                       <div className="flex gap-3 items-center">
                         <input
                           type="checkbox"
-                          checked={massFields.priority}
-                          onChange={() => toggleMassField("priority")}
-                        />
-                        <Select
-                          label="Priority"
-                          value={formData.priority}
-                          options={SOURCE_OPTIONS}
-                          disabled={!massFields.priority}
-                          onChange={(v) => handleChange("priority", v)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                    <div className="grid grid-cols-2">
-                      <div className="flex gap-3 items-center">
-                        <input
-                          type="checkbox"
                           checked={massFields.assignedUserId}
                           onChange={() => toggleMassField("assignedUserId")}
                         />
@@ -1174,9 +1104,25 @@ const DealDrawer = ({
                       </div>
                     </div>
                   </div>
+
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                     <div className="grid grid-cols-2">
                       <div className="flex gap-3 items-center">
+                        <input
+                          type="checkbox"
+                          checked={massFields.startDate}
+                          onChange={() => toggleMassField("startDate")}
+                        />
+
+                        <Input
+                          type="datetime-local"
+                          label="Start Date"
+                          value={formData.startDate}
+                          disabled={!massFields.dueDate}
+                          onChange={(e) =>
+                            handleChange("startDate", e.target.value)
+                          }
+                        />
                         <input
                           type="checkbox"
                           checked={massFields.dueDate}
@@ -1184,7 +1130,7 @@ const DealDrawer = ({
                         />
                         <Input
                           type="datetime-local"
-                          label="Due Date"
+                          label="End Date"
                           value={formData.dueDate}
                           disabled={!massFields.dueDate}
                           onChange={(e) =>
@@ -1195,7 +1141,7 @@ const DealDrawer = ({
                     </div>
                   </div>
                   <div className="flex justify-end gap-3">
-                    <Button variant="ghost" onClick={onClose}>
+                    <Button type="button" variant="ghost" onClick={onClose}>
                       Cancel
                     </Button>
                     <Button type="submit">

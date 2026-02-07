@@ -1,49 +1,47 @@
-import React, { useState } from 'react';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
+import React, { useEffect, useState } from "react";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
+import { fetchUser } from "services/user.service";
 
-const DealsFilters = ({ 
-  filters, 
-  onFiltersChange, 
-  onClearFilters, 
+const DealsFilters = ({
+  filters,
+  onFiltersChange,
+  onClearFilters,
   dealCount,
   onBulkAction,
-  selectedCount 
+  selectedCount,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [assignUser, setAssignUser] = useState([]);
 
-  const stageOptions = [
-    { value: '', label: 'All Stages' },
-    { value: 'New', label: 'New' },
-    { value: 'Qualified', label: 'Qualified' },
-    { value: 'Proposal', label: 'Proposal' },
-    { value: 'Negotiation', label: 'Negotiation' },
-    { value: 'Won', label: 'Won' },
-    { value: 'Lost', label: 'Lost' }
+  const statusOptions = [
+    { value: "", label: "All Status" },
+    { value: "Not Started", label: "Not Started" },
+    { value: "Started", label: "Started" },
+    { value: "Completed", label: "Completed" },
+    { value: "Canceled", label: "Canceled" },
+    { value: "Deferred", label: "Deferred" },
   ];
-
-  const ownerOptions = [
-    { value: '', label: 'All Owners' },
-    { value: 'Sarah Johnson', label: 'Sarah Johnson' },
-    { value: 'Michael Chen', label: 'Michael Chen' },
-    { value: 'Emily Rodriguez', label: 'Emily Rodriguez' },
-    { value: 'David Kim', label: 'David Kim' },
-    { value: 'Lisa Thompson', label: 'Lisa Thompson' }
+  const priorityOptions = [
+    { value: "", label: "All Status" },
+    { value: "Low", label: "Low" },
+    { value: "Normal", label: "Normal" },
+    { value: "High", label: "High" },
+    { value: "Urgent", label: "Urgent" },
   ];
-
   const bulkActions = [
-    { value: 'massupdate', label: 'Mass Update', icon: 'Update' },
-    { value: 'export', label: 'Export Selected', icon: 'Download' },
-    { value: 'delete', label: 'Delete Selected', icon: 'Trash2' }
+    { value: "massupdate", label: "Mass Update", icon: "Update" },
+    { value: "export", label: "Export Selected", icon: "Download" },
+    { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
   const handleFilterChange = (key, value) => {
     onFiltersChange({
       ...filters,
-      [key]: value
+      [key]: value,
     });
   };
 
@@ -51,11 +49,19 @@ const DealsFilters = ({
     onBulkAction(action);
     setShowBulkActions(false);
   };
+  useEffect(() => {
+    fetchUser()
+      .then((res) => setAssignUser(res.list || []))
+      .catch((err) => console.error("User fetch failed", err));
+  }, []);
 
-  const activeFiltersCount = Object.values(filters)?.filter(value => 
-    value !== '' && value !== null && value !== undefined
+  const activeFiltersCount = Object.values(filters)?.filter(
+    (value) => value !== "" && value !== null && value !== undefined,
   )?.length;
-
+  const assignUserOptions = assignUser.map((acc) => ({
+    value: acc.id, // 👈 important (ID use karo)
+    label: acc.name,
+  }));
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       {/* Header Row */}
@@ -67,7 +73,8 @@ const DealsFilters = ({
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''} active
+                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
+                active
               </span>
               <Button
                 variant="ghost"
@@ -96,7 +103,7 @@ const DealsFilters = ({
                   <Icon name="MoreHorizontal" size={16} className="mr-1" />
                   Actions
                 </Button>
-                
+
                 {showBulkActions && (
                   <>
                     <div
@@ -108,10 +115,16 @@ const DealsFilters = ({
                         {bulkActions?.map((action) => (
                           <button
                             key={action?.value}
-                            onClick={() => handleBulkActionSelect(action?.value)}
+                            onClick={() =>
+                              handleBulkActionSelect(action?.value)
+                            }
                             className="flex items-center w-full px-3 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
                           >
-                            <Icon name={action?.icon} size={16} className="mr-2" />
+                            <Icon
+                              name={action?.icon}
+                              size={16}
+                              className="mr-2"
+                            />
                             {action?.label}
                           </button>
                         ))}
@@ -122,7 +135,7 @@ const DealsFilters = ({
               </div>
             </div>
           )}
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -131,55 +144,45 @@ const DealsFilters = ({
           >
             <Icon name="Filter" size={16} className="mr-1" />
             Filters
-            <Icon 
-              name="ChevronDown" 
-              size={16} 
-              className={`ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            <Icon
+              name="ChevronDown"
+              size={16}
+              className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
             />
           </Button>
         </div>
       </div>
       {/* Filters */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? 'block' : 'hidden lg:grid'}`}>
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
+      >
         <Input
           type="search"
           placeholder="Search deals..."
-          value={filters?.search || ''}
-          onChange={(e) => handleFilterChange('search', e?.target?.value)}
+          value={filters?.search || ""}
+          onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
         />
-        
+
         <Select
-          placeholder="Stage"
-          options={stageOptions}
-          value={filters?.stage || ''}
-          onChange={(value) => handleFilterChange('stage', value)}
+          placeholder="Status"
+          options={statusOptions}
+          value={filters?.status || ""}
+          onChange={(value) => handleFilterChange("status", value)}
         />
-        
         <Select
-          placeholder="Owner"
-          options={ownerOptions}
-          value={filters?.owner || ''}
-          onChange={(value) => handleFilterChange('owner', value)}
-          searchable
+          placeholder="Priority"
+          options={priorityOptions}
+          value={filters?.priority || ""}
+          onChange={(value) => handleFilterChange("priority", value)}
         />
-        
-        <div className="flex space-x-2">
-          <Input
-            type="number"
-            placeholder="Min value"
-            value={filters?.minValue || ''}
-            onChange={(e) => handleFilterChange('minValue', e?.target?.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            placeholder="Max value"
-            value={filters?.maxValue || ''}
-            onChange={(e) => handleFilterChange('maxValue', e?.target?.value)}
-            className="flex-1"
-          />
-        </div>
+
+        <Select
+          placeholder="Assign User"
+          options={assignUserOptions}
+          value={filters?.assignUser || ""}
+          onChange={(value) => handleFilterChange("assignUser", value)}
+        />
       </div>
       {/* Advanced Filters Toggle */}
       <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
@@ -187,17 +190,21 @@ const DealsFilters = ({
           <Input
             type="date"
             placeholder="Close date from"
-            value={filters?.closeDateFrom || ''}
-            onChange={(e) => handleFilterChange('closeDateFrom', e?.target?.value)}
+            value={filters?.closeDateFrom || ""}
+            onChange={(e) =>
+              handleFilterChange("closeDateFrom", e?.target?.value)
+            }
           />
           <Input
             type="date"
             placeholder="Close date to"
-            value={filters?.closeDateTo || ''}
-            onChange={(e) => handleFilterChange('closeDateTo', e?.target?.value)}
+            value={filters?.closeDateTo || ""}
+            onChange={(e) =>
+              handleFilterChange("closeDateTo", e?.target?.value)
+            }
           />
         </div>
-        
+
         <Button variant="outline" size="sm">
           <Icon name="Download" size={16} className="mr-1" />
           Export All

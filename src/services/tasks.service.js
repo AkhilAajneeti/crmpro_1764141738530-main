@@ -14,7 +14,27 @@ export const fetchTasks = async () => {
       localStorage.clear();
       window.location.href = "/login";
     }
-    throw new Error("Failed to fetch accounts");
+    throw new Error("Failed to fetch tasks");
+  }
+  return await res.json();
+};
+export const fetchTasksById = async (id) => {
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Task/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token, // ✅ backend expects this
+    },
+  });
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch task by id");
   }
   return await res.json();
 };
@@ -82,12 +102,12 @@ export const bulkDeleteTasks = async (ids = []) => {
 
 // --------------Activity-----------
 //fetch by activity
-export const leadStreamById = async (id) => {
+export const taskStreamById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
+    `https://gateway.aajneetiadvertising.com/Task/${id}/stream`,
     {
       method: "GET",
       headers: {
@@ -143,4 +163,33 @@ export const createLeadActivity = async (payload) => {
   }
   // EspoCRM returns array
   return text ? JSON.parse(text) : null;
+};
+
+// create activity
+export const TaskActivitesById = async (id) => {
+  console.log(id);
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Activities/Task/${id}/activities`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+    }
+  );
+
+  console.log(res);
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch User's Activties");
+  }
+  return await res.json();
 };
