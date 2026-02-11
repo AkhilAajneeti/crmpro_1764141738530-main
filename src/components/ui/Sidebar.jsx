@@ -46,17 +46,23 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null
     },
     {
+      label: 'Call',
+      path: '/call',
+      icon: 'Phone',
+      badge: null
+    },
+    {
       label: 'Activities',
       path: '/activities',
       icon: 'Calendar',
       badge: '3'
     },
-    {
-      label: 'Emails',
-      path: '/emails',
-      icon: 'Mail',
-      badge: null
-    },
+    // {
+    //   label: 'Emails',
+    //   path: '/emails',
+    //   icon: 'Mail',
+    //   badge: null
+    // },
     {
       label: 'Reports',
       path: '/reports',
@@ -69,12 +75,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: 'Settings',
       badge: null
     },
-    {
-      label: 'Billing',
-      path: '/billing',
-      icon: 'CreditCard',
-      badge: null
-    },
+    // {
+    //   label: 'Billing',
+    //   path: '/billing',
+    //   icon: 'CreditCard',
+    //   badge: null
+    // },
     {
       label: 'Integrations',
       path: '/integrations',

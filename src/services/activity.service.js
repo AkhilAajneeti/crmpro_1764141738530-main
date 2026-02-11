@@ -19,3 +19,35 @@ export const fetchActivity=async()=>{
   return await res.json();
 }
 
+export const deleteActivity = async (id) => {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Note/${id}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", token: token },
+    },
+  );
+  if (!res.ok) {
+    throw new Error("Failed to delete Activity");
+  }
+  return res.json();
+};
+
+export const createActivity = async (payload) => {
+  console.log(payload);
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", token: token },
+
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    console.error("API ERROR:", text);
+    throw new Error("Activity is not created", text);
+  }
+  // EspoCRM returns array
+  return text ? JSON.parse(text) : null;
+};

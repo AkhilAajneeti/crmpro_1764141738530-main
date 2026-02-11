@@ -1,26 +1,18 @@
-import React from 'react';
-import Button from '../../../components/ui/Button';
-import Select from '../../../components/ui/Select';
-import Icon from '../../../components/AppIcon';
+import React from "react";
+import Button from "../../../components/ui/Button";
+import Select from "../../../components/ui/Select";
+import Icon from "../../../components/AppIcon";
 
-const BulkActions = ({ 
-  selectedCount, 
-  onMarkComplete, 
-  onReassign, 
-  onDelete, 
-  onClearSelection 
+const BulkActions = ({
+  selectedCount,
+  onMarkComplete,
+  onReassign,
+  onDelete,
+  onClearSelection,
 }) => {
-  const ownerOptions = [
-    { value: 'john-doe', label: 'John Doe' },
-    { value: 'sarah-wilson', label: 'Sarah Wilson' },
-    { value: 'mike-johnson', label: 'Mike Johnson' },
-    { value: 'emily-davis', label: 'Emily Davis' },
-    { value: 'alex-brown', label: 'Alex Brown' }
-  ];
-
   const handleReassign = (newOwner) => {
     if (newOwner && selectedCount > 0) {
-      const ownerName = ownerOptions?.find(o => o?.value === newOwner)?.label;
+      const ownerName = ownerOptions?.find((o) => o?.value === newOwner)?.label;
       onReassign(ownerName);
     }
   };
@@ -34,7 +26,8 @@ const BulkActions = ({
           <div className="flex items-center space-x-2">
             <Icon name="CheckSquare" size={20} className="text-primary" />
             <span className="text-sm font-medium text-foreground">
-              {selectedCount} {selectedCount === 1 ? 'activity' : 'activities'} selected
+              {selectedCount} {selectedCount === 1 ? "activity" : "activities"}{" "}
+              selected
             </span>
           </div>
 
@@ -48,19 +41,6 @@ const BulkActions = ({
             >
               Mark Complete
             </Button>
-
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">Reassign to:</span>
-              <Select
-                options={[
-                  { value: '', label: 'Select Owner' },
-                  ...ownerOptions
-                ]}
-                value=""
-                onChange={handleReassign}
-                placeholder="Choose owner"
-              />
-            </div>
 
             <Button
               variant="outline"

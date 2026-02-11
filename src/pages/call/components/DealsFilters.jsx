@@ -17,35 +17,14 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
   const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "New", label: "New" },
-    { value: "Converted", label: "Converted" },
-    { value: "Dead", label: "Dead" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Not Interested", label: "Not Interested" },
-    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
-    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
-    { value: "Site Visit Done", label: "Site Visit Done" },
-    { value: "Invalid", label: "Invalid" },
-    { value: "Qualified", label: "Qualified" },
-    { value: "Broker", label: "Broker" },
-  ];
-  const sourceOptions = [
-    { value: "Call", label: "Call" },
-    { value: "Existing Customer", label: "Existing Customer" },
-    { value: "Facebook", label: "Facebook" },
-    { value: "Import", label: "Import" },
-    { value: "IVR", label: "IVR" },
-    { value: "Web Site", label: "Web Site" },
+    { value: "Planned", label: "Planned" },
+    { value: "Held", label: "Held" },
+    { value: "Not Held", label: "Not Held" }
   ];
 
+
   const bulkActions = [
-    { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    { value: "export", label: "Export Selected", icon: "Download" },
+    { value: "mass-update", label: "Mass Update", icon: "User" },
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
@@ -56,17 +35,15 @@ const DealsFilters = ({
     });
   };
 
+  const handleBulkActionSelect = (action) => {
+    onBulkAction(action);
+    setShowBulkActions(false);
+  };
   useEffect(() => {
     fetchUser()
       .then((res) => setAssignUser(res.list || []))
       .catch((err) => console.error("User fetch failed", err));
   }, []);
-
-  const handleBulkActionSelect = (action) => {
-    onBulkAction(action);
-    setShowBulkActions(false);
-  };
-
   const activeFiltersCount = Object.values(filters)?.filter(
     (value) => value !== "" && value !== null && value !== undefined,
   )?.length;
@@ -80,7 +57,7 @@ const DealsFilters = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-foreground">
-            leads ({dealCount?.toLocaleString()})
+            Deals ({dealCount?.toLocaleString()})
           </h2>
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">
@@ -183,18 +160,6 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("status", value)}
         />
 
-        <Input
-          placeholder="Project Name"
-          value={filters?.projectName || ""}
-          onChange={(e) => handleFilterChange("projectName", e.target.value)}
-        />
-
-        <Select
-          placeholder="Source"
-          options={sourceOptions}
-          value={filters?.source || ""}
-          onChange={(value) => handleFilterChange("source", value)}
-        />
         <Select
           placeholder="Assign User"
           options={assignUserOptions}
