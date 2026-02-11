@@ -29,20 +29,20 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-      const loadActivity = async () => {
-        try {
-          const data = await fetchActivity();
-          setActivities(data.list);
-          console.log(data.list);
-        } catch (error) {
-          console.log("failed to fetch data", error);
-        } finally {
-        }
-      };
-      loadActivity();
+    const loadActivity = async () => {
+      try {
+        const data = await fetchActivity();
+        setActivities(data.list);
+        console.log(data.list);
+      } catch (error) {
+        console.log("failed to fetch data", error);
+      } finally {
+      }
+    };
+    loadActivity();
   }, []);
 
-  const isSameMonth = (date1, date2) => { 
+  const isSameMonth = (date1, date2) => {
     const d1 = new Date(date1);
     return (
       d1.getMonth() === date2.getMonth() &&
@@ -137,6 +137,7 @@ const Dashboard = () => {
       icon: "Users",
       iconBg: "bg-blue-100",
       iconColor: "#3B82F6",
+      comparisonLabel: "last month",
     },
     {
       title: "Today Leads",
@@ -146,6 +147,7 @@ const Dashboard = () => {
       icon: "Calendar",
       iconBg: "bg-green-100",
       iconColor: "#10B981",
+      comparisonLabel: "yesterday",
     },
     {
       title: "Interested Leads",
@@ -155,6 +157,7 @@ const Dashboard = () => {
       icon: "Star",
       iconBg: "bg-yellow-100",
       iconColor: "#F59E0B",
+      comparisonLabel: "last month",
     },
   ];
 
@@ -198,12 +201,12 @@ const Dashboard = () => {
 
               {/* Pipeline Chart */}
               <div className="m-5">
-                <PipelineChart leads={leads}/>
+                <PipelineChart leads={leads} />
               </div>
 
               {/* Recent Activities */}
               <div className="m-5">
-                <RecentActivities activities={activities}/>
+                <RecentActivities activities={activities} />
               </div>
             </motion.div>
           </div>

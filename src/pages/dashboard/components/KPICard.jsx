@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 
-const KPICard = ({ title, value, change, changeType, icon, iconBg, iconColor }) => {
+const KPICard = ({ title, value, change, changeType, icon, iconBg, iconColor,comparisonLabel }) => {
   return (
     <div className="bg-card border border-border rounded-xl p-6 shadow-elevation-1 hover:shadow-elevation-2 transition-smooth">
       <div className="flex items-start justify-between">
@@ -17,7 +17,7 @@ const KPICard = ({ title, value, change, changeType, icon, iconBg, iconColor }) 
               {changeType === 'negative' && <Icon name="TrendingDown" size={12} />}
               <span>{change}</span>
             </div>
-            <span className="text-xs text-muted-foreground">vs last month</span>
+            <span className="text-xs text-muted-foreground">vs {comparisonLabel}</span>
           </div>
         </div>
         <div className={`w-12 h-12 rounded-full flex items-center justify-center ${iconBg}`}>

@@ -279,18 +279,18 @@ const ContactsPage = () => {
     }
   };
   const handleMassUpdate = () => {
-  if (selectedContacts.length === 0) return;
+    if (selectedContacts.length === 0) return;
 
-  setDrawerMode("mass-update");
-  setIsDrawerOpen(true);
-};
+    setDrawerMode("mass-update");
+    setIsDrawerOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
       <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       <main className="lg:ml-64 pt-16">
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 lg:p-6">
           {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
