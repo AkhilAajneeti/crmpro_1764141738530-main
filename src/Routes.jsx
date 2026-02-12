@@ -19,6 +19,7 @@ import ProtectedRoute from "routes/ProtectedRoute";
 import TaskPage from "pages/tasks";
 import MeetingPage from "pages/meeting";
 import CallPage from "./pages/call";
+import Pipeline from "pages/pipeline";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -31,8 +32,7 @@ const Routes = () => {
             path="/"
             element={
               <ProtectedRoute>
-                {" "}
-                <Dashboard />{" "}
+                <Dashboard />
               </ProtectedRoute>
             }
           />
@@ -58,6 +58,7 @@ const Routes = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/meeting" element={<MeetingPage />} />
           <Route path="/call" element={<CallPage/>} />
+          <Route path="/pipeline" element={<Pipeline/>} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

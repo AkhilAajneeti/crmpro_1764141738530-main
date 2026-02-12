@@ -139,22 +139,6 @@ const AccountsTable = ({
     setSelectedRows(newSelected);
   };
 
-  const handleColumnFilter = (column, value) => {
-    setColumnFilters((prev) => ({
-      ...prev,
-      [column]: value,
-    }));
-    setCurrentPage(1);
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })?.format(parseFloat(value?.replace(/[$,]/g, "")) || 0);
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString)?.toLocaleDateString("en-US", {

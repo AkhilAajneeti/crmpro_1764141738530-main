@@ -14,9 +14,9 @@ const CategoryFilter = ({ categories, activeCategory, onCategoryChange }) => {
         >
           {category?.name}
           {category?.count > 0 && (
-            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${
+            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full  ${
               activeCategory === category?.id 
-                ? 'bg-primary-foreground/20 text-primary-foreground' 
+                ? 'bg-white text-primary-foreground' 
                 : 'bg-muted text-muted-foreground'
             }`}>
               {category?.count}

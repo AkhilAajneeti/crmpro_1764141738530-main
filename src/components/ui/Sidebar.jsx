@@ -75,12 +75,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: 'Settings',
       badge: null
     },
-    // {
-    //   label: 'Billing',
-    //   path: '/billing',
-    //   icon: 'CreditCard',
-    //   badge: null
-    // },
+    {
+      label: 'Pipeline',
+      path: '/pipeline',
+      icon: 'Pipe',
+      badge: null
+    },
     {
       label: 'Integrations',
       path: '/integrations',

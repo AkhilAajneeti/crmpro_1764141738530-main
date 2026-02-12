@@ -64,10 +64,6 @@ const RecentActivities = ({ activities = [] }) => {
             Latest updates from your sales team
           </p>
         </div>
-        <Button variant="outline" size="sm">
-          <Icon name="Plus" size={16} className="mr-2" />
-          Add Activity
-        </Button>
       </div>
       <div className="space-y-4">
         {todayActivities?.map((activity, index) => (
