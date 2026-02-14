@@ -8,12 +8,15 @@ import RecentActivities from "./components/RecentActivities";
 import RightRail from "./components/RightRail";
 import { fetchLeads } from "services/leads.service";
 import { fetchActivity } from "services/activity.service";
+import MultiLineChart from "./components/MultiLineChart";
+import IndustryChart from "./components/IndustryChart";
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [leads, setLeads] = useState([]);
   const [activities, setActivities] = useState([]);
 
+  // leads
   useEffect(() => {
     const loadLeads = async () => {
       try {
@@ -27,7 +30,7 @@ const Dashboard = () => {
     };
     loadLeads();
   }, []);
-
+// acctivity
   useEffect(() => {
     const loadActivity = async () => {
       try {
@@ -203,6 +206,12 @@ const Dashboard = () => {
               <div className="m-5">
                 <PipelineChart leads={leads} />
               </div>
+              <div className="m-5">
+                <MultiLineChart leads={leads} />
+              </div>
+              <div className="m-5">
+                <IndustryChart leads={leads} />
+              </div>
 
               {/* Recent Activities */}
               <div className="m-5">
@@ -213,7 +222,7 @@ const Dashboard = () => {
 
           {/* Right Rail */}
           <div className="hidden xl:block w-80 p-6 border-l border-border bg-background">
-            <RightRail />
+            <RightRail leads={leads}/>
           </div>
         </div>
       </main>

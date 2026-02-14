@@ -1,37 +1,37 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
-import Image from '../../../components/AppImage';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Image from "../../../components/AppImage";
 
 const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })?.format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString)?.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return new Date(dateString)?.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
-      'High': 'bg-red-100 text-red-800 border-red-200',
-      'Medium': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'Low': 'bg-green-100 text-green-800 border-green-200'
+      High: "bg-red-100 text-red-800 border-red-200",
+      Medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      Low: "bg-green-100 text-green-800 border-green-200",
     };
-    return colors?.[priority] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors?.[priority] || "bg-gray-100 text-gray-800 border-gray-200";
   };
 
   const getCloseDateStatus = (closeDate) => {
@@ -40,15 +40,15 @@ const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
     const diffTime = close - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return { color: 'text-red-600', text: 'Overdue' };
-    if (diffDays <= 7) return { color: 'text-yellow-600', text: 'Due Soon' };
-    return { color: 'text-muted-foreground', text: formatDate(closeDate) };
+    if (diffDays < 0) return { color: "text-red-600", text: "Overdue" };
+    if (diffDays <= 7) return { color: "text-yellow-600", text: "Due Soon" };
+    return { color: "text-muted-foreground", text: formatDate(closeDate) };
   };
 
   const handleDragStart = (e) => {
     setIsDragging(true);
-    e?.dataTransfer?.setData('text/plain', deal?.id);
-    e.dataTransfer.effectAllowed = 'move';
+    e?.dataTransfer?.setData("text/plain", deal?.id);
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragEnd = () => {
@@ -62,7 +62,7 @@ const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
       className={`
         relative bg-card border border-border rounded-lg p-4 cursor-move
         transition-all duration-200 hover:shadow-elevation-2
-        ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''}
+        ${isDragging ? "opacity-50 rotate-2 scale-105" : ""}
       `}
       draggable
       onDragStart={handleDragStart}
@@ -113,10 +113,10 @@ const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base text-card-foreground truncate pr-8 leading-tight">
-              {deal?.title}
+              {deal?.name}
             </h3>
             <p className="text-sm text-muted-foreground truncate mt-1">
-              {deal?.accountName}
+              {deal?.industry || deal?.addressCity}
             </p>
           </div>
         </div>
@@ -144,7 +144,11 @@ const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
 
           {/* Close Date */}
           <div className="flex items-center space-x-2">
-            <Icon name="Calendar" size={16} className="text-muted-foreground flex-shrink-0" />
+            <Icon
+              name="Calendar"
+              size={16}
+              className="text-muted-foreground flex-shrink-0"
+            />
             <span className={`text-sm font-medium ${closeDateStatus?.color}`}>
               {closeDateStatus?.text}
             </span>
@@ -152,13 +156,19 @@ const DealCard = ({ deal, onEdit, onDelete, onClone }) => {
 
           {/* Priority */}
           <div className="flex items-center justify-between">
-            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(deal?.priority)}`}>
+            <span
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(deal?.priority)}`}
+            >
               {deal?.priority}
             </span>
-            
+
             {/* Probability */}
             <div className="flex items-center space-x-1">
-              <Icon name="TrendingUp" size={14} className="text-muted-foreground" />
+              <Icon
+                name="TrendingUp"
+                size={14}
+                className="text-muted-foreground"
+              />
               <span className="text-sm font-semibold text-foreground">
                 {deal?.probability}%
               </span>

@@ -1,51 +1,51 @@
-import React, { useState } from 'react';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
+import React, { useState } from "react";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
 
 const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const ownerOptions = [
-    { value: 'all', label: 'All Owners' },
-    { value: 'john-doe', label: 'John Doe' },
-    { value: 'sarah-wilson', label: 'Sarah Wilson' },
-    { value: 'mike-johnson', label: 'Mike Johnson' },
-    { value: 'emily-davis', label: 'Emily Davis' },
-    { value: 'alex-chen', label: 'Alex Chen' }
+  const healthOptions = [
+    { value: "all", label: "All Categories" },
+    { value: "active", label: "Active Opportunities" },
+    { value: "scheduled", label: "Scheduled" },
+    { value: "budget_issue", label: "Budget Issue" },
+    { value: "stale", label: "Stale (30+ Days)" },
   ];
 
-  const priorityOptions = [
-    { value: 'all', label: 'All Priorities' },
-    { value: 'High', label: 'High Priority' },
-    { value: 'Medium', label: 'Medium Priority' },
-    { value: 'Low', label: 'Low Priority' }
+  const nextContactOptions = [
+    { value: "all", label: "All Next Contacts" },
+    { value: "today", label: "Due Today" },
+    { value: "7days", label: "Next 7 Days" },
+    { value: "14days", label: "Next 14 Days" },
+    { value: "30days", label: "Next 30 Days" },
+    { value: "overdue", label: "Overdue" },
   ];
 
-  const dateRangeOptions = [
-    { value: 'all', label: 'All Time' },
-    { value: 'this-week', label: 'This Week' },
-    { value: 'this-month', label: 'This Month' },
-    { value: 'this-quarter', label: 'This Quarter' },
-    { value: 'custom', label: 'Custom Range' }
+  const ageOptions = [
+    { value: "all", label: "All Ages" },
+    { value: "0-7", label: "0–7 Days" },
+    { value: "7-30", label: "7–30 Days" },
+    { value: "30+", label: "30+ Days" },
   ];
 
   const handleFilterChange = (key, value) => {
     onFiltersChange({
       ...filters,
-      [key]: value
+      [key]: value,
     });
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters?.owner && filters?.owner !== 'all') count++;
-    if (filters?.priority && filters?.priority !== 'all') count++;
-    if (filters?.dateRange && filters?.dateRange !== 'all') count++;
+
+    if (filters?.health && filters?.health !== "all") count++;
+    if (filters?.nextContact && filters?.nextContact !== "all") count++;
+    if (filters?.leadAge && filters?.leadAge !== "all") count++;
     if (filters?.search && filters?.search?.trim()) count++;
-    if (filters?.minValue && filters?.minValue > 0) count++;
-    if (filters?.maxValue && filters?.maxValue > 0) count++;
+
     return count;
   };
 
@@ -64,7 +64,7 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {activeFiltersCount > 0 && (
             <Button
@@ -83,84 +83,55 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
             size="icon"
             onClick={() => setIsExpanded(!isExpanded)}
             className="lg:hidden"
-            aria-label={isExpanded ? 'Collapse filters' : 'Expand filters'}
+            aria-label={isExpanded ? "Collapse filters" : "Expand filters"}
           >
             <Icon name={isExpanded ? "ChevronUp" : "ChevronDown"} size={16} />
           </Button>
         </div>
       </div>
       {/* Filters Content */}
-      <div className={`space-y-4 ${isExpanded ? 'block' : 'hidden lg:block'}`}>
+      <div className={`space-y-4 ${isExpanded ? "block" : "hidden lg:block"}`}>
         {/* Search and Quick Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Input
-            type="search"
-            placeholder="Search deals..."
-            value={filters?.search || ''}
-            onChange={(e) => handleFilterChange('search', e?.target?.value)}
-            className="w-full"
-          />
-          
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
-            placeholder="Select owner"
-            options={ownerOptions}
-            value={filters?.owner || 'all'}
-            onChange={(value) => handleFilterChange('owner', value)}
+            placeholder="Lead Category"
+            options={healthOptions}
+            value={filters?.health || "all"}
+            onChange={(value) => handleFilterChange("health", value)}
           />
-          
-          <Select
-            placeholder="Select priority"
-            options={priorityOptions}
-            value={filters?.priority || 'all'}
-            onChange={(value) => handleFilterChange('priority', value)}
-          />
-          
-          <Select
-            placeholder="Select date range"
-            options={dateRangeOptions}
-            value={filters?.dateRange || 'all'}
-            onChange={(value) => handleFilterChange('dateRange', value)}
-          />
-        </div>
 
-        {/* Value Range Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            type="number"
-            label="Minimum Deal Value"
-            placeholder="$0"
-            value={filters?.minValue || ''}
-            onChange={(e) => handleFilterChange('minValue', parseFloat(e?.target?.value) || 0)}
-            min="0"
-            step="1000"
+          <Select
+            placeholder="Next Contact"
+            options={nextContactOptions}
+            value={filters?.nextContact || "all"}
+            onChange={(value) => handleFilterChange("nextContact", value)}
           />
-          
-          <Input
-            type="number"
-            label="Maximum Deal Value"
-            placeholder="No limit"
-            value={filters?.maxValue || ''}
-            onChange={(e) => handleFilterChange('maxValue', parseFloat(e?.target?.value) || 0)}
-            min="0"
-            step="1000"
+
+          <Select
+            placeholder="Lead Age"
+            options={ageOptions}
+            value={filters?.leadAge || "all"}
+            onChange={(value) => handleFilterChange("leadAge", value)}
           />
         </div>
 
         {/* Custom Date Range */}
-        {filters?.dateRange === 'custom' && (
+        {filters?.dateRange === "custom" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
             <Input
               type="date"
               label="Start Date"
-              value={filters?.startDate || ''}
-              onChange={(e) => handleFilterChange('startDate', e?.target?.value)}
+              value={filters?.startDate || ""}
+              onChange={(e) =>
+                handleFilterChange("startDate", e?.target?.value)
+              }
             />
-            
+
             <Input
               type="date"
               label="End Date"
-              value={filters?.endDate || ''}
-              onChange={(e) => handleFilterChange('endDate', e?.target?.value)}
+              value={filters?.endDate || ""}
+              onChange={(e) => handleFilterChange("endDate", e?.target?.value)}
             />
           </div>
         )}
@@ -172,7 +143,7 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
               <span className="inline-flex items-center px-3 py-1 text-sm bg-accent text-accent-foreground rounded-full">
                 Search: "{filters?.search}"
                 <button
-                  onClick={() => handleFilterChange('search', '')}
+                  onClick={() => handleFilterChange("search", "")}
                   className="ml-2 hover:text-accent-foreground/80"
                   aria-label="Remove search filter"
                 >
@@ -180,12 +151,13 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
                 </button>
               </span>
             )}
-            
-            {filters?.owner && filters?.owner !== 'all' && (
+
+            {filters?.owner && filters?.owner !== "all" && (
               <span className="inline-flex items-center px-3 py-1 text-sm bg-accent text-accent-foreground rounded-full">
-                Owner: {ownerOptions?.find(o => o?.value === filters?.owner)?.label}
+                Owner:{" "}
+                {ownerOptions?.find((o) => o?.value === filters?.owner)?.label}
                 <button
-                  onClick={() => handleFilterChange('owner', 'all')}
+                  onClick={() => handleFilterChange("owner", "all")}
                   className="ml-2 hover:text-accent-foreground/80"
                   aria-label="Remove owner filter"
                 >
@@ -193,12 +165,12 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
                 </button>
               </span>
             )}
-            
-            {filters?.priority && filters?.priority !== 'all' && (
+
+            {filters?.priority && filters?.priority !== "all" && (
               <span className="inline-flex items-center px-3 py-1 text-sm bg-accent text-accent-foreground rounded-full">
                 Priority: {filters?.priority}
                 <button
-                  onClick={() => handleFilterChange('priority', 'all')}
+                  onClick={() => handleFilterChange("priority", "all")}
                   className="ml-2 hover:text-accent-foreground/80"
                   aria-label="Remove priority filter"
                 >

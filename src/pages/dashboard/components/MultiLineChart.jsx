@@ -1,50 +1,54 @@
 import React, { useState } from "react";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
-const PipelineChart = ({ leads = [] }) => {
+const MultiLineChart = ({ leads = [] }) => {
   // const [selectedYear, setSelectedYear] = useState(2024);
   const [viewType, setViewType] = useState("monthly");
   const now = new Date();
   const currentYearLeads = leads.filter((l) => {
     const d = new Date(l.createdAt);
-    return (
-      d.getFullYear() === now.getFullYear()
-    );
+    return d.getFullYear() === now.getFullYear();
   }).length;
-
   const currentYear = new Date().getFullYear();
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload?.length) {
+    if (active && payload && payload.length) {
       return (
         <div className="bg-popover border border-border rounded-lg p-3 shadow-elevation-2">
           <p className="font-medium text-popover-foreground mb-2">
             {label} {currentYear}
           </p>
+
           <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-primary rounded-full"></div>
-              <span className="text-sm text-popover-foreground">
-                {payload?.[0]?.value} leads
-              </span>
-            </div>
-            
+            {payload.map((entry, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                ></div>
+                <span className="text-sm text-popover-foreground capitalize">
+                  {entry.dataKey} : {entry.value}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       );
     }
     return null;
   };
+
   // get monthly data
 
   const getMonthlyData = () => {
@@ -64,13 +68,19 @@ const PipelineChart = ({ leads = [] }) => {
     ];
     const year = new Date().getFullYear();
 
-    return months.map((m, index) => ({
-      label: m,
-      value: leads.filter((l) => {
+    return months.map((month, index) => {
+      // filter month leads
+      const monthLeads = leads.filter((l) => {
         const d = new Date(l.createdAt);
         return d.getFullYear() === year && d.getMonth() === index;
-      }).length,
-    }));
+      });
+      return {
+        label: month,
+        facebook: monthLeads.filter((l) => l.source === "Facebook").length,
+        ivr: monthLeads.filter((l) => l.source === "IVR").length,
+        website: monthLeads.filter((l) => l.source === "Web Site").length,
+      };
+    });
   };
 
   const getWeeklyData = () => {
@@ -87,7 +97,7 @@ const PipelineChart = ({ leads = [] }) => {
     ];
 
     return weeks.map((w) => {
-      const count = leads.filter((l) => {
+      const weekLeads = leads.filter((l) => {
         const d = new Date(l.createdAt);
         return (
           d.getFullYear() === year &&
@@ -95,11 +105,13 @@ const PipelineChart = ({ leads = [] }) => {
           d.getDate() >= w.start &&
           d.getDate() <= w.end
         );
-      }).length;
+      });
 
       return {
         label: w.label,
-        value: count,
+        facebook: weekLeads.filter((l) => l.source === "Facebook").length,
+        ivr: weekLeads.filter((l) => l.source === "IVR").length,
+        website: weekLeads.filter((l) => l.source === "Web Site").length,
       };
     });
   };
@@ -109,11 +121,14 @@ const PipelineChart = ({ leads = [] }) => {
       const day = new Date();
       day.setDate(day.getDate() - (6 - i));
 
+      const dailyLeads = leads.filter(
+        (l) => new Date(l.createdAt).toDateString() === day.toDateString(),
+      );
       return {
         label: day.toLocaleDateString("en-IN", { weekday: "short" }),
-        value: leads.filter(
-          (l) => new Date(l.createdAt).toDateString() === day.toDateString(),
-        ).length,
+        facebook: dailyLeads.filter((l) => l.source === "Facebook").length,
+        ivr: dailyLeads.filter((l) => l.source === "IVR").length,
+        website: dailyLeads.filter((l) => l.source === "Web Site").length,
       };
     });
   };
@@ -128,6 +143,10 @@ const PipelineChart = ({ leads = [] }) => {
     }
   })();
 
+  const facebookTotal = chartData.reduce((sum, item) => sum + item.facebook, 0);
+  const ivrTotal = chartData.reduce((sum, item) => sum + item.ivr, 0);
+  const websiteTotal = chartData.reduce((sum, item) => sum + item.website, 0);
+  const Total = facebookTotal + ivrTotal + websiteTotal;
   return (
     <motion.div
       className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
@@ -144,29 +163,7 @@ const PipelineChart = ({ leads = [] }) => {
             Monthly deals closed and revenue generated
           </p>
         </div>
-        {/* <div className="flex items-center space-x-2">
-          <Button
-            variant={selectedYear === 2023 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2023)}
-          >
-            2023
-          </Button>
-          <Button
-            variant={selectedYear === 2024 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2024)}
-          >
-            2024
-          </Button>
-          <Button
-            variant={selectedYear === 2025 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2025)}
-          >
-            2025
-          </Button>
-        </div> */}
+
         <div className="flex items-center space-x-2">
           {["monthly", "weekly", "daily"].map((type) => (
             <Button
@@ -183,37 +180,72 @@ const PipelineChart = ({ leads = [] }) => {
       </div>
       <div className="h-80" aria-label="Monthly Pipeline Performance Bar Chart">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+          <LineChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis
-              dataKey="label"
-              stroke="var(--color-muted-foreground)"
-              fontSize={12}
-            />
-            <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2e2e2e" />
+
+            <XAxis dataKey="label" stroke="#888" fontSize={12} />
+
+            <YAxis stroke="#888" fontSize={12} />
+
             <Tooltip content={<CustomTooltip />} />
-            <Bar
-              dataKey="value"
-              fill="var(--color-primary)"
-              radius={[4, 4, 0, 0]}
+
+            <Legend />
+
+            {/* Main Leads Line */}
+            <Line
+              type="monotone"
+              dataKey="facebook"
+              stroke="#1877F2"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
             />
-          </BarChart>
+
+            <Line
+              type="monotone"
+              dataKey="ivr"
+              stroke="#22c55e"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+
+            <Line
+              type="monotone"
+              dataKey="website"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex items-center justify-center space-x-6 mt-4 pt-4 border-t border-border">
-       
+
+      <div className="flex items-center justify-center space-x-8 mt-4 pt-4 border-t border-border text-sm">
         <div className="flex items-center space-x-2">
-          <Icon name="Target" size={16} className="text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-           Leads : {currentYearLeads} / Year
-          </span>
+          <div className="w-3 h-3 rounded-full bg-[#1877F2]" />
+          <span>Facebook: {facebookTotal}</span>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
+          <span>IVR: {ivrTotal}</span>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+          <span>Website: {websiteTotal}</span>
+        </div>
+
+        <div className="flex items-center space-x-2 font-semibold">
+          <Icon name="Target" size={16} />
+          <span>Total: {Total}</span>
         </div>
       </div>
     </motion.div>
   );
 };
 
-export default PipelineChart;
+export default MultiLineChart;

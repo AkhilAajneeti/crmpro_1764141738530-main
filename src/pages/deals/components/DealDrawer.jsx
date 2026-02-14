@@ -12,6 +12,7 @@ import {
   leadActivitesById,
   leadStreamById,
 } from "services/leads.service";
+import { fetchAccounts } from "services/account.service";
 
 const DealDrawer = ({
   deal,
@@ -29,6 +30,7 @@ const DealDrawer = ({
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
+  const [industry, setIndustry] = useState([]);
   const [mockStream, setmockStream] = useState([]);
   const [mockActivities, setActivities] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
@@ -50,6 +52,7 @@ const DealDrawer = ({
     status: "",
     source: "",
     description: "",
+    industry: "",
   });
   useEffect(() => {
     if (mode === "add") {
@@ -69,11 +72,76 @@ const DealDrawer = ({
         status: formData.status || "",
         source: formData.source || "",
         description: formData.description || "",
+        industry: formData.industry || "",
       });
     } else if (deal) {
       setFormData(deal);
     }
   }, [deal, mode]);
+
+  // industries options
+  const INDUSTRIES = [
+    { label: "Advertising", value: "Advertising" },
+    { label: "Aerospace", value: "Aerospace" },
+    { label: "Agriculture", value: "Agriculture" },
+    { label: "Apparel & Accessories", value: "Apparel & Accessories" },
+    { label: "Architecture", value: "Architecture" },
+    { label: "Automotive", value: "Automotive" },
+    { label: "Banking", value: "Banking" },
+    { label: "Biotechnology", value: "Biotechnology" },
+    {
+      label: "Building Materials & Equipment",
+      value: "Building Materials & Equipment",
+    },
+    { label: "Chemical", value: "Chemical" },
+    { label: "Computer", value: "Computer" },
+    { label: "Construction", value: "Construction" },
+    { label: "Consulting", value: "Consulting" },
+    { label: "Creative", value: "Creative" },
+    { label: "Culture", value: "Culture" },
+    { label: "Defense", value: "Defense" },
+    { label: "Education", value: "Education" },
+    { label: "Electric Power", value: "Electric Power" },
+    { label: "Electronics", value: "Electronics" },
+    { label: "Energy", value: "Energy" },
+    { label: "Finance", value: "Finance" },
+    { label: "Food & Beverage", value: "Food & Beverage" },
+    { label: "Grocery", value: "Grocery" },
+    { label: "Healthcare", value: "Healthcare" },
+    { label: "Hospitality", value: "Hospitality" },
+    { label: "Insurance", value: "Insurance" },
+    { label: "Legal", value: "Legal" },
+    { label: "Manufacturing", value: "Manufacturing" },
+    { label: "Marketing", value: "Marketing" },
+    { label: "Mass Media", value: "Mass Media" },
+    { label: "Mining", value: "Mining" },
+    { label: "Music", value: "Music" },
+    { label: "Petroleum", value: "Petroleum" },
+    { label: "Publishing", value: "Publishing" },
+    { label: "Real Estate", value: "Real Estate" },
+    { label: "Retail", value: "Retail" },
+    { label: "Service", value: "Service" },
+    { label: "Shipping", value: "Shipping" },
+    { label: "Software", value: "Software" },
+    { label: "Sports", value: "Sports" },
+    { label: "Support", value: "Support" },
+    { label: "Technology", value: "Technology" },
+    { label: "Telecommunications", value: "Telecommunications" },
+    { label: "Television", value: "Television" },
+    {
+      label: "Testing, Inspection & Certification",
+      value: "Testing, Inspection & Certification",
+    },
+    { label: "Transportation", value: "Transportation" },
+    { label: "Travel", value: "Travel" },
+    { label: "Venture Capital", value: "Venture Capital" },
+    { label: "Water", value: "Water" },
+    { label: "Wholesale", value: "Wholesale" },
+  ];
+const industryOptions = INDUSTRIES?.map((item) => ({
+  value: item.id,
+  label: item.name,
+}));
 
   const [massFields, setMassFields] = useState({
     assignedUserId: false,
@@ -100,6 +168,7 @@ const DealDrawer = ({
     { value: "Follow up", label: "Follow up" },
     { value: "Interested", label: "Interested" },
     { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
+    { value: "Budget Issue", label: "Budget Issue" },
   ];
   const SOURCE_OPTIONS = [
     { value: "Call", label: "Call" },
@@ -344,13 +413,15 @@ const DealDrawer = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, teamRes] = await Promise.all([
+        const [usersRes, teamRes, accRes] = await Promise.all([
           fetchUser(),
           fetchTeam(),
+          fetchAccounts(),
         ]);
 
         setUsers(usersRes.list || []);
         setTeam(teamRes.list || []);
+        setIndustry(accRes.list || []);
       } catch (err) {
         console.error("Failed to load data", err);
       }
@@ -369,6 +440,10 @@ const DealDrawer = ({
     value: t.id,
     label: t.name,
   }));
+  // const industryOptions = industry?.map((t) => ({
+  //   value: t.industry,
+  //   label: t.industry,
+  // }));
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
@@ -547,14 +622,27 @@ const DealDrawer = ({
                         }
                       />
                     </div>
-
-                    <Input
-                      label="cQuestion"
-                      value={formData.cQuestion || ""}
-                      onChange={(e) =>
-                        handleChange("cQuestion", e.target.value)
-                      }
-                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                      <Input
+                        label="Preference"
+                        value={formData.cQuestion || ""}
+                        onChange={(e) =>
+                          handleChange("cQuestion", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                      <Select
+                        label="Industry"
+                        value={formData.industry || ""}
+                        options={INDUSTRIES} // 👉 later API se teams
+                        onChange={(value) =>
+                          handleSelectChange("industry", value)
+                        }
+                      />
+                    </div>
                   </div>
 
                   {/* ================= Assigned User ================= */}
@@ -660,7 +748,7 @@ const DealDrawer = ({
                     <Select
                       label="Team"
                       value={formData.teamId}
-                      options={teamOptions}
+                      options={industryOptions}
                       disabled={!massFields.teamId}
                       onChange={(v) => handleChange("teamId", v)}
                     />
@@ -839,6 +927,15 @@ const DealDrawer = ({
                             </p>
                             <p className="text-foreground font-medium">
                               {deal?.source || "—"}
+                            </p>
+                          </div>
+                          {/* Source */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Industry
+                            </p>
+                            <p className="text-foreground font-medium">
+                              {deal?.industry || "—"}
                             </p>
                           </div>
 

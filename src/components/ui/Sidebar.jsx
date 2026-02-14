@@ -78,7 +78,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     {
       label: 'Pipeline',
       path: '/pipeline',
-      icon: 'Pipe',
+      icon: 'Filter',
       badge: null
     },
     {

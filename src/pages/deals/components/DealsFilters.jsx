@@ -33,6 +33,7 @@ const DealsFilters = ({
     { value: "Invalid", label: "Invalid" },
     { value: "Qualified", label: "Qualified" },
     { value: "Broker", label: "Broker" },
+    { value: "Budget Issue", label: "Budget Issue" },
   ];
   const sourceOptions = [
     { value: "Call", label: "Call" },
