@@ -21,6 +21,8 @@ import { fetchTeam } from "services/team.service";
 import { fetchAccStreamById } from "services/account.service";
 import { deleteTasks } from "services/tasks.service";
 const AccountDrawer = ({
+  accType,
+  industry,
   account,
   isOpen,
   onClose,
@@ -80,62 +82,6 @@ const AccountDrawer = ({
     shippingAddressCountry: "",
     shippingAddressPostalCode: "",
   });
-
-  // industries options
-  const INDUSTRIES = [
-    "Advertising",
-    "Aerospace",
-    "Agriculture",
-    "Apparel & Accessories",
-    "Architecture",
-    "Automotive",
-    "Banking",
-    "Biotechnology",
-    "Building Materials & Equipment",
-    "Chemical",
-    "Computer",
-    "Construction",
-    "Consulting",
-    "Creative",
-    "Culture",
-    "Defense",
-    "Education",
-    "Electric Power",
-    "Electronics",
-    "Energy",
-    "Entertainment & Leisure",
-    "Finance",
-    "Food & Beverage",
-    "Grocery",
-    "Healthcare",
-    "Hospitality",
-    "Insurance",
-    "Legal",
-    "Manufacturing",
-    "Marketing",
-    "Mass Media",
-    "Mining",
-    "Music",
-    "Petroleum",
-    "Publishing",
-    "Real Estate",
-    "Retail",
-    "Service",
-    "Shipping",
-    "Software",
-    "Sports",
-    "Support",
-    "Technology",
-    "Telecommunications",
-    "Television",
-    "Testing, Inspection & Certification",
-    "Transportation",
-    "Travel",
-    "Venture Capital",
-    "Water",
-    "Wholesale",
-  ];
-  const TYPE = ["Customer", "Investor", "Partner", "Reseller"];
 
   useEffect(() => {
     if (account && (drawerMode === "view" || drawerMode === "edit")) {
@@ -358,6 +304,18 @@ const AccountDrawer = ({
     value: t.id,
     label: t.name,
   }));
+  const IndustryOptions = industry
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
+  const accountType = accType
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
 
   const handleUpdate = async () => {
     if (!validateForm()) return;
@@ -919,34 +877,24 @@ const AccountDrawer = ({
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <select
+                      <Select
+                        label="Type"
                         name="type"
-                        value={formData?.type}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        <option value="">Type</option>
-                        {TYPE.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
+                        value={formData.type}
+                        options={accountType}
+                        onChange={(value) => handleSelectChange("type", value)}
+                      />
                     </div>
                     <div>
-                      <select
+                      <Select
+                        label="Industry"
                         name="industry"
-                        value={formData.industry}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        <option value="">Select industry</option>
-                        {INDUSTRIES.map((industry) => (
-                          <option key={industry} value={industry}>
-                            {industry}
-                          </option>
-                        ))}
-                      </select>
+                        value={formData.industry || ""}
+                        options={IndustryOptions}
+                        onChange={(value) =>
+                          handleSelectChange("industry", value)
+                        }
+                      />
                     </div>
                     <div className="col-span-2">
                       <textarea
@@ -1019,10 +967,12 @@ const AccountDrawer = ({
                     />
                     <Select
                       label="Industry"
-                      value={formData.industry}
-                      options={INDUSTRIES.map((i) => ({ label: i, value: i }))}
-                      disabled={!massFields.industry}
-                      onChange={(v) => handleChange("industry", v)}
+                      name="industry"
+                      value={formData.industry || ""}
+                      options={IndustryOptions}
+                      onChange={(value) =>
+                        handleSelectChange("industry", value)
+                      }
                     />
                   </div>
                 </div>
@@ -1038,7 +988,7 @@ const AccountDrawer = ({
                     <Select
                       label="Type"
                       value={formData.type}
-                      options={TYPE.map((t) => ({ label: t, value: t }))}
+                      options={accountType}
                       disabled={!massFields.type}
                       onChange={(v) => handleChange("type", v)}
                     />
@@ -1279,34 +1229,24 @@ const AccountDrawer = ({
                           </label>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <select
-                                name="type"
-                                value={formData?.type}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border rounded-lg"
-                              >
-                                <option value="">Type</option>
-                                {TYPE.map((type) => (
-                                  <option key={type} value={type}>
-                                    {type}
-                                  </option>
-                                ))}
-                              </select>
+                              <Select
+                                label="Type"
+                                value={formData.type}
+                                options={accountType}
+                                disabled={!massFields.type}
+                                onChange={(v) => handleChange("type", v)}
+                              />
                             </div>
                             <div>
-                              <select
+                              <Select
+                                label="Industry"
                                 name="industry"
-                                value={formData.industry}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border rounded-lg"
-                              >
-                                <option value="">Select industry</option>
-                                {INDUSTRIES.map((industry) => (
-                                  <option key={industry} value={industry}>
-                                    {industry}
-                                  </option>
-                                ))}
-                              </select>
+                                value={formData.industry || ""}
+                                options={IndustryOptions}
+                                onChange={(value) =>
+                                  handleSelectChange("industry", value)
+                                }
+                              />
                             </div>
                             <div className="col-span-2">
                               <textarea

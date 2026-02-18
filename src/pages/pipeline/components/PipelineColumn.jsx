@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
@@ -12,7 +12,9 @@ const PipelineColumn = ({
   onEditDeal,
   onDeleteDeal,
   onCloneDeal,
+  onViewHistory,
 }) => {
+  const[isOver,setIsOver]=useState(false);
   const getStageColor = (stageName) => {
     const colors = {
       New: "bg-blue-100 text-blue-800 border-blue-200",
@@ -38,15 +40,22 @@ const PipelineColumn = ({
   };
 
   const handleDragOver = (e) => {
-    e?.preventDefault();
+    e.preventDefault();
+    setIsOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
   };
 
   const handleDrop = (e) => {
-    e?.preventDefault();
-    const dealId = e?.dataTransfer?.getData("text/plain");
-    if (dealId && onDealMove) {
-      onDealMove(dealId, stage?.id);
-    }
+    e.preventDefault();
+    setIsOver(false);
+
+    const dealId = e.dataTransfer.getData("text/plain");
+    if (!dealId) return;
+
+    onDealMove(dealId, stage.id);
   };
 
   return (
@@ -64,25 +73,14 @@ const PipelineColumn = ({
               {deals?.length} deal{deals?.length !== 1 ? "s" : ""}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onAddDeal(stage?.id)}
-            className="h-8 w-8 hover:bg-primary/10"
-            aria-label={`Add deal to ${stage?.name}`}
-          >
-            <Icon name="Plus" size={16} />
-          </Button>
-        </div>
-
-        <div className="text-xl font-bold text-primary">
-          {formatCurrency(getTotalValue())}
         </div>
       </div>
       {/* Deals Container */}
       <div
-        className="flex-1 p-3 space-y-3 overflow-y-auto min-h-0"
+        className={`flex-1 p-3 space-y-3 overflow-y-auto min-h-0 transition-all
+        ${isOver ? "bg-primary/10 border-2 border-primary border-dashed" : ""} `}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         {deals?.length === 0 ? (
@@ -105,7 +103,7 @@ const PipelineColumn = ({
               iconSize={14}
               className="font-medium"
             >
-              Add Deal
+              Add Leads
             </Button>
           </div>
         ) : (
@@ -121,6 +119,7 @@ const PipelineColumn = ({
                 onEdit={() => onEditDeal(deal)}
                 onDelete={() => onDeleteDeal(deal?.id)}
                 onClone={() => onCloneDeal(deal)}
+                onViewHistory={onViewHistory}
               />
             </motion.div>
           ))

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Pie, PieChart, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { motion } from "framer-motion";
-import Icon from "../../../components/AppIcon";
-import Button from "../../../components/ui/Button";
+import Button from "components/ui/Button";
+import Icon from "components/AppIcon";
 
 const COLORS = [
   "#1877F2",
@@ -12,8 +12,7 @@ const COLORS = [
   "#8b5cf6",
   "#06b6d4",
 ];
-
-const IndustryChart = ({ leads = [] }) => {
+const IndustryChart = ({ leads = [] ,headerDirection="row"}) => {
   const [viewType, setViewType] = useState("monthly");
 
   // 🔥 Filter leads based on view type
@@ -89,7 +88,7 @@ const IndustryChart = ({ leads = [] }) => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-col">
+      <div className={`flex items-center justify-between mb-6 ${headerDirection === "row" ? "flex-row" : "flex-col"}`}>
         <div>
           <h3 className="text-lg font-semibold text-card-foreground">
             Industry Breakdown
@@ -141,9 +140,9 @@ const IndustryChart = ({ leads = [] }) => {
       </div>
 
       {/* Bottom Summary */}
-      <div className="flex flex-wrap justify-start gap-6 mt-6 pt-4 border-t border-border text-sm">
+      <div className="flex flex-wrap justify-start gap-6 mt-6 pt-4 border-t border-border text-sm overflow-x-scroll">
         {chartData.map((item, index) => (
-          <div key={item.name} className="flex items-center space-x-2">
+          <div key={item.name} className="flex items-center space-x-2 ">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}

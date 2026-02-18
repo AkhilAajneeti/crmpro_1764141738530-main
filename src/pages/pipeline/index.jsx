@@ -8,11 +8,16 @@ import PipelineColumn from "./components/PipelineColumn";
 import PipelineFilters from "./components/PipelineFilters";
 import AddDealModal from "./components/AddDealModal";
 import PipelineStats from "./components/PipelineStats";
-import { fetchLeads } from "services/leads.service";
+import { deleteActivity, deleteLead, fetchLeads } from "services/leads.service";
+import VersionHistoryModal from "./components/VersionHistoryModal";
+import toast from "react-hot-toast";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 
 const Pipeline = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddDealModalOpen, setIsAddDealModalOpen] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [selectedDealForHistory, setSelectedDealForHistory] = useState(null);
   const [selectedStage, setSelectedStage] = useState(null);
   const [deals, setDeals] = useState([]);
   const [filters, setFilters] = useState({
@@ -29,7 +34,23 @@ const Pipeline = () => {
     const loadLeads = async () => {
       try {
         const data = await fetchLeads();
-        setDeals(data.list || []);
+        const normalizedDeals = (data.list || []).map((item) => ({
+          id: item.id,
+          title: item.firstName + " " + item.lastName,
+          stage: "active", // default stage until you build real deal stages
+          status: item.status,
+          source: item.source,
+          value: item.opportunityAmount || 0,
+          owner: {
+            id: item.assignedUserId,
+            name: item.assignedUserName,
+          },
+          createdAt: item.createdAt,
+          cNextContact: item.cNextContactAt,
+        }));
+
+        setDeals(normalizedDeals);
+
         console.log(data.list);
       } catch (error) {
         console.log("failed to fetch data", error);
@@ -61,10 +82,6 @@ const Pipeline = () => {
     { id: "stale", name: "Stale (30+ Days)", color: "gray" },
   ];
 
-  useEffect(() => {
-    setDeals(deals);
-  }, []);
-
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -77,19 +94,62 @@ const Pipeline = () => {
     setSelectedStage(stageId);
     setIsAddDealModalOpen(true);
   };
+  const handleVersionModal = () => {
+    setIsVersionModalOpen(true);
+    setSelectedDealForHistory(null); // board level history
+  };
 
   const handleSaveDeal = (newDeal) => {
     setDeals((prevDeals) => [...prevDeals, newDeal]);
   };
 
-  const handleDealMove = (dealId, newStageId) => {
-    setDeals((prevDeals) =>
-      prevDeals?.map((deal) =>
-        deal?.id === dealId
-          ? { ...deal, stage: newStageId, updatedAt: new Date()?.toISOString() }
+  const handleDealMove = async (dealId, newStageId) => {
+    const oldDeal = deals.find((d) => d.id === dealId);
+
+    setDeals((prev) =>
+      prev.map((deal) =>
+        deal.id === dealId
+          ? { ...deal, stage: newStageId, updatedAt: new Date().toISOString() }
           : deal,
       ),
     );
+
+    try {
+      // optional backend update
+      // await updateLead(dealId, { pipelineStage: newStageId });
+
+      toast.success(`Moved to ${newStageId}`);
+    } catch (err) {
+      toast.error("Failed to update stage");
+    }
+  };
+
+  const handleDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    if (destination.droppableId === source.droppableId) return;
+
+    // 🔥 Update local state
+    setDeals((prev) =>
+      prev.map((deal) =>
+        deal.id === draggableId
+          ? { ...deal, stage: destination.droppableId }
+          : deal,
+      ),
+    );
+
+    // 🔥 Update backend
+    try {
+      await updateLead(draggableId, {
+        pipelineStage: destination.droppableId,
+      });
+
+      toast.success("Stage updated successfully");
+    } catch (err) {
+      toast.error("Failed to update stage");
+    }
   };
 
   const handleEditDeal = (deal) => {
@@ -99,7 +159,16 @@ const Pipeline = () => {
 
   const handleDeleteDeal = (dealId) => {
     if (window.confirm("Are you sure you want to delete this deal?")) {
-      setDeals((prevDeals) => prevDeals?.filter((deal) => deal?.id !== dealId));
+      const deleteLeads = async () => {
+        try {
+          await deleteLead(dealId);
+          toast.success("Deal deleted successfully ✅");
+        } catch (err) {
+          toast.error("Failed to delete deal ❌");
+        }
+      };
+
+      deleteLeads();
     }
   };
 
@@ -130,8 +199,10 @@ const Pipeline = () => {
       endDate: "",
     });
   };
-
-
+  const handleOpenVersionHistory = (dealId) => {
+    setSelectedDealForHistory(dealId);
+    setIsVersionModalOpen(true);
+  };
 
   // const filteredDeals = getFilteredDeals();
   const filteredDeals = useMemo(() => {
@@ -179,7 +250,9 @@ const Pipeline = () => {
 
   const classifyDeal = (deal) => {
     const now = new Date();
-    const createdAt = new Date(deal.createdAt);
+    const createdAt = deal?.createdAt
+      ? new Date(deal.createdAt.replace(" ", "T"))
+      : null;
     const nextContact = deal?.cNextContact
       ? new Date(deal.cNextContact.replace(" ", "T"))
       : null;
@@ -187,7 +260,7 @@ const Pipeline = () => {
     const diffCreatedDays = (now - createdAt) / (1000 * 60 * 60 * 24);
 
     // 1️⃣ Budget Issue (based on status)
-    if (deal?.status === "Budget Issue") {
+    if (deal?.status === "Low Budget") {
       return "budget_issue";
     }
 
@@ -235,37 +308,17 @@ const Pipeline = () => {
                 functionality
               </p>
             </div>
-
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                iconName="Download"
-                iconPosition="left"
-                iconSize={16}
-              >
-                Export Pipeline
-              </Button>
-              <Button
-                variant="default"
-                onClick={() => handleAddDeal()}
-                iconName="Plus"
-                iconPosition="left"
-                iconSize={16}
-              >
-                Add Deal
-              </Button>
-            </div>
           </div>
 
           {/* Pipeline Stats */}
           <PipelineStats deals={filteredDeals} />
 
           {/* Filters */}
-          <PipelineFilters
+          {/* <PipelineFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onResetFilters={handleResetFilters}
-          />
+          /> */}
 
           {/* Pipeline Board */}
           <div className="bg-card border border-border rounded-xl p-6">
@@ -276,52 +329,42 @@ const Pipeline = () => {
                   <h2 className="text-xl font-bold text-card-foreground">
                     Pipeline Board
                   </h2>
-                  <p className="text-base font-medium text-foreground">
-                    {filteredDeals?.length} deal
-                    {filteredDeals?.length !== 1 ? "s" : ""} •
-                    <span className="text-primary font-semibold ml-1">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        minimumFractionDigits: 0,
-                      })?.format(
-                        filteredDeals?.reduce(
-                          (sum, deal) => sum + deal?.value,
-                          0,
-                        ),
-                      )}
-                    </span>
-                  </p>
                 </div>
               </div>
+              {/* <Button variant="default" onClick={() => handleVersionModal()}>
+                Version Control
+              </Button> */}
             </div>
 
             {/* Kanban Board with Horizontal Scroll */}
-            <div className="overflow-x-auto">
-              <div className="flex gap-6 min-h-[600px] w-max min-w-full">
-                {pipelineSections?.map((stage) => (
-                  <motion.div
-                    key={stage?.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      delay: pipelineSections?.indexOf(stage) * 0.1,
-                    }}
-                    className="flex-shrink-0 w-80 h-full"
-                  >
-                    <PipelineColumn
-                      stage={stage}
-                      deals={getDealsBySection(stage?.id)}
-                      onDealMove={handleDealMove}
-                      onAddDeal={handleAddDeal}
-                      onEditDeal={handleEditDeal}
-                      onDeleteDeal={handleDeleteDeal}
-                      onCloneDeal={handleCloneDeal}
-                    />
-                  </motion.div>
-                ))}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="overflow-x-auto">
+                <div className="flex gap-6 min-h-[600px] w-max min-w-full">
+                  {pipelineSections?.map((stage) => (
+                    <motion.div
+                      key={stage?.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{
+                        delay: pipelineSections?.indexOf(stage) * 0.1,
+                      }}
+                      className="flex-shrink-0 w-80 h-full"
+                    >
+                      <PipelineColumn
+                        stage={stage}
+                        deals={getDealsBySection(stage?.id)}
+                        onViewHistory={handleOpenVersionHistory}
+                        onDealMove={handleDealMove}
+                        onAddDeal={handleAddDeal}
+                        onEditDeal={handleEditDeal}
+                        onDeleteDeal={handleDeleteDeal}
+                        onCloneDeal={handleCloneDeal}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </DragDropContext>
           </div>
 
           {/* Mobile Pipeline View */}
@@ -384,6 +427,11 @@ const Pipeline = () => {
         onClose={() => setIsAddDealModalOpen(false)}
         onSave={handleSaveDeal}
         initialStage={selectedStage}
+      />
+      <VersionHistoryModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+        dealId={selectedDealForHistory}
       />
     </div>
   );

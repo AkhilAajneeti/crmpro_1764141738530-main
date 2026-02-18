@@ -34,6 +34,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: '12'
     },
     {
+      label: 'Projects',
+      path: '/projects',
+      icon: 'Layers',
+      badge: '12'
+    },
+    {
       label: 'Task',
       path: '/tasks',
       icon: 'ListChecks',

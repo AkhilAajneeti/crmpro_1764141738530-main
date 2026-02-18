@@ -6,47 +6,19 @@ import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 
 const DealsFilters = ({
-  filters, 
+  filters,
   onFiltersChange,
   onClearFilters,
   dealCount,
   onBulkAction,
   selectedCount,
-  toggleAnalytics
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "New", label: "New" },
-    { value: "Converted", label: "Converted" },
-    { value: "Dead", label: "Dead" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Not Interested", label: "Not Interested" },
-    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
-    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
-    { value: "Site Visit Done", label: "Site Visit Done" },
-    { value: "Invalid", label: "Invalid" },
-    { value: "Qualified", label: "Qualified" },
-    { value: "Broker", label: "Broker" },
-    { value: "Budget Issue", label: "Budget Issue" },
-  ];
-  const sourceOptions = [
-    { value: "Call", label: "Call" },
-    { value: "Existing Customer", label: "Existing Customer" },
-    { value: "Facebook", label: "Facebook" },
-    { value: "Import", label: "Import" },
-    { value: "IVR", label: "IVR" },
-    { value: "Web Site", label: "Web Site" },
-  ];
 
   const bulkActions = [
-    { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
+    { value: "massupdate", label: "Mass Update", icon: "Update" },
     { value: "export", label: "Export Selected", icon: "Download" },
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
@@ -58,16 +30,15 @@ const DealsFilters = ({
     });
   };
 
+  const handleBulkActionSelect = (action) => {
+    onBulkAction(action);
+    setShowBulkActions(false);
+  };
   useEffect(() => {
     fetchUser()
       .then((res) => setAssignUser(res.list || []))
       .catch((err) => console.error("User fetch failed", err));
   }, []);
-
-  const handleBulkActionSelect = (action) => {
-    onBulkAction(action);
-    setShowBulkActions(false);
-  };
 
   const activeFiltersCount = Object.values(filters)?.filter(
     (value) => value !== "" && value !== null && value !== undefined,
@@ -82,7 +53,7 @@ const DealsFilters = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-foreground">
-            leads ({dealCount?.toLocaleString()})
+            Deals ({dealCount?.toLocaleString()})
           </h2>
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">
@@ -179,35 +150,13 @@ const DealsFilters = ({
         />
 
         <Select
-          placeholder="Status"
-          options={statusOptions}
-          value={filters?.status || ""}
-          onChange={(value) => handleFilterChange("status", value)}
-        />
-
-        <Input
-          placeholder="Project Name"
-          value={filters?.projectName || ""}
-          onChange={(e) => handleFilterChange("projectName", e.target.value)}
-        />
-
-        <Select
-          placeholder="Source"
-          options={sourceOptions}
-          value={filters?.source || ""}
-          onChange={(value) => handleFilterChange("source", value)}
-        />
-        <Select
           placeholder="Assign User"
           options={assignUserOptions}
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
         />
-      </div>
-      {/* Advanced Filters Toggle */}
-      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
-        <div className="flex items-center space-x-4">
-          <Input
+
+         <Input
             type="date"
             placeholder="Close date from"
             value={filters?.closeDateFrom || ""}
@@ -223,10 +172,9 @@ const DealsFilters = ({
               handleFilterChange("closeDateTo", e?.target?.value)
             }
           />
-        </div>
-        <Button onClick={toggleAnalytics}>
-          <Icon name="Plus" size={16} className="mr-2" />
-          Anaylze By Chart
+           <Button variant="outline" size="sm">
+          <Icon name="Download" size={16} className="mr-1" />
+          Export All
         </Button>
       </div>
     </div>

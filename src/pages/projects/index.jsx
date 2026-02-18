@@ -11,58 +11,49 @@ import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
 import {
-  createLead,
+  createTasks,
+  deleteTasks,
+  fetchTasks,
+  updateTasks,
+  bulkDeleteTasks,
+  fetchTasksById,
   deleteActivity,
-  deleteLead,
-  fetchLeads,
-  fetchLeadsById,
-  updateLead,
-} from "services/leads.service";
-import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
+} from "services/tasks.service";
 import {
-  fetchIndustries,
-  fetchSources,
-  fetchStatus,
-} from "services/others.service";
-import StatusChart from "./components/charts/StatusChart";
-import SourceChart from "./components/charts/SourceChart";
-import IndustryChart from "./components/charts/IndustryChart";
-import AssignedUserChart from "./components/charts/AssignedUserChart";
-import MultiLineChart from "pages/dashboard/components/MultiLineChart";
+  bulkDeleteProject,
+  createProject,
+  deleteProject,
+  fetchProjects,
+  fetchProjectsById,
+  updateProject,
+} from "services/projects.service";
 
-const DealsPage = () => {
+const ProjectsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
   const [leads, setLeads] = useState([]);
-  const [source, setSource] = useState([]);
-  const [status, setStatus] = useState([]);
-  const [industry, setIndustry] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
-  const [leadsDetails, setLeadsDetails] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
   const [sortConfig, setSortConfig] = useState({
-    key: "createdAt",
-    direction: "desc",
+    key: "name",
+    direction: "asc",
   });
   const [filters, setFilters] = useState({
     search: "",
     status: "",
-    projectName: "",
-    source: "",
+    priority: "",
     assignUser: "",
     closeDateFrom: "",
     closeDateTo: "",
   });
 
   useEffect(() => {
-    const loadContact = async () => {
+    const loadProjects = async () => {
       try {
-        const data = await fetchLeads();
+        const data = await fetchProjects();
         setLeads(data.list);
         console.log(data.list);
       } catch (error) {
@@ -70,88 +61,23 @@ const DealsPage = () => {
       } finally {
       }
     };
-    loadContact();
-  }, []);
-  // fetch sources
-  useEffect(() => {
-    const loadSource = async () => {
-      try {
-        const data = await fetchSources();
-        setSource(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadSource();
-  }, []);
-  // fetch status
-  useEffect(() => {
-    const loadStatus = async () => {
-      try {
-        const data = await fetchStatus();
-        setStatus(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadStatus();
-  }, []);
-  useEffect(() => {
-    const loadIndustry = async () => {
-      try {
-        const data = await fetchIndustries();
-        setIndustry(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadIndustry();
+    loadProjects();
   }, []);
   // Mock deals data
-  useEffect(() => {
-    if (!selectedDeal?.id || mode !== "view") return;
+  const handleDealClick = async (deal) => {
+    try {
+      setMode("view");
+      setIsDrawerOpen(true);
 
-    fetchLeadsById(selectedDeal.id)
-      .then(setLeadsDetails)
-      .catch((err) => console.error("Failed to fetch lead detail", err));
-  }, [selectedDeal?.id, mode]);
+      // 🔥 fetch task detail by ID
+      const data = await fetchProjectsById(deal.id);
 
-  const exportLeadsToCSV = (rows, fileName = "leads_export") => {
-    if (!rows || rows.length === 0) {
-      toast.error("No data to export");
-      return;
+      // ✅ pass fetched task to drawer
+      setSelectedDeal(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load task details");
     }
-
-    const exportData = rows.map((lead) => ({
-      Name: lead?.name || "",
-      Email: lead?.emailAddress || "",
-      Phone: lead?.phoneNumber || "",
-      Status: lead?.status || "",
-      Source: lead?.source || "",
-      "Project Name": lead?.cProjectName || "",
-      "Assigned User": lead?.assignedUserName || "",
-      "Next Contact": lead?.cNextContact || "",
-      "Created At": lead?.createdAt || "",
-    }));
-
-    const csv = Papa.unparse(exportData);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.csv`;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   // Filter and sort deals
@@ -169,33 +95,25 @@ const DealsPage = () => {
       const matchesStatus =
         !filters?.status || deal?.status === filters?.status;
 
-      const matchesSource =
-        !filters?.source || deal?.source === filters?.source;
-
-      const matchesprojectName =
-        !filters?.projectName ||
-        deal?.cProjectName
-          ?.toLowerCase()
-          .includes(filters.projectName.toLowerCase());
+      const matchesPriority =
+        !filters?.priority || deal?.priority === filters?.priority;
 
       const matchesAssignUser =
-        !filters?.assignUser || deal?.assignedUserId === filters?.assignUser;
+        !filters.assignUser ||
+        String(deal.assignedUserId) === String(filters.assignUser);
 
       const matchesCreatedFrom =
         !filters?.closeDateFrom ||
-        new Date(deal?.createdAt?.replace(" ", "T")) >=
-          new Date(filters?.closeDateFrom);
+        new Date(deal?.createdAt) >= new Date(filters?.closeDateFrom);
 
       const matchesCreatedTo =
         !filters?.closeDateTo ||
-        new Date(deal?.createdAt?.replace(" ", "T")) <=
-          new Date(filters?.closeDateTo);
+        new Date(deal?.createdAt) <= new Date(filters?.closeDateTo);
 
       return (
         matchesSearch &&
         matchesStatus &&
-        matchesSource &&
-        matchesprojectName &&
+        matchesPriority &&
         matchesAssignUser &&
         matchesCreatedFrom &&
         matchesCreatedTo
@@ -230,6 +148,38 @@ const DealsPage = () => {
 
   const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
 
+  const exportLeadsToCSV = (rows, fileName = "leads_export") => {
+    if (!rows || rows.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = rows.map((lead) => ({
+      Name: lead?.name || "",
+      Email: lead?.emailAddress || "",
+      Phone: lead?.phoneNumber || "",
+      Status: lead?.status || "",
+      Source: lead?.source || "",
+      "Project Name": lead?.cProjectName || "",
+      "Assigned User": lead?.assignedUserName || "",
+      "Next Contact": lead?.cNextContact || "",
+      "Created At": lead?.createdAt || "",
+    }));
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -244,50 +194,91 @@ const DealsPage = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleDealClick = (deal) => {
-    setSelectedDeal(deal);
-    setMode("view");
-    setIsDrawerOpen(true);
-  };
-
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
-    setLeadsDetails(null);
+    setMode("view");
   };
+
   const handleCreateLead = async (payload) => {
     try {
-      await createLead(payload); // API
-      toast.success("Lead created successfully");
+      await createProject(payload); // API
+      toast.success("Project created successfully");
     } catch (err) {
-      console.error("Lead creationd failed", err);
+      console.error("Project creationd failed", err);
+      toast.error("Project is not created!");
     }
   };
 
-  const handleUpdateLead = async (id, payload) => {
-    await updateLead(id, payload);
+  const handleUpdateTasks = async (id, payload) => {
+    try {
+      await updateProject(id, payload);
+      toast.success("Project Update successfully");
+    } catch (err) {
+      console.error("Project updation failed", err);
+      toast.error("Project is not Update!");
+    }
+  };
+  const handleBulkUpdateTasks = async (ids, payload) => {
+    try {
+      toast.loading("Updating projects...", { id: "bulk-update" });
+
+      await Promise.all(ids.map((id) => updateProject(id, payload)));
+
+      toast.success(`${ids.length} Projects updated`, { id: "bulk-update" });
+      setSelectedDeals([]); 
+    } catch (err) {
+      console.error(err);
+      toast.error("Mass update failed", { id: "bulk-update" });
+    }
   };
 
+  //deletion delete
   const handleDeleteLead = async (id) => {
     try {
-      toast.loading("Deleting lead...", { id: "delete-lead" });
-      await deleteLead(id); // API call
-      toast.success("Lead deleted successfully", {
-        id: "delete-lead",
+      toast.loading("Deleting Project...", { id: "delete-project" });
+      await deleteProject(id); // API call
+      toast.success("Project deleted successfully", {
+        id: "delete-project",
       });
     } catch (err) {
       console.error("Delete failed", err);
     }
   };
-  const handleDeleteActivity = async (id) => {
+  const handleBulkDelete = async () => {
+    if (!selectedDeals.length) {
+      toast.error("Please select at least one projects");
+      return;
+    }
+
+    const ok = window.confirm(
+      `Delete ${selectedDeals.length} selected projects?`,
+    );
+    if (!ok) return;
+
     try {
-      await deleteActivity(id); // API call
-      toast.success("Activity deleted successfully");
+      toast.loading("Deleting projects...", { id: "bulk-delete" });
+
+      await bulkDeleteProject(selectedDeals);
+
+      // ✅ Remove from UI
+      setLeads((prev) =>
+        prev.filter((task) => !selectedDeals.includes(task.id)),
+      );
+
+      // ✅ Clear selection
+      setSelectedDeals([]);
+
+      toast.success("Project deleted successfully", {
+        id: "bulk-delete",
+      });
     } catch (err) {
-      console.error("Delete failed", err);
+      console.error("Bulk delete failed", err);
+      toast.error("Failed to delete Project", {
+        id: "bulk-delete",
+      });
     }
   };
-
   const handleSelectDeal = (dealId, isSelected) => {
     if (isSelected) {
       setSelectedDeals([...selectedDeals, dealId]);
@@ -331,28 +322,19 @@ const DealsPage = () => {
     setFilters({
       search: "",
       status: "",
-      projectName: "",
-      source: "",
+      priority: "",
       assignUser: "",
       closeDateFrom: "",
       closeDateTo: "",
     });
     setCurrentPage(1);
   };
-  const handleBulkAction = (action) => {
-    if (action === "mass-update") {
-      if (!selectedDeals.length) {
-        toast.error("Select at least one lead");
-        n;
-      }
-      setSelectedDeal(null);
-      setLeadsDetails(null);
-      setMode("mass-update");
-      setIsDrawerOpen(true);
 
+  const handleBulkAction = (action) => {
+    if (!selectedDeals.length) {
+      toast.error("Please select at least one task");
       return;
     }
-
     if (action === "export") {
       if (!selectedDeals.length) {
         toast.error("Select at least one lead");
@@ -368,40 +350,12 @@ const DealsPage = () => {
     }
 
     if (action === "delete") {
-      if (!selectedDeals.length) {
-        toast.error("Select at least one lead");
-        return;
-      }
-
-      setShowDeleteConfirm(true);
-      return;
+      handleBulkDelete();
     }
 
-    if (action === "stage" || action === "owner") {
-      // later mass update drawer
-    }
-  };
-  const handleConfirmBulkDelete = async () => {
-    try {
-      toast.loading("Deleting leads...", { id: "bulk-delete" });
-
-      await Promise.all(selectedDeals.map((id) => deleteLead(id)));
-
-      setLeads((prev) =>
-        prev.filter((lead) => !selectedDeals.includes(lead.id)),
-      );
-
-      setSelectedDeals([]);
-      setShowDeleteConfirm(false);
-
-      toast.success("Selected leads deleted", {
-        id: "bulk-delete",
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete leads", {
-        id: "bulk-delete",
-      });
+    if (action === "massupdate") {
+      setMode("mass-update");
+      setIsDrawerOpen(true);
     }
   };
 
@@ -413,27 +367,6 @@ const DealsPage = () => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
   };
-  const handleBulkUpdateLeads = async (payload) => {
-    try {
-      toast.loading("Updating leads...", { id: "bulk-update" });
-
-      await Promise.all(selectedDeals.map((id) => updateLead(id, payload)));
-
-      toast.success(`${selectedDeals.length} leads updated`, {
-        id: "bulk-update",
-      });
-
-      // refresh UI
-      const data = await fetchLeads();
-      setLeads(data.list);
-
-      setSelectedDeals([]);
-      setIsDrawerOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Mass update failed", { id: "bulk-update" });
-    }
-  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -443,7 +376,7 @@ const DealsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Leads - Aajneeti Connect ltd</title>
+        <title>Projects - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
@@ -459,10 +392,12 @@ const DealsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  Leads
+                  Projects
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Track and manage your sales opportunities
+                  Easily create, assign, and track tasks to ensure every
+                  projects is completed on time and nothing is missed in your
+                  workflow.
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -475,10 +410,9 @@ const DealsPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-
                 <Button onClick={handleAddLeads}>
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Deal
+                  New Project
                 </Button>
               </div>
             </div>
@@ -491,24 +425,7 @@ const DealsPage = () => {
               dealCount={filteredAndSortedDeals?.length}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
-              toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
             />
-            {/* chartsAnanlysis */}
-            {showAnalytics && (
-              <div className="bg-card border border-border rounded-lg p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                <h2 className="text-lg font-semibold mb-4">Lead Analytics</h2>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <IndustryChart leads={filteredAndSortedDeals} headerDirection="row" />
-
-                  <MultiLineChart leads={filteredAndSortedDeals} />
-
-                  <StatusChart leads={filteredAndSortedDeals} />
-
-                  <AssignedUserChart leads={filteredAndSortedDeals} />
-                </div>
-              </div>
-            )}
 
             {/* Deals Table */}
             <DealsTable
@@ -533,36 +450,23 @@ const DealsPage = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
-
-            {/* Deal Drawer */}
-            <DealDrawer
-              status={status}
-              industry={industry}
-              source={source}
-              leadsDetails={leadsDetails}
-              deal={selectedDeal}
-              mode={mode}
-              isOpen={isDrawerOpen}
-              onCreate={handleCreateLead}
-              onUpdate={handleUpdateLead}
-              onClose={handleDrawerClose}
-              onDelete={handleDeleteActivity}
-              onBulkUpdate={handleBulkUpdateLeads}
-              selectedIds={selectedDeals}
-            />
-
-            <ConfirmDeleteModal
-              open={showDeleteConfirm}
-              title="Delete Selected Leads"
-              description={`Are you sure you want to delete ${selectedDeals.length} lead(s)? This action cannot be undone.`}
-              onCancel={() => setShowDeleteConfirm(false)}
-              onConfirm={handleConfirmBulkDelete}
-            />
           </div>
         </main>
+
+        {/* Deal Drawer */}
+        <DealDrawer
+          deal={selectedDeal}
+          mode={mode}
+          isOpen={isDrawerOpen}
+          onCreate={handleCreateLead}
+          onUpdate={handleUpdateTasks}
+          onClose={handleDrawerClose}
+          selectedIds={selectedDeals}
+          onBulkUpdate={handleBulkUpdateTasks} // 👈 NEW
+        />
       </div>
     </>
   );
 };
 
-export default DealsPage;
+export default ProjectsPage;

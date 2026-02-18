@@ -15,6 +15,9 @@ import {
 import { fetchAccounts } from "services/account.service";
 
 const DealDrawer = ({
+  status,
+  source,
+  industry,
   deal,
   isOpen,
   onClose,
@@ -30,7 +33,6 @@ const DealDrawer = ({
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
-  const [industry, setIndustry] = useState([]);
   const [mockStream, setmockStream] = useState([]);
   const [mockActivities, setActivities] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
@@ -45,7 +47,7 @@ const DealDrawer = ({
     whatsapp: "",
     addressCity: "",
     cProjectName: "",
-    cNextContact: "",
+    cNextContactAt: "",
     cQuestion: "",
     assignedUserId: "",
     teamId: "",
@@ -64,8 +66,7 @@ const DealDrawer = ({
         whatsapp: formData.whatsapp || "",
         addressCity: formData.addressCity || "",
         cProjectName: formData.cProjectName || "",
-        cNextContact: formData.cNextContact || "",
-
+        cNextContactAt: formData.cNextContactAt || "",
         cQuestion: formData.cQuestion || "",
         assignedUserId: formData.assignedUserId || "",
         teamId: formData.teamId || "",
@@ -79,76 +80,13 @@ const DealDrawer = ({
     }
   }, [deal, mode]);
 
-  // industries options
-  const INDUSTRIES = [
-    { label: "Advertising", value: "Advertising" },
-    { label: "Aerospace", value: "Aerospace" },
-    { label: "Agriculture", value: "Agriculture" },
-    { label: "Apparel & Accessories", value: "Apparel & Accessories" },
-    { label: "Architecture", value: "Architecture" },
-    { label: "Automotive", value: "Automotive" },
-    { label: "Banking", value: "Banking" },
-    { label: "Biotechnology", value: "Biotechnology" },
-    {
-      label: "Building Materials & Equipment",
-      value: "Building Materials & Equipment",
-    },
-    { label: "Chemical", value: "Chemical" },
-    { label: "Computer", value: "Computer" },
-    { label: "Construction", value: "Construction" },
-    { label: "Consulting", value: "Consulting" },
-    { label: "Creative", value: "Creative" },
-    { label: "Culture", value: "Culture" },
-    { label: "Defense", value: "Defense" },
-    { label: "Education", value: "Education" },
-    { label: "Electric Power", value: "Electric Power" },
-    { label: "Electronics", value: "Electronics" },
-    { label: "Energy", value: "Energy" },
-    { label: "Finance", value: "Finance" },
-    { label: "Food & Beverage", value: "Food & Beverage" },
-    { label: "Grocery", value: "Grocery" },
-    { label: "Healthcare", value: "Healthcare" },
-    { label: "Hospitality", value: "Hospitality" },
-    { label: "Insurance", value: "Insurance" },
-    { label: "Legal", value: "Legal" },
-    { label: "Manufacturing", value: "Manufacturing" },
-    { label: "Marketing", value: "Marketing" },
-    { label: "Mass Media", value: "Mass Media" },
-    { label: "Mining", value: "Mining" },
-    { label: "Music", value: "Music" },
-    { label: "Petroleum", value: "Petroleum" },
-    { label: "Publishing", value: "Publishing" },
-    { label: "Real Estate", value: "Real Estate" },
-    { label: "Retail", value: "Retail" },
-    { label: "Service", value: "Service" },
-    { label: "Shipping", value: "Shipping" },
-    { label: "Software", value: "Software" },
-    { label: "Sports", value: "Sports" },
-    { label: "Support", value: "Support" },
-    { label: "Technology", value: "Technology" },
-    { label: "Telecommunications", value: "Telecommunications" },
-    { label: "Television", value: "Television" },
-    {
-      label: "Testing, Inspection & Certification",
-      value: "Testing, Inspection & Certification",
-    },
-    { label: "Transportation", value: "Transportation" },
-    { label: "Travel", value: "Travel" },
-    { label: "Venture Capital", value: "Venture Capital" },
-    { label: "Water", value: "Water" },
-    { label: "Wholesale", value: "Wholesale" },
-  ];
-const industryOptions = INDUSTRIES?.map((item) => ({
-  value: item.id,
-  label: item.name,
-}));
 
   const [massFields, setMassFields] = useState({
     assignedUserId: false,
     status: false,
     source: false,
     teamId: false,
-    cNextContact: false,
+    cNextContactAt: false,
   });
 
   const toggleMassField = (field) => {
@@ -158,26 +96,7 @@ const industryOptions = INDUSTRIES?.map((item) => ({
     }));
   };
 
-  const STATUS_OPTIONS = [
-    { value: "New", label: "New" },
-    { value: "Converted", label: "Converted" },
-    { value: "Dead", label: "Dead" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
-    { value: "Budget Issue", label: "Budget Issue" },
-  ];
-  const SOURCE_OPTIONS = [
-    { value: "Call", label: "Call" },
-    { value: "Existing Customer", label: "Existing Customer" },
-    { value: "Facebook", label: "Facebook" },
-    { value: "Import", label: "Import" },
-    { value: "IVR", label: "IVR" },
-    { value: "Web Site", label: "Web Site" },
-  ];
+
   const toggleActivity = (id) => {
     setExpandedActivityId((prev) => (prev === id ? null : id));
   };
@@ -306,7 +225,7 @@ const industryOptions = INDUSTRIES?.map((item) => ({
     e.preventDefault();
     const payload = {
       ...formData,
-      cNextContact: toEspoDateTime(formData.cNextContact),
+      cNextContactAt: toEspoDateTime(formData.cNextContactAt),
     };
     try {
       if (mode === "add") {
@@ -329,8 +248,8 @@ const industryOptions = INDUSTRIES?.map((item) => ({
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
 
-    if (massFields.cNextContact)
-      payload.cNextContact = toEspoDateTime(formData.cNextContact);
+    if (massFields.cNextContactAt)
+      payload.cNextContactAt = toEspoDateTime(formData.cNextContactAt);
 
     if (massFields.status) payload.status = formData.status;
 
@@ -413,15 +332,13 @@ const industryOptions = INDUSTRIES?.map((item) => ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, teamRes, accRes] = await Promise.all([
+        const [usersRes, teamRes] = await Promise.all([
           fetchUser(),
           fetchTeam(),
-          fetchAccounts(),
         ]);
 
         setUsers(usersRes.list || []);
         setTeam(teamRes.list || []);
-        setIndustry(accRes.list || []);
       } catch (err) {
         console.error("Failed to load data", err);
       }
@@ -440,10 +357,24 @@ const industryOptions = INDUSTRIES?.map((item) => ({
     value: t.id,
     label: t.name,
   }));
-  // const industryOptions = industry?.map((t) => ({
-  //   value: t.industry,
-  //   label: t.industry,
-  // }));
+  const sourceOptions = source
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
+  const statusOptions = status
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
+  const industryOptions = industry
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
@@ -616,9 +547,9 @@ const industryOptions = INDUSTRIES?.map((item) => ({
                       <Input
                         type="datetime-local"
                         label="Next Contact"
-                        value={formData.cNextContact || ""}
+                        value={formData.cNextContactAt || ""}
                         onChange={(e) =>
-                          handleChange("cNextContact", e.target.value)
+                          handleChange("cNextContactAt", e.target.value)
                         }
                       />
                     </div>
@@ -637,7 +568,7 @@ const industryOptions = INDUSTRIES?.map((item) => ({
                       <Select
                         label="Industry"
                         value={formData.industry || ""}
-                        options={INDUSTRIES} // 👉 later API se teams
+                        options={industryOptions} // 👉 later API se teams
                         onChange={(value) =>
                           handleSelectChange("industry", value)
                         }
@@ -677,14 +608,13 @@ const industryOptions = INDUSTRIES?.map((item) => ({
                       <Select
                         label="Status"
                         value={formData.status || "New"}
-                        options={STATUS_OPTIONS}
+                        options={statusOptions}
                         onChange={(value) => handleChange("status", value)}
                       />
-
                       <Select
                         label="Source"
                         value={formData.source || ""}
-                        options={SOURCE_OPTIONS}
+                        options={sourceOptions}
                         onChange={(value) => handleChange("source", value)}
                       />
                     </div>
@@ -875,8 +805,8 @@ const industryOptions = INDUSTRIES?.map((item) => ({
                               Next Contact
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cNextContact
-                                ? formatDateTime(deal.cNextContact)
+                              {deal?.cNextContactAt
+                                ? formatDateTime(deal.cNextContactAt)
                                 : "—"}
                             </p>
                           </div>

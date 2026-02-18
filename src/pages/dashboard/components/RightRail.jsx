@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
+import IndustryChart from "./IndustryChart";
 
 const RightRail = ({ leads = [] }) => {
   const quickLinks = [
@@ -65,7 +66,7 @@ const RightRail = ({ leads = [] }) => {
       </motion.div>
 
       {/* Stats Card */}
-      <motion.div
+      {/* <motion.div
         className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -121,7 +122,10 @@ const RightRail = ({ leads = [] }) => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.div> */}
+
+      {/* Industry Chart */}
+      <IndustryChart leads={leads}/>
     </div>
   );
 };

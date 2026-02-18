@@ -9,7 +9,6 @@ import RightRail from "./components/RightRail";
 import { fetchLeads } from "services/leads.service";
 import { fetchActivity } from "services/activity.service";
 import MultiLineChart from "./components/MultiLineChart";
-import IndustryChart from "./components/IndustryChart";
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -208,9 +207,6 @@ const Dashboard = () => {
               </div>
               <div className="m-5">
                 <MultiLineChart leads={leads} />
-              </div>
-              <div className="m-5">
-                <IndustryChart leads={leads} />
               </div>
 
               {/* Recent Activities */}

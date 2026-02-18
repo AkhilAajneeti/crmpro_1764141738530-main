@@ -15,6 +15,7 @@ import {
 } from "services/account.service";
 import toast from "react-hot-toast";
 import ImportModel from "./components/ImportModel";
+import { fetchAccountType, fetchIndustries } from "services/others.service";
 
 const AccountsPage = () => {
   const [mockAccounts, setmockAccounts] = useState([]);
@@ -25,6 +26,8 @@ const AccountsPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [industry, setIndustry] = useState([]);
+  const [accType, setAccType] = useState([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -46,7 +49,34 @@ const AccountsPage = () => {
     };
     loadAccount();
   }, []);
-
+  // fetch industries
+  useEffect(() => {
+    const loadIndustry = async () => {
+      try {
+        const data = await fetchIndustries();
+        setIndustry(data.options || []);
+        console.log(data.list);
+      } catch (error) {
+        console.log("failed to fetch data", error);
+      } finally {
+      }
+    };
+    loadIndustry();
+  }, []);
+  // fetch types
+  useEffect(() => {
+    const loadAccType = async () => {
+      try {
+        const data = await fetchAccountType();
+        setAccType(data.options || []);
+        console.log(data.list);
+      } catch (error) {
+        console.log("failed to fetch data", error);
+      } finally {
+      }
+    };
+    loadAccType();
+  }, []);
   const handleAccountSuccess = async () => {
     try {
       setLoading(true);
@@ -384,6 +414,8 @@ const AccountsPage = () => {
       </main>
       {/* Account Details Drawer */}
       <AccountDrawer
+      accType={accType}
+        industry={industry}
         account={selectedAccount}
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}

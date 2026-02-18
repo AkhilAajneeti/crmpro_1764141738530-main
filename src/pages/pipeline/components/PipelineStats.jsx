@@ -5,7 +5,6 @@ import Icon from "../../../components/AppIcon";
 const PipelineStats = ({ deals = [] }) => {
   const stats = useMemo(() => {
     const now = new Date();
-
     let active = 0;
     let scheduled = 0;
     let budget = 0;
@@ -13,30 +12,44 @@ const PipelineStats = ({ deals = [] }) => {
     let overdue = 0;
 
     deals.forEach((deal) => {
-      const createdAt = new Date(deal.createdAt);
+      const createdAt = deal?.createdAt
+        ? new Date(deal.createdAt.replace(" ", "T"))
+        : null;
+
       const nextContact = deal?.cNextContact
         ? new Date(deal.cNextContact.replace(" ", "T"))
         : null;
 
-      const diffCreatedDays =
-        (now - createdAt) / (1000 * 60 * 60 * 24);
+      const diffCreatedDays = createdAt
+        ? (now - createdAt) / (1000 * 60 * 60 * 24)
+        : 0;
 
-      if (deal?.status === "Budget Issue") {
+      // 1️⃣ Budget Issue
+      if (deal.status?.toLowerCase().includes("budget")) {
         budget++;
+        return;
       }
 
-      if (nextContact) {
-        const diffDays =
-          (nextContact - now) / (1000 * 60 * 60 * 24);
-
-        if (diffDays < 0) overdue++;
-        if (diffDays >= 0 && diffDays <= 30) active++;
-        if (diffDays > 30) scheduled++;
+      // 2️⃣ Scheduled (future follow up)
+      if (nextContact && nextContact > now) {
+        scheduled++;
+        return;
       }
 
-      if (diffCreatedDays > 30) {
+      // 3️⃣ Overdue
+      if (nextContact && nextContact < now) {
+        overdue++;
+        return;
+      }
+
+      // 4️⃣ Stale
+      if (diffCreatedDays > 30 && !nextContact) {
         stale++;
+        return;
       }
+
+      // 5️⃣ Everything else is Active
+      active++;
     });
 
     return { active, scheduled, budget, stale, overdue };
@@ -100,9 +113,7 @@ const PipelineStats = ({ deals = [] }) => {
 
           <div>
             <div className="text-2xl font-bold">{stat.value}</div>
-            <div className="text-sm text-muted-foreground">
-              {stat.title}
-            </div>
+            <div className="text-sm text-muted-foreground">{stat.title}</div>
           </div>
         </motion.div>
       ))}

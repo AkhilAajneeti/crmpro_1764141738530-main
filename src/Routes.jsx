@@ -20,6 +20,7 @@ import TaskPage from "pages/tasks";
 import MeetingPage from "pages/meeting";
 import CallPage from "./pages/call";
 import Pipeline from "pages/pipeline";
+import ProjectsPage from "pages/projects";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -43,6 +44,7 @@ const Routes = () => {
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/emails" element={<EmailsPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
           <Route
             path="/accounts"
             element={
