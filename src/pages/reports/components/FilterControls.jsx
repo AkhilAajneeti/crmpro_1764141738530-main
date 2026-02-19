@@ -1,111 +1,225 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
+import React, { useEffect, useState } from "react";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
+import { fetchUser } from "services/user.service";
 
-import Select from '../../../components/ui/Select';
+const FilterControls = ({
+  filters,
+  onFiltersChange,
+  source,
+  status,
+  onClearFilters,
+  dealCount,
+  onBulkAction,
+  selectedCount,
+  toggleAnalytics,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [assignUser, setAssignUser] = useState([]);
 
-const FilterControls = ({ onFiltersChange, isLoading }) => {
-  const [dateRange, setDateRange] = useState('last-30-days');
-  const [selectedOwner, setSelectedOwner] = useState('all');
-  const [selectedStage, setSelectedStage] = useState('all');
-
-  const dateRangeOptions = [
-    { value: 'last-7-days', label: 'Last 7 days' },
-    { value: 'last-30-days', label: 'Last 30 days' },
-    { value: 'last-90-days', label: 'Last 90 days' },
-    { value: 'last-6-months', label: 'Last 6 months' },
-    { value: 'last-year', label: 'Last year' },
-    { value: 'custom', label: 'Custom range' }
+  const daysOptions = [
+    { value: "Today", label: "Today" },
+    { value: "Yesterday", label: "Yesterday" },
+    { value: "Last 3 Days", label: "Last 3 Days" },
+    { value: "Last & Days", label: "Last 7 Days" },
+    { value: "Current Month", label: "Current Month" },
   ];
 
-  const ownerOptions = [
-    { value: 'all', label: 'All owners' },
-    { value: 'john-doe', label: 'John Doe' },
-    { value: 'sarah-wilson', label: 'Sarah Wilson' },
-    { value: 'mike-johnson', label: 'Mike Johnson' },
-    { value: 'emily-davis', label: 'Emily Davis' },
-    { value: 'alex-chen', label: 'Alex Chen' }
-  ];
-
-  const stageOptions = [
-    { value: 'all', label: 'All stages' },
-    { value: 'new', label: 'New' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'proposal', label: 'Proposal' },
-    { value: 'negotiation', label: 'Negotiation' },
-    { value: 'won', label: 'Won' },
-    { value: 'lost', label: 'Lost' }
-  ];
-
-  const handleFilterChange = (type, value) => {
-    const newFilters = { dateRange, selectedOwner, selectedStage };
-    newFilters[type] = value;
-    
-    if (type === 'dateRange') setDateRange(value);
-    if (type === 'selectedOwner') setSelectedOwner(value);
-    if (type === 'selectedStage') setSelectedStage(value);
-    
-    onFiltersChange(newFilters);
+  const handleFilterChange = (key, value) => {
+    onFiltersChange({
+      ...filters,
+      [key]: value,
+    });
   };
 
-  const handleRefresh = () => {
-    onFiltersChange({ dateRange, selectedOwner, selectedStage, refresh: true });
+  useEffect(() => {
+    fetchUser()
+      .then((res) => setAssignUser(res.list || []))
+      .catch((err) => console.error("User fetch failed", err));
+  }, []);
+
+  const handleBulkActionSelect = (action) => {
+    onBulkAction(action);
+    setShowBulkActions(false);
   };
 
+  const activeFiltersCount = Object.values(filters)?.filter(
+    (value) => value !== "" && value !== null && value !== undefined,
+  )?.length;
+  const assignUserOptions = assignUser.map((acc) => ({
+    value: acc.id, // 👈 important (ID use karo)
+    label: acc.name,
+  }));
+  const sourceOptions = source
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
+  const statusOptions = status
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-card border border-border rounded-xl p-6 mb-6"
-    >
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <Select
-            label="Date Range"
-            options={dateRangeOptions}
-            value={dateRange}
-            onChange={(value) => handleFilterChange('dateRange', value)}
-            className="w-full sm:w-48"
-          />
-          
-          <Select
-            label="Owner"
-            options={ownerOptions}
-            value={selectedOwner}
-            onChange={(value) => handleFilterChange('selectedOwner', value)}
-            className="w-full sm:w-48"
-          />
-          
-          <Select
-            label="Pipeline Stage"
-            options={stageOptions}
-            value={selectedStage}
-            onChange={(value) => handleFilterChange('selectedStage', value)}
-            className="w-full sm:w-48"
-          />
+    <div className="bg-card border border-border rounded-lg p-4 mb-6">
+      {/* Header Row */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-lg font-semibold text-foreground">
+            leads ({dealCount?.toLocaleString()})
+          </h2>
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
+                active
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearFilters}
+                className="text-xs"
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
         </div>
-        
-        <div className="flex items-center space-x-3">
+
+        <div className="flex items-center space-x-2">
+          {selectedCount > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">
+                {selectedCount} selected
+              </span>
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBulkActions(!showBulkActions)}
+                >
+                  <Icon name="MoreHorizontal" size={16} className="mr-1" />
+                  Actions
+                </Button>
+
+                {showBulkActions && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowBulkActions(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-lg shadow-elevation-2 z-50">
+                      <div className="py-1">
+                        {bulkActions?.map((action) => (
+                          <button
+                            key={action?.value}
+                            onClick={() =>
+                              handleBulkActionSelect(action?.value)
+                            }
+                            className="flex items-center w-full px-3 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
+                          >
+                            <Icon
+                              name={action?.icon}
+                              size={16}
+                              className="mr-2"
+                            />
+                            {action?.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <Button
             variant="outline"
-            onClick={handleRefresh}
-            loading={isLoading}
-            iconName="RefreshCw"
-            iconPosition="left"
-            className="flex-shrink-0"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="lg:hidden"
           >
-            Refresh Data
+            <Icon name="Filter" size={16} className="mr-1" />
+            Filters
+            <Icon
+              name="ChevronDown"
+              size={16}
+              className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            />
           </Button>
-          
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Icon name="Clock" size={16} />
-            <span>Last updated: {new Date()?.toLocaleTimeString()}</span>
-          </div>
         </div>
       </div>
-    </motion.div>
+      {/* Filters */}
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
+      >
+        <Input
+          type="search"
+          placeholder="Search deals..."
+          value={filters?.search || ""}
+          onChange={(e) => handleFilterChange("search", e?.target?.value)}
+          className="lg:col-span-2"
+        />
+
+        <Select
+          placeholder="Status"
+          options={statusOptions}
+          value={filters?.status || ""}
+          onChange={(value) => handleFilterChange("status", value)}
+        />
+
+        <Select
+          placeholder="Filter By Days"
+          options={daysOptions}
+          value={filters?.days || ""}
+          onChange={(value) => handleFilterChange("days", value)}
+        />
+
+        <Select
+          placeholder="Source"
+          options={sourceOptions}
+          value={filters?.source || ""}
+          onChange={(value) => handleFilterChange("source", value)}
+        />
+        <Select
+          placeholder="Assign User"
+          options={assignUserOptions}
+          value={filters?.assignUser || ""}
+          onChange={(value) => handleFilterChange("assignUser", value)}
+        />
+      </div>
+      {/* Advanced Filters Toggle */}
+      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
+        <div className="flex items-center space-x-4">
+          <Input
+            type="date"
+            placeholder="Close date from"
+            value={filters?.closeDateFrom || ""}
+            onChange={(e) =>
+              handleFilterChange("closeDateFrom", e?.target?.value)
+            }
+          />
+          <Input
+            type="date"
+            placeholder="Close date to"
+            value={filters?.closeDateTo || ""}
+            onChange={(e) =>
+              handleFilterChange("closeDateTo", e?.target?.value)
+            }
+          />
+        </div>
+        <Button onClick={toggleAnalytics}>
+          <Icon name="Plus" size={16} className="mr-2" />
+          Anaylze By Chart
+        </Button>
+      </div>
+    </div>
   );
 };
 

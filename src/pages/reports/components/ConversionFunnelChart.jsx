@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 
-const ConversionFunnelChart = () => {
+const ConversionFunnelChart = ({data}) => {
   // Small-multiple sparkline data for different reps/stages
   const sparklineData = [
     {
@@ -144,7 +144,7 @@ const ConversionFunnelChart = () => {
         <p className="text-sm text-muted-foreground">8-week conversion rate sparklines by rep</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sparklineData?.map((rep) => (
+        {data?.map((rep) => (
           <motion.div
             key={rep?.id}
             initial={{ opacity: 0, scale: 0.95 }}

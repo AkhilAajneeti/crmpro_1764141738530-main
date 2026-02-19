@@ -1,30 +1,41 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
 
-const WinRateChart = () => {
-  const [chartType, setChartType] = useState('line');
+const WinRateChart = ({ data, pieData }) => {
+  const [chartType, setChartType] = useState("line");
 
   const winRateData = [
-    { month: 'Jan', winRate: 65, deals: 45, won: 29, lost: 16 },
-    { month: 'Feb', winRate: 72, deals: 52, won: 37, lost: 15 },
-    { month: 'Mar', winRate: 68, deals: 48, won: 33, lost: 15 },
-    { month: 'Apr', winRate: 75, deals: 56, won: 42, lost: 14 },
-    { month: 'May', winRate: 71, deals: 49, won: 35, lost: 14 },
-    { month: 'Jun', winRate: 78, deals: 64, won: 50, lost: 14 },
-    { month: 'Jul', winRate: 73, deals: 58, won: 42, lost: 16 },
-    { month: 'Aug', winRate: 76, deals: 61, won: 46, lost: 15 },
-    { month: 'Sep', winRate: 69, deals: 55, won: 38, lost: 17 },
-    { month: 'Oct', winRate: 81, deals: 67, won: 54, lost: 13 },
-    { month: 'Nov', winRate: 74, deals: 59, won: 44, lost: 15 }
+    { month: "Jan", winRate: 65, deals: 45, won: 29, lost: 16 },
+    { month: "Feb", winRate: 72, deals: 52, won: 37, lost: 15 },
+    { month: "Mar", winRate: 68, deals: 48, won: 33, lost: 15 },
+    { month: "Apr", winRate: 75, deals: 56, won: 42, lost: 14 },
+    { month: "May", winRate: 71, deals: 49, won: 35, lost: 14 },
+    { month: "Jun", winRate: 78, deals: 64, won: 50, lost: 14 },
+    { month: "Jul", winRate: 73, deals: 58, won: 42, lost: 16 },
+    { month: "Aug", winRate: 76, deals: 61, won: 46, lost: 15 },
+    { month: "Sep", winRate: 69, deals: 55, won: 38, lost: 17 },
+    { month: "Oct", winRate: 81, deals: 67, won: 54, lost: 13 },
+    { month: "Nov", winRate: 74, deals: 59, won: 44, lost: 15 },
   ];
 
-  const pieData = [
-    { name: 'Won', value: 430, fill: '#10B981' },
-    { name: 'Lost', value: 164, fill: '#EF4444' }
-  ];
+  // const pieData = [
+  //   { name: "Won", value: 430, fill: "#10B981" },
+  //   { name: "Lost", value: 164, fill: "#EF4444" },
+  // ];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
@@ -34,7 +45,9 @@ const WinRateChart = () => {
           <p className="font-medium text-popover-foreground">{label} 2024</p>
           <p className="text-sm text-success">Won: {data?.won} deals</p>
           <p className="text-sm text-error">Lost: {data?.lost} deals</p>
-          <p className="text-sm text-muted-foreground">Win Rate: {data?.winRate}%</p>
+          <p className="text-sm text-muted-foreground">
+            Win Rate: {data?.winRate}%
+          </p>
         </div>
       );
     }
@@ -46,11 +59,13 @@ const WinRateChart = () => {
       const data = payload?.[0];
       const total = pieData?.reduce((sum, item) => sum + item?.value, 0);
       const percentage = ((data?.value / total) * 100)?.toFixed(1);
-      
+
       return (
         <div className="bg-popover border border-border rounded-lg p-3 shadow-elevation-2">
           <p className="font-medium text-popover-foreground">{data?.name}</p>
-          <p className="text-sm text-muted-foreground">{data?.value} deals ({percentage}%)</p>
+          <p className="text-sm text-muted-foreground">
+            {data?.value} deals ({percentage}%)
+          </p>
         </div>
       );
     }
@@ -66,24 +81,28 @@ const WinRateChart = () => {
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Win Rate Analytics</h3>
-          <p className="text-sm text-muted-foreground">Monthly win rate trends and distribution</p>
+          <h3 className="text-lg font-semibold text-foreground">
+            Win Rate Analytics
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Monthly win rate trends and distribution
+          </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
-            variant={chartType === 'line' ? 'default' : 'outline'}
+            variant={chartType === "line" ? "default" : "outline"}
             size="sm"
-            onClick={() => setChartType('line')}
+            onClick={() => setChartType("line")}
             iconName="TrendingUp"
             iconPosition="left"
           >
             Trend
           </Button>
           <Button
-            variant={chartType === 'pie' ? 'default' : 'outline'}
+            variant={chartType === "pie" ? "default" : "outline"}
             size="sm"
-            onClick={() => setChartType('pie')}
+            onClick={() => setChartType("pie")}
             iconName="PieChart"
             iconPosition="left"
           >
@@ -93,15 +112,11 @@ const WinRateChart = () => {
       </div>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          {chartType === 'line' ? (
-            <LineChart data={winRateData}>
+          {chartType === "line" ? (
+            <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis 
-                dataKey="month" 
-                stroke="#64748B"
-                fontSize={12}
-              />
-              <YAxis 
+              <XAxis dataKey="month" stroke="#64748B" fontSize={12} />
+              <YAxis
                 stroke="#64748B"
                 fontSize={12}
                 domain={[0, 100]}
@@ -113,13 +128,13 @@ const WinRateChart = () => {
                 dataKey="winRate"
                 stroke="#8B5CF6"
                 strokeWidth={3}
-                dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 6 }}
-                activeDot={{ r: 8, stroke: '#8B5CF6', strokeWidth: 2 }}
+                dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 6 }}
+                activeDot={{ r: 8, stroke: "#8B5CF6", strokeWidth: 2 }}
                 animationDuration={1500}
               />
             </LineChart>
           ) : (
-            <PieChart>
+            <PieChart data={pieData}>
               <Pie
                 data={pieData}
                 cx="50%"
@@ -143,34 +158,42 @@ const WinRateChart = () => {
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <div className="w-3 h-3 bg-success rounded-full" />
-            <span className="text-sm font-medium text-foreground">Total Won</span>
+            <span className="text-sm font-medium text-foreground">
+              Total Won
+            </span>
           </div>
           <p className="text-2xl font-semibold text-foreground">430</p>
           <p className="text-xs text-muted-foreground">deals closed</p>
         </div>
-        
+
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <div className="w-3 h-3 bg-error rounded-full" />
-            <span className="text-sm font-medium text-foreground">Total Lost</span>
+            <span className="text-sm font-medium text-foreground">
+              Total Lost
+            </span>
           </div>
           <p className="text-2xl font-semibold text-foreground">164</p>
           <p className="text-xs text-muted-foreground">deals lost</p>
         </div>
-        
+
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <Icon name="Target" size={16} className="text-primary" />
-            <span className="text-sm font-medium text-foreground">Win Rate</span>
+            <span className="text-sm font-medium text-foreground">
+              Win Rate
+            </span>
           </div>
           <p className="text-2xl font-semibold text-foreground">72.4%</p>
           <p className="text-xs text-muted-foreground">this year</p>
         </div>
-        
+
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <Icon name="TrendingUp" size={16} className="text-success" />
-            <span className="text-sm font-medium text-foreground">Best Month</span>
+            <span className="text-sm font-medium text-foreground">
+              Best Month
+            </span>
           </div>
           <p className="text-2xl font-semibold text-foreground">81%</p>
           <p className="text-xs text-muted-foreground">October 2024</p>

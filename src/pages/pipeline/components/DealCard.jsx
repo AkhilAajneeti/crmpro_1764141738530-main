@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
-const DealCard = ({ deal = {}, onEdit, onDelete, onClone,onViewHistory }) => {
+const DealCard = ({ deal = {}, onEdit, onDelete, onClone, onViewHistory }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -36,8 +36,41 @@ const DealCard = ({ deal = {}, onEdit, onDelete, onClone,onViewHistory }) => {
     e.dataTransfer.setData("text/plain", deal?.id);
   };
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
+  const handleDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+
+    // SAME COLUMN REORDER
+    if (destination.droppableId === source.droppableId) {
+      const columnDeals = deals.filter(
+        (deal) => deal.stage === source.droppableId,
+      );
+
+      const movedDeal = columnDeals[source.index];
+
+      const newColumnDeals = Array.from(columnDeals);
+      newColumnDeals.splice(source.index, 1);
+      newColumnDeals.splice(destination.index, 0, movedDeal);
+
+      const otherDeals = deals.filter(
+        (deal) => deal.stage !== source.droppableId,
+      );
+
+      setDeals([...otherDeals, ...newColumnDeals]);
+      return;
+    }
+
+    // DIFFERENT COLUMN MOVE
+    setDeals((prev) =>
+      prev.map((deal) =>
+        deal.id === draggableId
+          ? { ...deal, stage: destination.droppableId }
+          : deal,
+      ),
+    );
+
+    toast.success("Stage updated successfully");
   };
 
   return (
@@ -56,7 +89,11 @@ const DealCard = ({ deal = {}, onEdit, onDelete, onClone,onViewHistory }) => {
       {/* Action Buttons */}
       {isHovered && (
         <div className="absolute top-2 right-2 flex space-x-1 bg-white border rounded-md shadow p-1 z-10">
-          <Button variant="ghost" size="icon" onClick={() => onViewHistory(deal.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onViewHistory(deal.id)}
+          >
             <Icon name="Edit2" size={14} />
           </Button>
           {/* <Button variant="ghost" size="icon" onClick={onClone}>
