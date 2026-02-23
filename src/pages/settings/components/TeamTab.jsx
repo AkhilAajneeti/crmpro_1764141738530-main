@@ -7,11 +7,81 @@ import Select from "../../../components/ui/Select";
 import Avatar from "react-avatar";
 import TablePagination from "./TablePagination";
 import { fetchUser } from "services/user.service";
+import { fetchTeam } from "services/team.service";
+import { createUser, fetchRoles } from "services/setting.service";
+import toast from "react-hot-toast";
 const TeamTab = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [team, setTeam] = useState([]);
+  const [role, setRole] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [inviteData, setInviteData] = useState({
+    userName: "",
+    title: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    emailAddress: "",
+    gender: "",
+    teamId: "",
+    type: "",
+    isActive: "",
+    role: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const handleChange = (key, value) => {
+    setInviteData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    if (!inviteData.firstName || !inviteData.userName) {
+      toast.error("First name and username are required");
+      return;
+    }
+
+    if (inviteData.password !== inviteData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const payload = {
+      userName: inviteData.userName,
+      firstName: inviteData.firstName,
+      lastName: inviteData.lastName,
+      title: inviteData.title,
+      phoneNumber: inviteData.phoneNumber,
+      emailAddress: inviteData.emailAddress,
+      gender: inviteData.gender,
+      type: inviteData.type, // already lowercase
+      defaultTeamId: inviteData.teamId,
+      isActive: inviteData.isActive === "true",
+      password: inviteData.password,
+    };
+
+    try {
+      setIsLoading(true);
+
+      await createUser(payload);
+
+      toast.success("User created successfully ✅");
+
+      const data = await fetchUser();
+      setTeamMembers(data.list || []);
+
+      setIsInviteModalOpen(false);
+    } catch (err) {
+      toast.error("Failed to create user ❌");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -24,52 +94,50 @@ const TeamTab = () => {
 
     loadData();
   }, []);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [teamRes, roleRes] = await Promise.all([
+          fetchTeam(),
+          fetchRoles(),
+        ]);
+        setTeam(teamRes.list || []);
+        setRole(roleRes.list || []);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      }
+    };
+    loadData();
+  }, []);
 
+  const teamOptions = team?.map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
+  const roleOptions = role?.map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
   const paginatedMembers = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return teamMembers.slice(startIndex, endIndex);
   }, [teamMembers, currentPage, itemsPerPage]);
 
-  const [inviteData, setInviteData] = useState({
-    email: "",
-    role: "User",
-    department: "Sales",
-  });
-
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const roleOptions = [
-    {
-      value: "Admin",
-      label: "Admin",
-      description: "Full access to all features and settings",
-    },
-    {
-      value: "Manager",
-      label: "Manager",
-      description: "Manage team members and view all data",
-    },
-    {
-      value: "User",
-      label: "User",
-      description: "Standard access to CRM features",
-    },
-    {
-      value: "Viewer",
-      label: "Viewer",
-      description: "Read-only access to reports and data",
-    },
+  const typeOptions = [
+    { value: "regular", label: "Regular" },
+    { value: "admin", label: "Admin" },
   ];
-
-  const departmentOptions = [
-    { value: "Sales", label: "Sales" },
-    { value: "Marketing", label: "Marketing" },
-    { value: "Customer Success", label: "Customer Success" },
-    { value: "Operations", label: "Operations" },
-    { value: "Finance", label: "Finance" },
-    { value: "HR", label: "Human Resources" },
+  const ActiveOptions = [
+    { value: "true", label: "true" },
+    { value: "false", label: "false" },
+  ];
+  const GenderOptions = [
+    { value: "Male", label: "Male" },
+    { value: "Female", label: "Female" },
+    { value: "Neutral", label: "Neutral" },
   ];
 
   const handleInviteChange = (field, value) => {
@@ -106,14 +174,6 @@ const TeamTab = () => {
     }, 1000);
   };
 
-  const handleRoleChange = (memberId, newRole) => {
-    setTeamMembers((ROLE) =>
-      ROLE?.map((member) =>
-        member?.id === memberId ? { ...member, role: newRole } : member
-      )
-    );
-  };
-
   const handleRemoveMember = (memberId) => {
     setTeamMembers((prev) => prev?.filter((member) => member?.id !== memberId));
   };
@@ -145,24 +205,6 @@ const TeamTab = () => {
     );
   };
 
-  const getRoleBadge = (role) => {
-    const roleConfig = {
-      Admin: { bg: "bg-error/10", text: "text-error" },
-      Manager: { bg: "bg-primary/10", text: "text-primary" },
-      User: { bg: "bg-accent/10", text: "text-accent-foreground" },
-      Viewer: { bg: "bg-muted", text: "text-muted-foreground" },
-    };
-
-    const config = roleConfig?.[role] || roleConfig?.User;
-
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config?.bg} ${config?.text}`}
-      >
-        {role}
-      </span>
-    );
-  };
   const totalPages = Math.ceil(teamMembers?.length / itemsPerPage);
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -198,7 +240,7 @@ const TeamTab = () => {
             iconName="UserPlus"
             iconPosition="left"
           >
-            Invite Member
+            Create User
           </Button>
         </div>
 
@@ -374,73 +416,225 @@ const TeamTab = () => {
         />
       </div>
       {/* Invite Modal */}
+
       {isInviteModalOpen && (
         <>
+          {/* Overlay */}
           <div
             className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setIsInviteModalOpen(false)}
           />
+
+          {/* Modal Wrapper */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-6">
+            {/* Modal Box */}
+            <div
+              className="relative bg-card border border-border rounded-xl w-full max-w-4xl
+                      max-h-[90vh] overflow-hidden shadow-xl"
+            >
+              {/* Header (Sticky) */}
+              <div className="sticky top-0 bg-card z-10 flex items-center justify-between p-6 border-b border-border">
                 <h3 className="text-lg font-semibold text-card-foreground">
-                  Invite Team Member
+                  Create User
                 </h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
+
+                <button
                   onClick={() => setIsInviteModalOpen(false)}
-                  aria-label="Close modal"
+                  className="p-2 rounded-lg hover:bg-muted transition"
                 >
                   <Icon name="X" size={20} />
-                </Button>
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={inviteData?.email}
-                  onChange={(e) =>
-                    handleInviteChange("email", e?.target?.value)
-                  }
-                  placeholder="colleague@company.com"
-                  required
-                />
+              {/* Scrollable Body */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-4">
+                    {/* userName's  && Title*/}
+                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          label="User Name"
+                          type="text"
+                          value={inviteData?.userName}
+                          onChange={(e) =>
+                            handleInviteChange("userName", e?.target?.value)
+                          }
+                          placeholder="colleague@company.com"
+                          required
+                        />
+                        <Input
+                          label="Title"
+                          type="text"
+                          value={inviteData?.title}
+                          onChange={(e) =>
+                            handleInviteChange("title", e?.target?.value)
+                          }
+                          placeholder="title"
+                          required
+                        />
+                      </div>
+                      {/* First Name's  && Last Name*/}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          label="First Name"
+                          type="text"
+                          value={inviteData?.firstName}
+                          onChange={(e) =>
+                            handleInviteChange("firstName", e?.target?.value)
+                          }
+                          placeholder="colleague@company.com"
+                          required
+                        />
+                        <Input
+                          label="Last Name"
+                          type="text"
+                          value={inviteData?.lastName}
+                          onChange={(e) =>
+                            handleInviteChange("lastName", e?.target?.value)
+                          }
+                          placeholder="colleague@company.com"
+                          required
+                        />
+                      </div>
 
-                <Select
-                  label="Role"
-                  options={roleOptions}
-                  value={inviteData?.role}
-                  onChange={(value) => handleInviteChange("role", value)}
-                />
+                      {/* email & phone number */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          label="Email Address"
+                          type="email"
+                          value={inviteData?.emailAddress}
+                          onChange={(e) =>
+                            handleInviteChange("emailAddress", e?.target?.value)
+                          }
+                          placeholder="colleague@company.com"
+                          required
+                        />
+                        <Input
+                          label="Phone Number"
+                          type="tel"
+                          value={inviteData?.phoneNumber}
+                          onChange={(e) =>
+                            handleInviteChange("phoneNumber", e?.target?.value)
+                          }
+                          placeholder="colleague@company.com"
+                          required
+                        />
+                      </div>
 
-                <Select
-                  label="Department"
-                  options={departmentOptions}
-                  value={inviteData?.department}
-                  onChange={(value) => handleInviteChange("department", value)}
-                />
-
-                <div className="flex space-x-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsInviteModalOpen(false)}
-                    fullWidth
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="default"
-                    onClick={handleSendInvite}
-                    loading={isLoading}
-                    iconName="Send"
-                    iconPosition="left"
-                    fullWidth
-                  >
-                    Send Invite
-                  </Button>
-                </div>
+                      {/* gender & phone number */}
+                      <div className="grid grid-cols-2 gap-2">
+                       <Select
+                          label="Gender"
+                          options={GenderOptions}
+                          value={inviteData?.gender}
+                          onChange={(value) =>
+                            handleInviteChange("gender", value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    {/* Team Access Control */}
+                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                      {/* Teams And Roles */}
+                      <label htmlFor="">Team And Access control</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select
+                          label="Team"
+                          options={teamOptions}
+                          value={inviteData?.teamId}
+                          onChange={(value) =>
+                            handleInviteChange("teamId", value)
+                          }
+                        />
+                        <Select
+                          label="Role"
+                          options={roleOptions}
+                          value={inviteData?.role}
+                          onChange={(value) =>
+                            handleInviteChange("role", value)
+                          }
+                        />
+                      </div>
+                      {/* Regular And Is Active */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select
+                          label="Type"
+                          options={typeOptions}
+                          value={inviteData?.type}
+                          onChange={(value) =>
+                            handleInviteChange("type", value)
+                          }
+                        />
+                        <Select
+                          label="IsActive"
+                          options={ActiveOptions}
+                          value={inviteData?.isActive}
+                          onChange={(value) =>
+                            handleInviteChange("isActive", value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    {/* password and generate password */}
+                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          label="Password"
+                          type="password"
+                          value={inviteData?.password}
+                          onChange={(e) =>
+                            handleInviteChange("password", e?.target?.value)
+                          }
+                          required
+                        />
+                        <Input
+                          label="Confirm Password"
+                          type="password"
+                          value={inviteData?.confirmPassword}
+                          onChange={(e) =>
+                            handleInviteChange(
+                              "confirmPassword",
+                              e?.target?.value,
+                            )
+                          }
+                          required
+                        />
+                        <Button
+                          className="col-span-2"
+                          variant="default"
+                          onClick={handleSendInvite}
+                          loading={isLoading}
+                          iconName="Send"
+                          iconPosition="left"
+                          fullWidth
+                        >
+                          Generate Password
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex space-x-3 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsInviteModalOpen(false)}
+                        fullWidth
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        Send
+                        Invite
+                        variant="default"
+                        loading={isLoading}
+                        iconName="Send"
+                        iconPosition="left"
+                        fullWidth
+                      >
+                        Create User
+                      </Button>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

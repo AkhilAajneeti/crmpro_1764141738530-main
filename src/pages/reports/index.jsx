@@ -336,33 +336,27 @@ const Reports = () => {
   const repConversionData = useMemo(() => {
     if (!leads?.length) return [];
 
+    const WON_STATUSES = ["Converted"];
+
     const weeksToShow = 8;
     const now = new Date();
 
-    const WON_STATUSES = ["converted"];
-
-    const LOST_STATUSES = [
-      "dead",
-      "not interested",
-      "low budget | low intent",
-      "budget issue",
-      "invalid",
-    ];
-
-    // 🔹 Get week start (Sunday-based)
+    // ✅ Proper Monday-based week start (00:00:00 safe)
     const getWeekStart = (date) => {
       const d = new Date(date);
       const day = d.getDay();
-      const diff = d.getDate() - day;
-      return new Date(d.setDate(diff));
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const weekStart = new Date(d.setDate(diff));
+      weekStart.setHours(0, 0, 0, 0);
+      return weekStart;
     };
 
-    // 🔹 Build last 8 weeks
-    const weekLabels = [];
+    // ✅ Generate last 8 weeks properly
+    const weekStarts = [];
     for (let i = weeksToShow - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(now.getDate() - i * 7);
-      weekLabels.push(getWeekStart(date));
+      weekStarts.push(getWeekStart(date));
     }
 
     const grouped = {};
@@ -378,11 +372,11 @@ const Reports = () => {
         grouped[repId] = {
           id: repId,
           name: repName,
-          trend: weekLabels.map((weekStart) => ({
+          role: "Sales Rep",
+          trend: weekStarts.map((weekStart) => ({
             weekStart,
             deals: 0,
             won: 0,
-            lost: 0,
           })),
         };
       }
@@ -390,52 +384,51 @@ const Reports = () => {
       grouped[repId].trend.forEach((weekObj) => {
         const weekEnd = new Date(weekObj.weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
 
         if (leadDate >= weekObj.weekStart && leadDate <= weekEnd) {
-          const status = lead.status?.toLowerCase()?.trim();
+          // ✅ Efficiency Mode (counts ALL leads)
+          weekObj.deals += 1;
 
-          if (WON_STATUSES.includes(status)) {
+          if (WON_STATUSES.includes(lead.status)) {
             weekObj.won += 1;
-          }
-
-          if (LOST_STATUSES.includes(status)) {
-            weekObj.lost += 1;
-          }
-
-          if (WON_STATUSES.includes(status) || LOST_STATUSES.includes(status)) {
-            weekObj.deals += 1;
           }
         }
       });
     });
 
-    // 🔹 Calculate weekly win rate
-    return Object.values(grouped).map((rep) => {
-      const trend = rep.trend.map((week, index) => {
-        const totalClosed = week.won + week.lost;
+    return Object.values(grouped).map((rep, index) => {
+      const trend = rep.trend.map((week, i) => ({
+        period: `W${i + 1}`,
+        value: week.deals
+          ? Number(((week.won / week.deals) * 100).toFixed(1))
+          : 0,
+      }));
 
-        return {
-          period: `W${index + 1}`,
-          value: totalClosed
-            ? Number(((week.won / totalClosed) * 100).toFixed(1))
-            : null, // 🔥 null = no data, better than 0%
-        };
-      });
+      // ✅ Week-over-week growth (last vs previous)
+      const last = trend[trend.length - 1]?.value || 0;
+      const prev = trend[trend.length - 2]?.value || 0;
+      const growth = Number((last - prev).toFixed(1));
 
-      const first = trend.find((t) => t.value !== null)?.value ?? 0;
-      const last =
-        [...trend].reverse().find((t) => t.value !== null)?.value ?? 0;
-
-      const growth = Number((last - first).toFixed(1));
+      // ✅ 8 week average (better KPI)
+      const average = trend.reduce((sum, t) => sum + t.value, 0) / trend.length;
 
       return {
         id: rep.id,
         name: rep.name,
+        role: rep.role,
         trend,
-        current: last,
+        current: Number(average.toFixed(1)), // shows 8-week avg
         change: `${growth >= 0 ? "+" : ""}${growth}%`,
         positive: growth >= 0,
-        color: "#10B981", // you can randomize per rep later
+        color: [
+          "#10B981",
+          "#8B5CF6",
+          "#06B6D4",
+          "#F59E0B",
+          "#EC4899",
+          "#84CC16",
+        ][index % 6],
       };
     });
   }, [leads]);
@@ -479,11 +472,11 @@ const Reports = () => {
 
       grouped[monthName].deals += 1;
 
-      if (lead.status === "Interested") {
+      if (lead.status === "Converted") {
         grouped[monthName].won += 1;
       }
 
-      if (["Not Interested", "Dead", "Low Budget"].includes(lead.status)) {
+      if (["Not Interested", "Dead"].includes(lead.status)) {
         grouped[monthName].lost += 1;
       }
     });
@@ -519,7 +512,89 @@ const Reports = () => {
       { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
     ];
   }, [leads]);
+  const monthlyInsights = useMemo(() => {
+    if (!leads?.length) return null;
 
+    const WON_STATUSES = ["Converted"];
+
+    const monthly = {};
+
+    leads.forEach((lead) => {
+      if (!lead.createdAt) return;
+
+      const date = new Date(lead.createdAt.replace(" ", "T"));
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+
+      if (!monthly[monthKey]) {
+        monthly[monthKey] = {
+          month: date.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          }),
+          total: 0,
+          won: 0,
+        };
+      }
+
+      monthly[monthKey].total += 1;
+
+      if (WON_STATUSES.includes(lead.status)) {
+        monthly[monthKey].won += 1;
+      }
+    });
+
+    const results = Object.values(monthly).map((m) => ({
+      ...m,
+      winRate: m.total ? Number(((m.won / m.total) * 100).toFixed(1)) : 0,
+    }));
+
+    if (!results.length) return null;
+
+    const bestMonth = results.reduce((prev, current) =>
+      current.winRate > prev.winRate ? current : prev,
+    );
+
+    const totalDeals = results.reduce((sum, m) => sum + m.total, 0);
+    const totalWon = results.reduce((sum, m) => sum + m.won, 0);
+
+    const overallWinRate = totalDeals
+      ? Number(((totalWon / totalDeals) * 100).toFixed(1))
+      : 0;
+
+    return {
+      bestMonth,
+      overallWinRate,
+      totalDeals,
+    };
+  }, [leads]);
+  const summary = useMemo(() => {
+    if (!monthlyWinRateData?.length) return null;
+
+    let totalWon = 0;
+    let totalLost = 0;
+
+    monthlyWinRateData.forEach((month) => {
+      totalWon += month.won;
+      totalLost += month.lost;
+    });
+
+    const totalDeals = totalWon + totalLost;
+
+    const overallWinRate = totalDeals
+      ? Number(((totalWon / totalDeals) * 100).toFixed(1))
+      : 0;
+
+    const bestMonth = monthlyWinRateData.reduce((prev, current) =>
+      current.winRate > prev.winRate ? current : prev,
+    );
+
+    return {
+      totalWon,
+      totalLost,
+      overallWinRate,
+      bestMonth,
+    };
+  }, [monthlyWinRateData]);
   return (
     <>
       <Helmet>
@@ -605,7 +680,11 @@ const Reports = () => {
                 <ConversionFunnelChart data={repConversionData} />
 
                 {/* Win Rate Analytics */}
-                <WinRateChart data={monthlyWinRateData} pieData={pieData} />
+                <WinRateChart
+                  data={monthlyWinRateData}
+                  pieData={pieData}
+                  summary={summary}
+                />
               </div>
             )}
             {/* table */}
@@ -627,12 +706,12 @@ const Reports = () => {
             />
 
             {/* Revenue Forecasting - Full Width */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <RevenueChart />
-            </div>
+            </div> */}
 
             {/* Export Controls */}
-            <ExportControls />
+            {/* <ExportControls /> */}
 
             {/* Additional Insights */}
             <motion.div
@@ -644,35 +723,44 @@ const Reports = () => {
               <h3 className="text-lg font-semibold text-foreground mb-4">
                 Key Insights
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground">
-                    Top Performing Month
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    October 2024 achieved the highest win rate at 81% with 54
-                    deals closed
-                  </p>
-                </div>
 
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground">Revenue Trend</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Revenue is tracking 97% to target with strong Q4 forecast of
-                    $635K
-                  </p>
-                </div>
+              {monthlyInsights && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* ✅ Best Month */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-foreground">
+                      Top Performing Month
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {monthlyInsights.bestMonth.month} achieved the highest win
+                      rate at {monthlyInsights.bestMonth.winRate}% with{" "}
+                      {monthlyInsights.bestMonth.won} deals closed
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground">
-                    Conversion Opportunity
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Improving proposal to negotiation conversion could add $50K
-                    monthly
-                  </p>
+                  {/* ✅ Overall Win Rate */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-foreground">
+                      Overall Conversion Rate
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      The team closed {monthlyInsights.totalDeals} leads with an
+                      overall win rate of {monthlyInsights.overallWinRate}%
+                    </p>
+                  </div>
+
+                  {/* ✅ Improvement Suggestion */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-foreground">
+                      Conversion Opportunity
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Increasing win rate by just 5% could significantly improve
+                      monthly performance.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
         </main>

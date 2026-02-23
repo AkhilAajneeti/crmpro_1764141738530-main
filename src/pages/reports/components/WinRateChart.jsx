@@ -15,27 +15,8 @@ import {
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
-const WinRateChart = ({ data, pieData }) => {
+const WinRateChart = ({ data, pieData,summary }) => {
   const [chartType, setChartType] = useState("line");
-
-  const winRateData = [
-    { month: "Jan", winRate: 65, deals: 45, won: 29, lost: 16 },
-    { month: "Feb", winRate: 72, deals: 52, won: 37, lost: 15 },
-    { month: "Mar", winRate: 68, deals: 48, won: 33, lost: 15 },
-    { month: "Apr", winRate: 75, deals: 56, won: 42, lost: 14 },
-    { month: "May", winRate: 71, deals: 49, won: 35, lost: 14 },
-    { month: "Jun", winRate: 78, deals: 64, won: 50, lost: 14 },
-    { month: "Jul", winRate: 73, deals: 58, won: 42, lost: 16 },
-    { month: "Aug", winRate: 76, deals: 61, won: 46, lost: 15 },
-    { month: "Sep", winRate: 69, deals: 55, won: 38, lost: 17 },
-    { month: "Oct", winRate: 81, deals: 67, won: 54, lost: 13 },
-    { month: "Nov", winRate: 74, deals: 59, won: 44, lost: 15 },
-  ];
-
-  // const pieData = [
-  //   { name: "Won", value: 430, fill: "#10B981" },
-  //   { name: "Lost", value: 164, fill: "#EF4444" },
-  // ];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
@@ -155,49 +136,67 @@ const WinRateChart = ({ data, pieData }) => {
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="w-3 h-3 bg-success rounded-full" />
-            <span className="text-sm font-medium text-foreground">
-              Total Won
-            </span>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">430</p>
-          <p className="text-xs text-muted-foreground">deals closed</p>
-        </div>
+        {summary && (
+          <>
+            {/* ✅ Total Won */}
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <div className="w-3 h-3 bg-success rounded-full" />
+                <span className="text-sm font-medium text-foreground">
+                  Total Won
+                </span>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {summary.totalWon}
+              </p>
+              <p className="text-xs text-muted-foreground">deals closed</p>
+            </div>
 
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="w-3 h-3 bg-error rounded-full" />
-            <span className="text-sm font-medium text-foreground">
-              Total Lost
-            </span>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">164</p>
-          <p className="text-xs text-muted-foreground">deals lost</p>
-        </div>
+            {/* ✅ Total Lost */}
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <div className="w-3 h-3 bg-error rounded-full" />
+                <span className="text-sm font-medium text-foreground">
+                  Total Lost
+                </span>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {summary.totalLost}
+              </p>
+              <p className="text-xs text-muted-foreground">deals lost</p>
+            </div>
 
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <Icon name="Target" size={16} className="text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              Win Rate
-            </span>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">72.4%</p>
-          <p className="text-xs text-muted-foreground">this year</p>
-        </div>
+            {/* ✅ Overall Win Rate */}
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Icon name="Target" size={16} className="text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Win Rate
+                </span>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {summary.overallWinRate}%
+              </p>
+              <p className="text-xs text-muted-foreground">this year</p>
+            </div>
 
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <Icon name="TrendingUp" size={16} className="text-success" />
-            <span className="text-sm font-medium text-foreground">
-              Best Month
-            </span>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">81%</p>
-          <p className="text-xs text-muted-foreground">October 2024</p>
-        </div>
+            {/* ✅ Best Month */}
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Icon name="TrendingUp" size={16} className="text-success" />
+                <span className="text-sm font-medium text-foreground">
+                  Best Month
+                </span>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {summary.bestMonth.winRate}%
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {summary.bestMonth.month} 2024
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   );

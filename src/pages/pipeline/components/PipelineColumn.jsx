@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import DealCard from "./DealCard";
+import { Draggable } from "@hello-pangea/dnd";
 
 const PipelineColumn = ({
   stage,
@@ -14,7 +15,7 @@ const PipelineColumn = ({
   onCloneDeal,
   onViewHistory,
 }) => {
-  const[isOver,setIsOver]=useState(false);
+  const [isOver, setIsOver] = useState(false);
   const getStageColor = (stageName) => {
     const colors = {
       New: "bg-blue-100 text-blue-800 border-blue-200",
@@ -24,19 +25,6 @@ const PipelineColumn = ({
       Lost: "bg-red-100 text-red-800 border-red-200",
     };
     return colors?.[stageName] || "bg-gray-100 text-gray-800 border-gray-200";
-  };
-
-  const getTotalValue = () => {
-    return deals?.reduce((sum, deal) => sum + deal?.value, 0);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })?.format(amount);
   };
 
   const handleDragOver = (e) => {
@@ -108,20 +96,23 @@ const PipelineColumn = ({
           </div>
         ) : (
           deals?.map((deal, index) => (
-            <motion.div
-              key={deal?.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <DealCard
-                deal={deal}
-                onEdit={() => onEditDeal(deal)}
-                onDelete={() => onDeleteDeal(deal?.id)}
-                onClone={() => onCloneDeal(deal)}
-                onViewHistory={onViewHistory}
-              />
-            </motion.div>
+            <Draggable key={deal.id} draggableId={deal.id} index={index}>
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                >
+                  <DealCard
+                    deal={deal}
+                    onEdit={() => onEditDeal(deal)}
+                    onDelete={() => onDeleteDeal(deal.id)}
+                    onClone={() => onCloneDeal(deal)}
+                    onViewHistory={onViewHistory}
+                  />
+                </div>
+              )}
+            </Draggable>
           ))
         )}
       </div>

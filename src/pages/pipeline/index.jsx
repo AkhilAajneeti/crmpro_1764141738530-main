@@ -11,7 +11,7 @@ import PipelineStats from "./components/PipelineStats";
 import { deleteActivity, deleteLead, fetchLeads } from "services/leads.service";
 import VersionHistoryModal from "./components/VersionHistoryModal";
 import toast from "react-hot-toast";
-import { Droppable, Draggable } from "@hello-pangea/dnd";
+import { Droppable, Draggable, DragDropContext } from "@hello-pangea/dnd";
 
 const Pipeline = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -103,54 +103,35 @@ const Pipeline = () => {
     setDeals((prevDeals) => [...prevDeals, newDeal]);
   };
 
-  const handleDealMove = async (dealId, newStageId) => {
-    const oldDeal = deals.find((d) => d.id === dealId);
-
-    setDeals((prev) =>
-      prev.map((deal) =>
-        deal.id === dealId
-          ? { ...deal, stage: newStageId, updatedAt: new Date().toISOString() }
-          : deal,
-      ),
-    );
-
-    try {
-      // optional backend update
-      // await updateLead(dealId, { pipelineStage: newStageId });
-
-      toast.success(`Moved to ${newStageId}`);
-    } catch (err) {
-      toast.error("Failed to update stage");
-    }
-  };
-
-  const handleDragEnd = async (result) => {
+  const handleDragEnd = (result) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
 
-    if (destination.droppableId === source.droppableId) return;
-
-    // 🔥 Update local state
-    setDeals((prev) =>
-      prev.map((deal) =>
-        deal.id === draggableId
-          ? { ...deal, stage: destination.droppableId }
-          : deal,
-      ),
-    );
-
-    // 🔥 Update backend
-    try {
-      await updateLead(draggableId, {
-        pipelineStage: destination.droppableId,
-      });
-
-      toast.success("Stage updated successfully");
-    } catch (err) {
-      toast.error("Failed to update stage");
+    // Same position
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
     }
+
+    setDeals((prevDeals) => {
+      const updatedDeals = Array.from(prevDeals);
+
+      const movedDeal = updatedDeals.find((deal) => deal.id === draggableId);
+
+      if (!movedDeal) return prevDeals;
+
+      // Update stage
+      movedDeal.stage = destination.droppableId;
+
+      return updatedDeals;
+    });
+
+    toast.success("Stage updated successfully");
   };
+
 
   const handleEditDeal = (deal) => {
     console.log("Edit deal:", deal);
@@ -340,82 +321,90 @@ const Pipeline = () => {
             <DragDropContext onDragEnd={handleDragEnd}>
               <div className="overflow-x-auto">
                 <div className="flex gap-6 min-h-[600px] w-max min-w-full">
-                  {pipelineSections?.map((stage) => (
+                  {pipelineSections?.map((stage, index) => (
                     <motion.div
-                      key={stage?.id}
+                      key={stage.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        delay: pipelineSections?.indexOf(stage) * 0.1,
-                      }}
+                      transition={{ delay: index * 0.1 }}
                       className="flex-shrink-0 w-80 h-full"
                     >
-                      <PipelineColumn
-                        stage={stage}
-                        deals={getDealsBySection(stage?.id)}
-                        onViewHistory={handleOpenVersionHistory}
-                        onDealMove={handleDealMove}
-                        onAddDeal={handleAddDeal}
-                        onEditDeal={handleEditDeal}
-                        onDeleteDeal={handleDeleteDeal}
-                        onCloneDeal={handleCloneDeal}
-                      />
+                      <Droppable droppableId={stage.id}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className="h-full"
+                          >
+                            <PipelineColumn
+                              stage={stage}
+                              deals={getDealsBySection(stage.id)}
+                              onViewHistory={handleOpenVersionHistory}
+                              onAddDeal={handleAddDeal}
+                              onEditDeal={handleEditDeal}
+                              onDeleteDeal={handleDeleteDeal}
+                              onCloneDeal={handleCloneDeal}
+                            />
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
                     </motion.div>
                   ))}
                 </div>
               </div>
             </DragDropContext>
-          </div>
 
-          {/* Mobile Pipeline View */}
-          <div className="lg:hidden">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Icon name="Smartphone" size={24} className="text-primary" />
-                <div>
-                  <h3 className="text-lg font-bold text-card-foreground">
-                    Mobile Pipeline View
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Switch to landscape mode or use a larger screen for the full
-                    Kanban board experience.
-                  </p>
+            {/* Mobile Pipeline View */}
+            <div className="lg:hidden">
+              <div className="bg-card border border-border rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <Icon name="Smartphone" size={24} className="text-primary" />
+                  <div>
+                    <h3 className="text-lg font-bold text-card-foreground">
+                      Mobile Pipeline View
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Switch to landscape mode or use a larger screen for the
+                      full Kanban board experience.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Stage Tabs for Mobile */}
-              <div className="space-y-4">
-                {pipelineSections?.map((section) => {
-                  const stageDeals = getDealsBySection(section?.id);
-                  return (
-                    <div
-                      key={section?.id}
-                      className="border border-border rounded-lg p-4 bg-muted/20"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-card-foreground text-base">
-                          {section?.name}
-                        </h4>
-                        <span className="text-sm font-medium text-foreground bg-background px-2 py-1 rounded-full">
-                          {stageDeals?.length} deal
-                          {stageDeals?.length !== 1 ? "s" : ""}
-                        </span>
+                {/* Stage Tabs for Mobile */}
+                <div className="space-y-4">
+                  {pipelineSections?.map((section) => {
+                    const stageDeals = getDealsBySection(section?.id);
+                    return (
+                      <div
+                        key={section?.id}
+                        className="border border-border rounded-lg p-4 bg-muted/20"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-card-foreground text-base">
+                            {section?.name}
+                          </h4>
+                          <span className="text-sm font-medium text-foreground bg-background px-2 py-1 rounded-full">
+                            {stageDeals?.length} deal
+                            {stageDeals?.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="text-base font-semibold text-primary">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            minimumFractionDigits: 0,
+                          })?.format(
+                            stageDeals?.reduce(
+                              (sum, deal) => sum + deal?.value,
+                              0,
+                            ),
+                          )}
+                        </div>
                       </div>
-                      <div className="text-base font-semibold text-primary">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                          minimumFractionDigits: 0,
-                        })?.format(
-                          stageDeals?.reduce(
-                            (sum, deal) => sum + deal?.value,
-                            0,
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
