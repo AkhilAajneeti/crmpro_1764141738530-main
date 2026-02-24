@@ -143,7 +143,7 @@ const FilterControls = ({
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden"
+            className="lg:hidden w-full"
           >
             <Icon name="Filter" size={16} className="mr-1" />
             Filters
@@ -195,8 +195,8 @@ const FilterControls = ({
         />
       </div>
       {/* Advanced Filters Toggle */}
-      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mt-4 pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
           <Input
             type="date"
             placeholder="Close date from"

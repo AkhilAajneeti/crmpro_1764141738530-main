@@ -499,7 +499,7 @@ const DealsPage = () => {
                 <h2 className="text-lg font-semibold mb-4">Lead Analytics</h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <IndustryChart leads={filteredAndSortedDeals} headerDirection="row" />
+                  <IndustryChart leads={filteredAndSortedDeals}/>
 
                   <MultiLineChart leads={filteredAndSortedDeals} />
 

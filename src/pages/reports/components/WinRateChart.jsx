@@ -15,7 +15,7 @@ import {
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
-const WinRateChart = ({ data, pieData,summary }) => {
+const WinRateChart = ({ data, pieData, summary }) => {
   const [chartType, setChartType] = useState("line");
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -60,7 +60,7 @@ const WinRateChart = ({ data, pieData,summary }) => {
       transition={{ duration: 0.5, delay: 0.1 }}
       className="bg-card border border-border rounded-xl p-6"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-foreground">
             Win Rate Analytics
@@ -70,7 +70,7 @@ const WinRateChart = ({ data, pieData,summary }) => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 pt-3">
           <Button
             variant={chartType === "line" ? "default" : "outline"}
             size="sm"
@@ -100,8 +100,10 @@ const WinRateChart = ({ data, pieData,summary }) => {
               <YAxis
                 stroke="#64748B"
                 fontSize={12}
-                domain={[0, 100]}
+                domain={[0, 'dataMax + 1']}
                 tickFormatter={(value) => `${value}%`}
+                width={35}
+                allowDecimals={false}
               />
               <Tooltip content={<CustomTooltip />} />
               <Line

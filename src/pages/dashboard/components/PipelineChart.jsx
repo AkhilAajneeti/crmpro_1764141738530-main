@@ -138,10 +138,10 @@ const PipelineChart = ({ leads = [] }) => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-card-foreground">
-            Pipeline Performance
+            Leads Performance
           </h3>
           <p className="text-sm text-muted-foreground">
-            Monthly deals closed and revenue generated
+            Monthly leads closed and leads generated
           </p>
         </div>
         {/* <div className="flex items-center space-x-2">
@@ -181,7 +181,7 @@ const PipelineChart = ({ leads = [] }) => {
           ))}
         </div>
       </div>
-      <div className="h-80" aria-label="Monthly Pipeline Performance Bar Chart">
+      <div className="h-80" aria-label="Monthly Leads Performance Bar Chart">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}

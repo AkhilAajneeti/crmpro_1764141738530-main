@@ -51,3 +51,5 @@ export const createActivity = async (payload) => {
   // EspoCRM returns array
   return text ? JSON.parse(text) : null;
 };
+
+// above is for notes means stream

@@ -55,8 +55,10 @@ const Activities = () => {
           }
 
           // TYPE
-          if (filters.type !== "all" && activity.type !== filters.type) {
-            return false;
+          if (filters.type !== "all") {
+            if (activity.parentType !== filters.type) {
+              return false;
+            }
           }
 
           // DATE FROM

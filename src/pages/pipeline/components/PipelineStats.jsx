@@ -103,17 +103,16 @@ const PipelineStats = ({ deals = [] }) => {
           transition={{ delay: index * 0.05 }}
           className={`${stat.bgColor} border border-border rounded-xl p-5`}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start sm:justify-between mb-2 sm:flex-col gap-4">
             <div
               className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center`}
             >
               <Icon name={stat.icon} size={20} />
             </div>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold">{stat.value}</div>
-            <div className="text-sm text-muted-foreground">{stat.title}</div>
+            <div>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-sm text-muted-foreground">{stat.title}</div>
+            </div>
           </div>
         </motion.div>
       ))}

@@ -302,7 +302,7 @@ const Pipeline = () => {
           /> */}
 
           {/* Pipeline Board */}
-          <div className="bg-card border border-border rounded-xl p-6">
+          <div className="bg-card border border-border rounded-xl p-3">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <Icon name="Kanban" size={24} className="text-primary" />
@@ -356,7 +356,7 @@ const Pipeline = () => {
             </DragDropContext>
 
             {/* Mobile Pipeline View */}
-            <div className="lg:hidden">
+            <div className="hidden">
               <div className="bg-card border border-border rounded-xl p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <Icon name="Smartphone" size={24} className="text-primary" />

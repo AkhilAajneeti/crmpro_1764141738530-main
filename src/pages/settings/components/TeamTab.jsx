@@ -16,6 +16,8 @@ const TeamTab = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [team, setTeam] = useState([]);
   const [role, setRole] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteData, setInviteData] = useState({
     userName: "",
@@ -50,7 +52,14 @@ const TeamTab = () => {
       toast.error("Passwords do not match");
       return;
     }
-
+    if (!inviteData.type) {
+      toast.error("Please select user type");
+      return;
+    }
+    if (!inviteData.teamId) {
+      toast.error("Please select a team");
+      return;
+    }
     const payload = {
       userName: inviteData.userName,
       firstName: inviteData.firstName,
@@ -59,15 +68,20 @@ const TeamTab = () => {
       phoneNumber: inviteData.phoneNumber,
       emailAddress: inviteData.emailAddress,
       gender: inviteData.gender,
-      type: inviteData.type, // already lowercase
-      defaultTeamId: inviteData.teamId,
+      type: inviteData.type,
       isActive: inviteData.isActive === "true",
+
       password: inviteData.password,
+      passwordConfirm: inviteData.password, // 🔥 important for Espo
+
+      // ✅ ensure team is properly set
+      teamsIds: inviteData.teamId ? [inviteData.teamId] : [],
+      defaultTeamId: inviteData.teamId ? inviteData.teamId : null,
     };
 
     try {
       setIsLoading(true);
-
+console.log("Submitting payload:", payload);
       await createUser(payload);
 
       toast.success("User created successfully ✅");
@@ -218,8 +232,30 @@ const TeamTab = () => {
     setCurrentPage(1);
   }, [itemsPerPage]);
   const ROLES = ["apiread", "calling", "Executive", "Manager"];
+  const generatePassword = (length = 10) => {
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let password = "";
+
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    return password;
+  };
+  const handleGeneratePassword = () => {
+    const newPassword = generatePassword(12);
+
+    setInviteData((prev) => ({
+      ...prev,
+      password: newPassword,
+      confirmPassword: newPassword,
+    }));
+
+    toast.success("Password generated ✅");
+  };
   return (
-    <div className="space-y-8">
+    <div>
       {/* Team Overview */}
       <div className="bg-card border border-border rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
@@ -524,7 +560,7 @@ const TeamTab = () => {
 
                       {/* gender & phone number */}
                       <div className="grid grid-cols-2 gap-2">
-                       <Select
+                        <Select
                           label="Gender"
                           options={GenderOptions}
                           value={inviteData?.gender}
@@ -579,35 +615,62 @@ const TeamTab = () => {
                     {/* password and generate password */}
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                       <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          label="Password"
-                          type="password"
-                          value={inviteData?.password}
-                          onChange={(e) =>
-                            handleInviteChange("password", e?.target?.value)
-                          }
-                          required
-                        />
-                        <Input
-                          label="Confirm Password"
-                          type="password"
-                          value={inviteData?.confirmPassword}
-                          onChange={(e) =>
-                            handleInviteChange(
-                              "confirmPassword",
-                              e?.target?.value,
-                            )
-                          }
-                          required
-                        />
+                        <div className="relative">
+                          <Input
+                            label="Password"
+                            type={showPassword ? "text" : "password"}
+                            value={inviteData?.password}
+                            onChange={(e) =>
+                              handleInviteChange("password", e?.target?.value)
+                            }
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                          >
+                            <Icon
+                              name={showPassword ? "EyeOff" : "Eye"}
+                              size={18}
+                            />
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            label="Confirm Password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={inviteData?.confirmPassword}
+                            onChange={(e) =>
+                              handleInviteChange(
+                                "confirmPassword",
+                                e?.target?.value,
+                              )
+                            }
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                          >
+                            <Icon
+                              name={showConfirmPassword ? "EyeOff" : "Eye"}
+                              size={18}
+                            />
+                          </button>
+                        </div>
                         <Button
                           className="col-span-2"
                           variant="default"
-                          onClick={handleSendInvite}
+                          onClick={handleGeneratePassword}
                           loading={isLoading}
                           iconName="Send"
                           iconPosition="left"
                           fullWidth
+                          type="button"
                         >
                           Generate Password
                         </Button>
@@ -622,8 +685,7 @@ const TeamTab = () => {
                         Cancel
                       </Button>
                       <Button
-                        Send
-                        Invite
+                        type="submit"
                         variant="default"
                         loading={isLoading}
                         iconName="Send"

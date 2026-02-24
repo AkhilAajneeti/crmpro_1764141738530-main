@@ -6,13 +6,13 @@ import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 
 const DealsFilters = ({
-  filters, 
+  filters,
   onFiltersChange,
   onClearFilters,
   dealCount,
   onBulkAction,
   selectedCount,
-  toggleAnalytics
+  toggleAnalytics,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
@@ -154,7 +154,7 @@ const DealsFilters = ({
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden"
+            className="lg:hidden w-full"
           >
             <Icon name="Filter" size={16} className="mr-1" />
             Filters
@@ -205,8 +205,8 @@ const DealsFilters = ({
         />
       </div>
       {/* Advanced Filters Toggle */}
-      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-border gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
           <Input
             type="date"
             placeholder="Close date from"

@@ -1,7 +1,7 @@
 export const fetchRoles=async()=>{
     const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Role", {
+  const res = await fetch("https://gateway.aajneetiadvertising.com/role", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -23,7 +23,7 @@ export const fetchRoles=async()=>{
 export const createUser = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/user", {
+  const res = await fetch("https://gateway.aajneetiadvertising.com/User", {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 

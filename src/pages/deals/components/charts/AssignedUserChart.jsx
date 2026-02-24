@@ -26,9 +26,11 @@ const AssignedUserChart = ({ leads = [] }) => {
     const grouped = {};
 
     leads.forEach((lead) => {
-      const user = lead.assignedUserName || "Unassigned";
-      if (!grouped[user]) grouped[user] = 0;
-      grouped[user] += 1;
+      const fullName = lead.assignedUserName || "Unassigned";
+      const firstName = fullName.split(" ")[0]; // 👈 only first name
+
+      if (!grouped[firstName]) grouped[firstName] = 0;
+      grouped[firstName] += 1;
     });
 
     return Object.entries(grouped)
@@ -44,9 +46,7 @@ const AssignedUserChart = ({ leads = [] }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-semibold mb-1">
-        Leads by Assigned User
-      </h3>
+      <h3 className="text-lg font-semibold mb-1">Leads by Assigned User</h3>
       <p className="text-sm text-muted-foreground mb-6">
         Lead distribution across sales team
       </p>
@@ -65,21 +65,14 @@ const AssignedUserChart = ({ leads = [] }) => {
               barCategoryGap="25%"
             >
               {/* Subtle grid */}
-              <CartesianGrid
-                strokeDasharray="3 3"
-                strokeOpacity={0.3}
-              />
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
 
-              <XAxis
-                type="number"
-                axisLine={false}
-                tickLine={false}
-              />
+              <XAxis type="number" axisLine={false} tickLine={false} />
 
               <YAxis
                 type="category"
                 dataKey="name"
-                width={140}
+                width={60}
                 axisLine={false}
                 tickLine={false}
               />
@@ -92,11 +85,7 @@ const AssignedUserChart = ({ leads = [] }) => {
                 }}
               />
 
-              <Bar
-                dataKey="value"
-                radius={[0, 12, 12, 0]}
-                barSize={28}
-              >
+              <Bar dataKey="value" radius={[0, 12, 12, 0]} barSize={28}>
                 {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
@@ -112,7 +101,7 @@ const AssignedUserChart = ({ leads = [] }) => {
                 <LabelList
                   dataKey="value"
                   position="right"
-                  style={{ fontSize: 12 }}
+                  style={{ fontSize: 10 }}
                 />
               </Bar>
             </BarChart>

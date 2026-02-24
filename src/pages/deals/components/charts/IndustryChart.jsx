@@ -12,7 +12,7 @@ const COLORS = [
   "#8b5cf6",
   "#06b6d4",
 ];
-const IndustryChart = ({ leads = [] ,headerDirection="row"}) => {
+const IndustryChart = ({ leads = []}) => {
   const [viewType, setViewType] = useState("monthly");
 
   // 🔥 Filter leads based on view type
@@ -88,7 +88,7 @@ const IndustryChart = ({ leads = [] ,headerDirection="row"}) => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className={`flex items-center justify-between mb-6 ${headerDirection === "row" ? "flex-row" : "flex-col"}`}>
+      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6`}>
         <div>
           <h3 className="text-lg font-semibold text-card-foreground">
             Industry Breakdown

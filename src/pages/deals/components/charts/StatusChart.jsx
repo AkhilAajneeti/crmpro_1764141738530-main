@@ -21,7 +21,7 @@ const COLORS = {
 
 const StatusChart = ({ leads = [] }) => {
   const [viewType, setViewType] = useState("monthly");
-
+  const isMobile = window.innerWidth < 640;
   const mapStatusToGroup = (status) => {
     const active = [
       "New",
@@ -143,7 +143,7 @@ const StatusChart = ({ leads = [] }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex justify-between mb-6 flex-row">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold">Status Trend (Line)</h3>
           <p className="text-sm text-muted-foreground">
@@ -168,10 +168,19 @@ const StatusChart = ({ leads = [] }) => {
 
       <div className="h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
+          <LineChart
+            data={chartData}
+            margin={
+              isMobile
+                ? { top: 0, right: 0, left: 0, bottom: 5 }
+                : { top: 20, right: 30, left: 20, bottom: 5 }
+            }
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="label" />
-            <YAxis />
+            <YAxis width={35}
+              allowDecimals={false}
+              domain={[0, "dataMax + 1"]}/>
             <Tooltip />
             <Legend />
 
