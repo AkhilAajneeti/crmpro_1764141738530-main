@@ -66,7 +66,7 @@ const AccountDrawer = ({
     website: "",
     industry: "",
     type: "",
-    phoneNumber: "",
+    phoneNumber: "+91",
     emailAddress: "",
     description: "",
     assignedUserId: "",
@@ -195,7 +195,22 @@ const AccountDrawer = ({
   }, [isOpen, account?.id, activeTab]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e?.target;
+    const { name, value } = e.target;
+
+    if (name === "phoneNumber") {
+      let clean = value.replace(/\D/g, "");
+
+      if (!clean.startsWith("91")) {
+        clean = "91" + clean;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        phoneNumber: "+" + clean,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -344,7 +359,10 @@ const AccountDrawer = ({
 
     try {
       setIsLoading(true);
-
+      if (formData.phoneNumber.length !== 10) {
+        toast.error("Phone number must be 10 digits");
+        return;
+      }
       const payload = {
         ...formData,
       };
@@ -716,7 +734,7 @@ const AccountDrawer = ({
                       type="tel"
                       value={formData?.phoneNumber}
                       onChange={handleInputChange}
-                      placeholder="1234567891"
+                      placeholder="+911234567891"
                     />
                   </div>
                   <div>

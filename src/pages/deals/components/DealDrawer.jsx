@@ -42,7 +42,7 @@ const DealDrawer = ({
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    phoneNumber: "",
+    phoneNumber: "+91",
     emailAddress: "",
     whatsapp: "",
     addressCity: "",
