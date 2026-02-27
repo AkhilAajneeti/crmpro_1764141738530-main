@@ -22,8 +22,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null
     },
     {
-      label: 'Contacts',
-      path: '/contacts',
+      label: 'Sales Team',
+      path: '/sales-team',
       icon: 'Users',
       badge: null
     },
@@ -52,7 +52,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null
     },
     {
-      label: 'Call',
+      label: 'Training',
       path: '/call',
       icon: 'Phone',
       badge: null

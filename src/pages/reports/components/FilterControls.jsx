@@ -214,10 +214,9 @@ const FilterControls = ({
             }
           />
         </div>
-        <Button onClick={toggleAnalytics}>
-          <Icon name="Plus" size={16} className="mr-2" />
-          Anaylze By Chart
-        </Button>
+
+          <Button onClick={toggleAnalytics}>Anaylze By Chart</Button>
+      
       </div>
     </div>
   );

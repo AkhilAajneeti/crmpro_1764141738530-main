@@ -6,19 +6,30 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import Avatar from "react-avatar";
 import TablePagination from "./TablePagination";
-import { fetchUser } from "services/user.service";
+import {
+  deleteUser,
+  fetchUser,
+  fetchUserById,
+  updateUser,
+} from "services/user.service";
 import { fetchTeam } from "services/team.service";
 import { createUser, fetchRoles } from "services/setting.service";
 import toast from "react-hot-toast";
-const TeamTab = () => {
+import UserDetailsModal from "./models/UserDetailsModal";
+const UserTab = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [team, setTeam] = useState([]);
   const [role, setRole] = useState([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [isShowDetails, setIsShowDetails] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [inviteData, setInviteData] = useState({
     userName: "",
     title: "",
@@ -34,6 +45,28 @@ const TeamTab = () => {
     password: "",
     confirmPassword: "",
   });
+  const handleEdit = (member) => {
+    setIsEdit(true);
+    setIsInviteModalOpen(true);
+
+    setInviteData({
+      id: member.id,
+      userName: member.userName || "",
+      title: member.title || "",
+      firstName: member.firstName || "",
+      lastName: member.lastName || "",
+      phoneNumber: member.phoneNumber || "",
+      emailAddress: member.emailAddress || "",
+      gender: member.gender || "",
+      teamId: member.defaultTeamId || "",
+      type: member.type || "",
+      isActive: member.isActive ? "true" : "false",
+      role: member.role || "",
+      password: "",
+      confirmPassword: "",
+    });
+  };
+
   const handleChange = (key, value) => {
     setInviteData((prev) => ({
       ...prev,
@@ -70,7 +103,6 @@ const TeamTab = () => {
       gender: inviteData.gender,
       type: inviteData.type,
       isActive: inviteData.isActive === "true",
-
       password: inviteData.password,
       passwordConfirm: inviteData.password, // 🔥 important for Espo
 
@@ -82,7 +114,14 @@ const TeamTab = () => {
     try {
       setIsLoading(true);
       console.log("Submitting payload:", payload);
-      await createUser(payload);
+      // await createUser(payload);
+      if (isEdit) {
+        await updateUser(inviteData.id, payload);
+        toast.success("User updated successfully ✅");
+      } else {
+        await createUser(payload);
+        toast.success("User created successfully ✅");
+      }
 
       toast.success("User created successfully ✅");
 
@@ -96,6 +135,24 @@ const TeamTab = () => {
       setIsLoading(false);
     }
   };
+  const fetchuserById = async (member) => {
+    try {
+      setIsLoading(true);
+
+      const data = await fetchUserById(member.id);
+
+      console.log("Full User Data:", data); // 🔍 debug
+
+      setSelectedUser(data); // ✅ SET CORRECT STATE
+      setIsShowDetails(true); // ✅ open modal
+    } catch (err) {
+      console.error("failed to fetch data", err);
+      toast.error("Failed to load user details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -188,8 +245,26 @@ const TeamTab = () => {
     }, 1000);
   };
 
-  const handleRemoveMember = (memberId) => {
-    setTeamMembers((prev) => prev?.filter((member) => member?.id !== memberId));
+  const handleRemoveUser = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      setIsLoading(true);
+
+      await deleteUser(selectedUserId);
+
+      toast.success("User deleted successfully ✅");
+
+      const data = await fetchUser();
+      setTeamMembers(data.list || []);
+
+      setIsDeleteModalOpen(false);
+      setSelectedUserId(null);
+    } catch (err) {
+      toast.error("Failed to delete user ❌");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -263,10 +338,10 @@ const TeamTab = () => {
             <Icon name="Users" size={24} className="text-primary" />
             <div>
               <h3 className="text-lg font-semibold text-card-foreground">
-                Team Management
+                User Management
               </h3>
               <p className="text-sm text-muted-foreground">
-                Manage team members, roles, and permissions
+                Manage users, roles, and permissions
               </p>
             </div>
           </div>
@@ -388,7 +463,12 @@ const TeamTab = () => {
                       </div>
 
                       <div>
-                        <p className="font-medium text-card-foreground">
+                        <p
+                          className="font-medium text-card-foreground"
+                          onClick={() => {
+                            fetchuserById(member);
+                          }}
+                        >
                           {member?.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -420,7 +500,7 @@ const TeamTab = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => console.log("Edit member", member?.id)}
+                        onClick={() => handleEdit(member)}
                         aria-label="Edit member"
                       >
                         <Icon name="Edit" size={16} />
@@ -428,7 +508,10 @@ const TeamTab = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleRemoveMember(member?.id)}
+                        onClick={() => {
+                          setSelectedUserId(member?.id);
+                          setIsDeleteModalOpen(true);
+                        }}
                         aria-label="Remove member"
                       >
                         <Icon name="Trash2" size={16} />
@@ -471,7 +554,7 @@ const TeamTab = () => {
               {/* Header (Sticky) */}
               <div className="sticky top-0 bg-card z-10 flex items-center justify-between p-6 border-b border-border">
                 <h3 className="text-lg font-semibold text-card-foreground">
-                  Create User
+                  {isEdit ? "Update User" : "Create User"}
                 </h3>
 
                 <button
@@ -692,7 +775,7 @@ const TeamTab = () => {
                         iconPosition="left"
                         fullWidth
                       >
-                        Create User
+                        {isEdit ? "Update User" : "Create User"}
                       </Button>
                     </div>
                   </div>
@@ -702,8 +785,59 @@ const TeamTab = () => {
           </div>
         </>
       )}
+      {isShowDetails && selectedUser && (
+        <UserDetailsModal
+          user={selectedUser}
+          onClose={() => setIsShowDetails(false)}
+          getStatusBadge={getStatusBadge}
+        />
+      )}
+
+      {isDeleteModalOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setIsDeleteModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-xl w-full max-w-md shadow-xl p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Icon name="AlertTriangle" size={24} className="text-error" />
+                <h3 className="text-lg font-semibold text-card-foreground">
+                  Confirm Delete
+                </h3>
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-6">
+                Are you sure you want to delete this user? This action cannot be
+                undone.
+              </p>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  onClick={handleRemoveUser}
+                  loading={isLoading}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
-export default TeamTab;
+export default UserTab;

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import Header from '../../components/ui/Header';
-import Sidebar from '../../components/ui/Sidebar';
-import Icon from '../../components/AppIcon';
-import CompanyTab from './components/CompanyTab';
-import TeamTab from './components/TeamTab';
-import CustomFieldsTab from './components/CustomFieldsTab';
-import PipelineTab from './components/PipelineTab';
+import React, { useState } from "react";
+import Header from "../../components/ui/Header";
+import Sidebar from "../../components/ui/Sidebar";
+import Icon from "../../components/AppIcon";
+import CompanyTab from "./components/CompanyTab";
+import TeamsTab from "./components/TeamsTab";
+import PipelineTab from "./components/PipelineTab";
+import UserTab from "./components/UserTab";
 
 const Settings = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -21,40 +21,40 @@ const Settings = () => {
 
   const tabs = [
     {
-      id: 'company',
-      label: 'Company',
-      icon: 'Building2',
-      description: 'Organization details and branding'
+      id: "company",
+      label: "Company",
+      icon: "Building2",
+      description: "Organization details and branding",
     },
     {
-      id: 'team',
-      label: 'Team & Roles',
-      icon: 'Users',
-      description: 'Manage team members and permissions'
+      id: "user",
+      label: "Users & Roles",
+      icon: "Users",
+      description: "Manage users and permissions",
     },
     {
-      id: 'fields',
-      label: 'Custom Fields',
-      icon: 'Settings',
-      description: 'Create and manage custom fields'
+      id: "team",
+      label: "Teams & Roles",
+      icon: "Users",
+      description: "Create and manage custom fields",
     },
     {
-      id: 'pipeline',
-      label: 'Pipeline',
-      icon: 'GitBranch',
-      description: 'Configure sales pipeline and automation'
-    }
+      id: "pipeline",
+      label: "Pipeline",
+      icon: "GitBranch",
+      description: "Configure sales pipeline and automation",
+    },
   ];
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'company':
+      case "company":
         return <CompanyTab />;
-      case 'team':
-        return <TeamTab />;
-      case 'fields':
-        return <CustomFieldsTab />;
-      case 'pipeline':
+      case "user":
+        return <UserTab />;
+      case "team":
+        return <TeamsTab />;
+      case "pipeline":
         return <PipelineTab />;
       default:
         return <CompanyTab />;
@@ -63,7 +63,10 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onMenuToggle={handleSidebarToggle} isSidebarOpen={isSidebarOpen} />
+      <Header
+        onMenuToggle={handleSidebarToggle}
+        isSidebarOpen={isSidebarOpen}
+      />
       <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       <main className="lg:ml-64 pt-16">
         <div className="p-4 lg:p-8">
@@ -74,8 +77,12 @@ const Settings = () => {
                 <Icon name="Settings" size={24} className="text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Settings</h1>
-                <p className="text-muted-foreground">Configure your CRM system and preferences</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                  Settings
+                </h1>
+                <p className="text-muted-foreground">
+                  Configure your CRM system and preferences
+                </p>
               </div>
             </div>
           </div>
@@ -91,8 +98,10 @@ const Settings = () => {
                     onClick={() => setActiveTab(tab?.id)}
                     className={`
                       flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-smooth
-                      ${activeTab === tab?.id
-                        ? 'border-primary text-primary' :'border-transparent text-muted-foreground hover:text-foreground hover:border-muted'
+                      ${
+                        activeTab === tab?.id
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                       }
                     `}
                   >
@@ -118,7 +127,11 @@ const Settings = () => {
                   ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <Icon name="ChevronDown" size={20} className="text-muted-foreground" />
+                  <Icon
+                    name="ChevronDown"
+                    size={20}
+                    className="text-muted-foreground"
+                  />
                 </div>
               </div>
             </div>
@@ -126,21 +139,24 @@ const Settings = () => {
             {/* Tab Content */}
             <div className="p-6 lg:p-8">
               {/* Tab Description - Desktop Only */}
-              <div className="hidden lg:block mb-6">
+              <div className="hidden lg:block mb-3">
                 <div className="flex items-center space-x-3">
-                  <Icon 
-                    name={tabs?.find(tab => tab?.id === activeTab)?.icon || 'Settings'} 
-                    size={20} 
-                    className="text-primary" 
-                  />
-                  <div>
+                  {/* <Icon
+                    name={
+                      tabs?.find((tab) => tab?.id === activeTab)?.icon ||
+                      "Settings"
+                    }
+                    size={20}
+                    className="text-primary"
+                  /> */}
+                  {/* <div>
                     <h2 className="text-lg font-semibold text-card-foreground">
-                      {tabs?.find(tab => tab?.id === activeTab)?.label}
+                      {tabs?.find((tab) => tab?.id === activeTab)?.label}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {tabs?.find(tab => tab?.id === activeTab)?.description}
+                      {tabs?.find((tab) => tab?.id === activeTab)?.description}
                     </p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -156,9 +172,12 @@ const Settings = () => {
                 <Icon name="HelpCircle" size={20} className="text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-card-foreground mb-2">Need Help?</h3>
+                <h3 className="font-semibold text-card-foreground mb-2">
+                  Need Help?
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  If you need assistance with any settings, check out our documentation or contact support.
+                  If you need assistance with any settings, check out our
+                  documentation or contact support.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button className="inline-flex items-center px-4 py-2 bg-background border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-smooth">

@@ -6,7 +6,7 @@ import NotFound from "pages/NotFound";
 import Settings from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
 import DealsPage from "./pages/deals";
-import ContactsPage from "./pages/contacts";
+// import ContactsPage from "./pages/contacts";
 import LoginPage from "./pages/login";
 import EmailsPage from "./pages/emails";
 import AccountsPage from "./pages/accounts";
@@ -21,6 +21,7 @@ import MeetingPage from "pages/meeting";
 import CallPage from "./pages/call";
 import Pipeline from "pages/pipeline";
 import ProjectsPage from "pages/projects";
+import SalesTeam from "pages/sales-team";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -41,7 +42,8 @@ const Routes = () => {
           <Route path="/integrations" element={<IntegrationsPage />} />
 
           <Route path="/leads" element={<DealsPage />} />
-          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/sales-team" element={<SalesTeam/>} />
+          {/* <Route path="/contacts" element={<ContactsPage />} /> */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/emails" element={<EmailsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
