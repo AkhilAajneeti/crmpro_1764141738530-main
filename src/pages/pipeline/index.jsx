@@ -36,11 +36,12 @@ const Pipeline = () => {
         const data = await fetchLeads();
         const normalizedDeals = (data.list || []).map((item) => ({
           id: item.id,
-          title: item.firstName + " " + item.lastName,
+          title: item.name,
           stage: "active", // default stage until you build real deal stages
           status: item.status,
           source: item.source,
           value: item.opportunityAmount || 0,
+          cProject:item.cProject,
           owner: {
             id: item.assignedUserId,
             name: item.assignedUserName,
@@ -131,7 +132,6 @@ const Pipeline = () => {
 
     toast.success("Stage updated successfully");
   };
-
 
   const handleEditDeal = (deal) => {
     console.log("Edit deal:", deal);
@@ -312,9 +312,6 @@ const Pipeline = () => {
                   </h2>
                 </div>
               </div>
-              {/* <Button variant="default" onClick={() => handleVersionModal()}>
-                Version Control
-              </Button> */}
             </div>
 
             {/* Kanban Board with Horizontal Scroll */}

@@ -27,44 +27,6 @@ const RightRail = ({ leads = [] }) => {
 
   return (
     <div className="space-y-6">
-      {/* Quick Links */}
-      <motion.div
-        className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <h3 className="text-lg font-semibold text-card-foreground mb-4">
-          Quick Actions
-        </h3>
-        <div className="space-y-3">
-          {quickLinks?.map((link, index) => (
-            <button
-              key={index}
-              onClick={link?.action}
-              className="w-full flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-smooth text-left"
-            >
-              <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Icon name={link?.icon} size={16} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-card-foreground mb-1">
-                  {link?.title}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {link?.description}
-                </p>
-              </div>
-              <Icon
-                name="ArrowRight"
-                size={14}
-                className="text-muted-foreground mt-1"
-              />
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Stats Card */}
       {/* <motion.div
         className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
@@ -125,7 +87,45 @@ const RightRail = ({ leads = [] }) => {
       </motion.div> */}
 
       {/* Industry Chart */}
-      <IndustryChart leads={leads}/>
+      <IndustryChart leads={leads} />
+
+      {/* Quick Links */}
+      <motion.div
+        className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">
+          Quick Actions
+        </h3>
+        <div className="space-y-3">
+          {quickLinks?.map((link, index) => (
+            <button
+              key={index}
+              onClick={link?.action}
+              className="w-full flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-smooth text-left"
+            >
+              <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Icon name={link?.icon} size={16} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-card-foreground mb-1">
+                  {link?.title}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {link?.description}
+                </p>
+              </div>
+              <Icon
+                name="ArrowRight"
+                size={14}
+                className="text-muted-foreground mt-1"
+              />
+            </button>
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 };

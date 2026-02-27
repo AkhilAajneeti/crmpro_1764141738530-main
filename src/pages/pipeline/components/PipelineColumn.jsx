@@ -79,8 +79,8 @@ const PipelineColumn = ({
             <p className="text-base font-medium text-foreground mb-2">
               No deals in {stage?.name}
             </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Get started by adding your first deal
+            {/* <p className="text-sm text-muted-foreground mb-4">
+              Get started by adding your first lead
             </p>
             <Button
               variant="outline"
@@ -92,7 +92,7 @@ const PipelineColumn = ({
               className="font-medium"
             >
               Add Leads
-            </Button>
+            </Button> */}
           </div>
         ) : (
           deals?.map((deal, index) => (
