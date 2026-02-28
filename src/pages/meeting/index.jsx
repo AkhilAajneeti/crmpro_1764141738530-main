@@ -30,6 +30,7 @@ const MeetingPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
+
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",

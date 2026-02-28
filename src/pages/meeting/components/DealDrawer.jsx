@@ -63,6 +63,7 @@ const DealDrawer = ({
         priority: "",
         startDate: "",
         dueDate: "",
+        joinUrl: "",
         description: "",
         parentName: "", // Account | Lead | Contact (TYPE)
         parentType: "", // record ID
@@ -77,14 +78,20 @@ const DealDrawer = ({
         teamId: deal.teamId || "",
         status: deal.status || "",
         priority: deal.priority || "",
-        startDate: deal.startDate || "",
-        dueDate: deal.dueDate || "",
+        startDate: deal.dateStart
+          ? deal.dateStart.replace(" ", "T").slice(0, 16)
+          : "",
+
+        dueDate: deal.dateEnd
+          ? deal.dateEnd.replace(" ", "T").slice(0, 16)
+          : "",
+        joinUrl: deal.joinUrl || "",
         description: deal.description || "",
         parentName: deal.parentType || "",
         parentType: deal.parentId || "",
-        attendeesUsersIds: deal.attendeeUsers || [],
-        attendeesContactsIds: deal.attendeeContacts || [],
-        attendeesLeadsIds: deal.attendeeLeads || [],
+        attendeeUsers: deal.attendeesUsersIds || [],
+        attendeeContacts: deal.attendeesContactsIds || [],
+        attendeeLeads: deal.attendeesLeadsIds || [],
       });
     }
   }, [deal, mode]);
@@ -270,6 +277,7 @@ const DealDrawer = ({
       dateEnd: toEspoDateTime(formData.dueDate),
 
       description: formData.description || "",
+      joinUrl: formData.joinUrl || "",
 
       // ✅ CORRECT parent mapping
       parentType: formData.parentName || null, // Account
@@ -461,6 +469,12 @@ const DealDrawer = ({
         return [];
     }
   };
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditing(false);
+      setActiveTab("overview");
+    }
+  }, [isOpen]);
   return (
     <>
       {/* Backdrop */}
@@ -629,6 +643,16 @@ const DealDrawer = ({
                         placeholder="Description"
                         onChange={(e) =>
                           handleChange("description", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        type="text"
+                        label="Meeting Link"
+                        value={formData.joinUrl || ""}
+                        onChange={(e) =>
+                          handleChange("joinUrl", e.target.value)
                         }
                       />
                     </div>
@@ -825,6 +849,30 @@ const DealDrawer = ({
                             <p className="text-foreground leading-relaxed mt-1">
                               {deal?.description}
                             </p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Meeting Link
+                            </p>
+
+                            <div className="flex items-center justify-between border rounded-lg p-2 bg-muted/30">
+                              <p className="text-sm text-foreground truncate">
+                                {deal?.joinUrl || "—"}
+                              </p>
+
+                              {deal?.joinUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(deal.joinUrl);
+                                    toast.success("Link copied!");
+                                  }}
+                                  className="ml-3 text-muted-foreground hover:text-primary transition"
+                                >
+                                  <Icon name="Copy" size={18} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

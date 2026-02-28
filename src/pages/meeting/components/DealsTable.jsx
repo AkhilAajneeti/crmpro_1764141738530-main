@@ -18,7 +18,6 @@ const DealsTable = ({
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
-
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
@@ -184,7 +183,6 @@ const DealsTable = ({
                       deal?.status,
                     )}`}
                   >
-                    
                     <span className={`text-sm text-foreg roundunded-full `}>
                       {deal?.status}
                     </span>
@@ -242,7 +240,7 @@ const DealsTable = ({
         </table>
       </div>
       {/* Mobile Cards */}
-   
+
       <div className="md:hidden">
         {paginatedDeals?.map((deal) => (
           <div
