@@ -44,6 +44,19 @@ const ContactsTable = ({
     if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
     return contactDate?.toLocaleDateString();
   };
+  const getConversionColor = (rate) => {
+    const value = Number(rate);
+
+    if (value >= 30) {
+      return "bg-green-100 text-green-700 border-green-300";
+    }
+
+    if (value >= 10) {
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    }
+
+    return "bg-red-100 text-red-700 border-red-300";
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -54,7 +67,6 @@ const ContactsTable = ({
     };
     return colors?.[status] || colors?.["Inactive"];
   };
-
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Desktop Table */}
@@ -97,7 +109,7 @@ const ContactsTable = ({
                   </div>
                 </th>
               ))}
-              <th className="w-24 px-4 py-3 text-center text-sm font-medium text-muted-foreground">
+              <th className="w-24 px-4 py-3 text-center text-sm font-medium text-muted-foreground hidden">
                 Actions
               </th>
             </tr>
@@ -137,23 +149,25 @@ const ContactsTable = ({
                   </div>
                 </td>
                 <td className="px-4 py-4 text-sm text-foreground">
-                  {contact?.accountName}
+                  {contact?.leadsAssigned}
                 </td>
                 <td className="px-4 py-4 text-sm text-foreground">
-                  {contact?.phoneNumber}
+                  {contact?.siteVisits}
                 </td>
                 <td className="px-4 py-4 text-sm text-primary hover:underline">
-                  {contact?.assignedUserName}
+                  {contact?.dealsClosed}
                 </td>
 
                 <td className="px-4 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-medium border`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-semibold border ${getConversionColor(
+                      contact?.conversionRate,
+                    )}`}
                   >
-                    {contact?.conversionRate}
+                    {contact?.conversionRate ?? 0}%
                   </span>
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-4 hidden">
                   <div
                     className={`flex items-center justify-center space-x-1 transition-opacity`}
                   >

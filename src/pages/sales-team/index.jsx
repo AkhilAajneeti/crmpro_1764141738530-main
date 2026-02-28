@@ -70,9 +70,8 @@ const SalesTeam = () => {
   }, [mockContacts]);
 
   const [filters, setFilters] = useState({
-    accounts: "",
-    assignUser: "",
-    status: "",
+    performance: "",
+    leadsVolume: "",
   });
 
   // operational
@@ -109,11 +108,11 @@ const SalesTeam = () => {
 
       stats[userId].leadsAssigned++;
 
-      if (lead.status === "Closed") {
+      if (lead.status === "Deal Closed") {
         stats[userId].dealsClosed++;
       }
 
-      if (lead.status === "Site Visit") {
+      if (lead.status === "Site Visit Done") {
         stats[userId].siteVisits++;
       }
     });
@@ -153,18 +152,50 @@ const SalesTeam = () => {
 
   // ✅ 4️⃣ Search + Safe Sorting
   const filteredUsers = useMemo(() => {
-    let users = salesStats.filter((user) => {
-      return (
-        searchTerm === "" ||
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.emailAddress?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
+    let users = [...salesStats];
 
+    // 🔎 Search
+    if (searchTerm) {
+      users = users.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.emailAddress?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    // 🎯 Performance Filter
+    if (filters.performance) {
+      users = users.filter((user) => {
+        const rate = Number(user.conversionRate);
+
+        if (filters.performance === "high") return rate > 40;
+        if (filters.performance === "medium") return rate >= 10 && rate <= 40;
+        if (filters.performance === "low") return rate > 0 && rate < 10;
+        if (filters.performance === "none") return rate === 0;
+
+        return true;
+      });
+    }
+
+    // 📊 Leads Volume Filter
+    if (filters.leadsVolume) {
+      users = users.filter((user) => {
+        const leads = user.leadsAssigned;
+
+        if (filters.leadsVolume === "heavy") return leads >= 30;
+        if (filters.leadsVolume === "medium") return leads >= 10 && leads < 30;
+        if (filters.leadsVolume === "low") return leads > 0 && leads < 10;
+        if (filters.leadsVolume === "none") return leads === 0;
+
+        return true;
+      });
+    }
+
+    // 🔽 Sorting
     if (sortConfig.key) {
       users.sort((a, b) => {
-        const aValue = (a[sortConfig.key] || "").toString().toLowerCase();
-        const bValue = (b[sortConfig.key] || "").toString().toLowerCase();
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
 
         if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
@@ -173,7 +204,7 @@ const SalesTeam = () => {
     }
 
     return users;
-  }, [salesStats, searchTerm, sortConfig]);
+  }, [salesStats, searchTerm, filters, sortConfig]);
   // end
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -360,6 +391,12 @@ const SalesTeam = () => {
     setIsDrawerOpen(true);
   };
 
+  //
+  const siteVisits = allLeads.filter(
+    (l) => l.status === "Site Visit Done",
+  ).length;
+  const closedDeals = allLeads.filter((l) => l.status === "Deal Closed").length;
+
   return (
     <div className="min-h-screen bg-background">
       <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
@@ -379,7 +416,7 @@ const SalesTeam = () => {
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
               </Button>
-              <Button onClick={handleAddContact}>
+              <Button onClick={handleAddContact} className="hidden">
                 <Icon name="Plus" size={16} className="mr-2" />
                 Add Contact
               </Button>
@@ -392,7 +429,7 @@ const SalesTeam = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Total Contacts
+                    Total Sales Members
                   </p>
                   <p className="text-2xl font-bold text-foreground">
                     {salesStats?.length}
@@ -407,18 +444,13 @@ const SalesTeam = () => {
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    Active Contacts
-                  </p>
+                  <p className="text-sm text-muted-foreground">Site Visits</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {
-                      mockContacts?.filter((c) => c?.accountIsInactive == false)
-                        ?.length
-                    }
+                    {siteVisits}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
-                  <Icon name="UserCheck" size={24} className="text-success" />
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
+                  <Icon name="MapPin" size={24} className="text-amber-600" />
                 </div>
               </div>
             </div>
@@ -426,37 +458,15 @@ const SalesTeam = () => {
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Prospects</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Deals Closed
+                  </p>
                   <p className="text-2xl font-bold text-foreground">
-                    {
-                      mockContacts?.filter((c) => c?.status === "Prospect")
-                        ?.length
-                    }
+                    {closedDeals}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center">
                   <Icon name="Target" size={24} className="text-warning" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-card rounded-xl border border-border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Customers</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {
-                      mockContacts?.filter((c) => c?.status === "Customer")
-                        ?.length
-                    }
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
-                  <Icon
-                    name="Crown"
-                    size={24}
-                    className="text-accent-foreground"
-                  />
                 </div>
               </div>
             </div>
@@ -516,6 +526,7 @@ const SalesTeam = () => {
         isOpen={isDrawerOpen}
         onClose={handleDrawerClose}
         onBulkUpdate={handleBulkUpdateContact}
+        allLeads={allLeads}
       />
     </div>
   );

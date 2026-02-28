@@ -17,36 +17,39 @@ const ContactFilters = ({
   const [accounts, setAccounts] = useState([]);
   const [assignUser, setAssignUser] = useState([]);
   useEffect(() => {
- 
-      fetchAccounts()
-        .then((res) => setAccounts(res.list || []))
-        .catch((err) => console.error("Account fetch failed", err));
-
+    fetchAccounts()
+      .then((res) => setAccounts(res.list || []))
+      .catch((err) => console.error("Account fetch failed", err));
   }, []);
   useEffect(() => {
- 
-      fetchUser()
-        .then((res) => setAssignUser(res.list || []))
-        .catch((err) => console.error("User fetch failed", err));
-
+    fetchUser()
+      .then((res) => setAssignUser(res.list || []))
+      .catch((err) => console.error("User fetch failed", err));
   }, []);
 
   const accountOptions = accounts.map((acc) => ({
-  value: acc.id,        // 👈 important (ID use karo)
-  label: acc.name,
-}));
+    value: acc.id, // 👈 important (ID use karo)
+    label: acc.name,
+  }));
   const assignUserOptions = assignUser.map((acc) => ({
-  value: acc.id,        // 👈 important (ID use karo)
-  label: acc.name,
-}));
+    value: acc.id, // 👈 important (ID use karo)
+    label: acc.name,
+  }));
 
+  const performanceOptions = [
+    { value: "", label: "Performance" },
+    { value: "high", label: "High Performer" },
+    { value: "medium", label: "Medium Performer" },
+    { value: "low", label: "Low Performer" },
+    { value: "none", label: "none" },
+  ];
 
-  const statusOptions = [
-    { value: "", label: "All Statuses" },
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-    { value: "Prospect", label: "Prospect" },
-    { value: "Customer", label: "Customer" },
+  const LeadOptions = [
+    { value: "", label: "Leads Volume" },
+    { value: "heavy", label: "Heavy Load (30+)" },
+    { value: "medium", label: "Medium Load (10-29)" },
+    { value: "low", label: "Low Load (1-9)" },
+    { value: "none", label: "No Leads" },
   ];
 
   return (
@@ -62,7 +65,7 @@ const ContactFilters = ({
             />
             <Input
               type="search"
-              placeholder="Search contacts by name, email, or company..."
+              placeholder="Search by name and email"
               value={searchTerm}
               onChange={(e) => onSearchChange(e?.target?.value)}
               className="pl-10"
@@ -73,27 +76,18 @@ const ContactFilters = ({
         {/* Filters */}
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
           <Select
-            placeholder="Account"
-            options={accountOptions}
-            value={filters?.accounts}
-            onChange={(value) => onFilterChange("accounts", value)}
+            placeholder="Performance"
+            options={performanceOptions}
+            value={filters.performance}
+            onChange={(value) => onFilterChange("performance", value)}
             className="w-full sm:w-48"
           />
-
           <Select
-            placeholder="Assign User"
-            options={assignUserOptions}
-            value={filters?.assignUser}
-            onChange={(value) => onFilterChange("assignUser", value)}
-            className="w-full sm:w-40"
-          />
-
-          <Select
-            placeholder="Status"
-            options={statusOptions}
-            value={filters?.status}
-            onChange={(value) => onFilterChange("status", value)}
-            className="w-full sm:w-36"
+            placeholder="Leads Volume"
+            options={LeadOptions}
+            value={filters.leadsVolume}
+            onChange={(value) => onFilterChange("leadsVolume", value)}
+            className="w-full sm:w-48"
           />
 
           {/* Clear Filters */}
