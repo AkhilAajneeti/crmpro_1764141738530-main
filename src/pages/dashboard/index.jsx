@@ -447,7 +447,7 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                                   Assigned User
                                 </th>
                                 <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Parent
+                                  Created By
                                 </th>
                                 <th className="text-left px-6 py-3 text-sm font-medium">
                                   Created
@@ -516,7 +516,7 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                                   </td>
 
                                   <td className="px-6 py-4 text-sm">
-                                    {item.parentName || "—"}
+                                    {item.createdByName || "—"}
                                   </td>
 
                                   <td className="px-6 py-4 text-sm">

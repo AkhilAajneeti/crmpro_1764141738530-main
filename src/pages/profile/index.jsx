@@ -24,12 +24,12 @@ const Profile = () => {
       icon: "User",
       description: "Personal information and preferences",
     },
-    {
-      id: "password",
-      label: "Password",
-      icon: "Building2",
-      description: "Make your password you first priority",
-    },
+    // {
+    //   id: "password",
+    //   label: "Password",
+    //   icon: "Building2",
+    //   description: "Make your password you first priority",
+    // },
   ];
 
   const renderTabContent = () => {

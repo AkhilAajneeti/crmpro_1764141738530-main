@@ -38,12 +38,6 @@ const Settings = () => {
       icon: "Users",
       description: "Create and manage custom fields",
     },
-    {
-      id: "pipeline",
-      label: "Pipeline",
-      icon: "GitBranch",
-      description: "Configure sales pipeline and automation",
-    },
   ];
 
   const renderTabContent = () => {
