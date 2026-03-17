@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Pie, PieChart, Tooltip, ResponsiveContainer, Cell,Label } from "recharts";
+import { Pie, PieChart, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
@@ -11,9 +11,23 @@ const COLORS = [
   "#ef4444",
   "#8b5cf6",
   "#06b6d4",
+  "#10b981",
+  "#f97316",
+  "#6366f1",
+];
+const STATUS_OPTIONS = [
+  "Interested",
+  "Not Interested",
+  "Follow up",
+  "Site Visit Scheduled",
+  "Low Budget",
+  "Purchased",
+  "Converted",
+  "Deal Closed",
+  "Proposal Shared",
 ];
 
-const IndustryChart = ({ leads = [] }) => {
+const StatusChart = ({ leads = [] }) => {
   const [viewType, setViewType] = useState("month");
 
   // 🔥 Filter leads based on view type
@@ -39,6 +53,7 @@ const IndustryChart = ({ leads = [] }) => {
     if (viewType === "week") {
       const startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
 
       return leads.filter((l) => {
         const d = new Date(l.createdAt);
@@ -59,22 +74,26 @@ const IndustryChart = ({ leads = [] }) => {
     return leads;
   }, [leads, viewType]);
 
-  // 🔥 Group by industry
+  // 🔥 Filter leads based on view type
   const chartData = useMemo(() => {
     const grouped = {};
 
-    filteredLeads.forEach((lead) => {
-      const industry = lead.industry || "Unknown";
-
-      if (!grouped[industry]) grouped[industry] = 0;
-
-      grouped[industry] += 1;
+    STATUS_OPTIONS.forEach((status) => {
+      grouped[status] = 0;
     });
 
-    return Object.keys(grouped).map((key) => ({
-      name: key,
-      value: grouped[key],
-    }));
+    filteredLeads.forEach((lead) => {
+      const status = lead.status;
+
+      if (grouped[status] !== undefined) {
+        grouped[status] += 1;
+      }
+    });
+
+    return STATUS_OPTIONS.map((status) => ({
+      name: status,
+      value: grouped[status],
+    })).filter((item) => item.value > 0);
   }, [filteredLeads]);
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -106,22 +125,21 @@ const IndustryChart = ({ leads = [] }) => {
       <div className="flex items-start justify-between mb-6 flex-col">
         <div>
           <h3 className="text-lg font-semibold text-card-foreground">
-            Leads by Sector
+            Leads by Status
           </h3>
           <p className="text-sm text-muted-foreground">
-            Lead distribution across sectors
+            Lead distribution across Status
           </p>
         </div>
-
         <div className="w-full overflow-x-auto mt-5 scrollbar-hide">
-          <div className="flex gap-1 min-w-max">
+          <div className="flex gap-1 mt-5 min-w-max">
             {["today", "yesterday", "week", "month"].map((type) => (
               <Button
                 key={type}
                 size="sm"
                 variant={viewType === type ? "default" : "outline"}
                 onClick={() => setViewType(type)}
-                className="capitalize flex-shrink-0"
+                className="capitalize"
               >
                 {type === "today" && "Today"}
                 {type === "yesterday" && "Yesterday"}
@@ -155,11 +173,6 @@ const IndustryChart = ({ leads = [] }) => {
                   />
                 ),
               )}
-              <Label
-                              value={`Total\n${total}`}
-                              position="center"
-                              className="text-sm font-semibold"
-                            />
             </Pie>
 
             <Tooltip content={<CustomTooltip />} />
@@ -175,9 +188,7 @@ const IndustryChart = ({ leads = [] }) => {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}
             />
-            <span>
-              {item.name}
-            </span>
+            <span>{item.name}</span>
           </div>
         ))}
 
@@ -190,4 +201,4 @@ const IndustryChart = ({ leads = [] }) => {
   );
 };
 
-export default IndustryChart;
+export default StatusChart;

@@ -496,10 +496,18 @@ const DealsPage = () => {
             {/* chartsAnanlysis */}
             {showAnalytics && (
               <div className="bg-card border border-border rounded-lg p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                <h2 className="text-lg font-semibold mb-4">Lead Analytics</h2>
-
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Lead Analytics</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={()=>setShowAnalytics((prev)=>!prev)}
+                  >
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <IndustryChart leads={filteredAndSortedDeals}/>
+                  <IndustryChart leads={filteredAndSortedDeals} />
 
                   <MultiLineChart leads={filteredAndSortedDeals} />
 

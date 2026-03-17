@@ -4,6 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import { fetchStatus } from "services/others.service";
 
 const DealsFilters = ({
   filters,
@@ -16,15 +17,31 @@ const DealsFilters = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
+  const [status, setStatus] = useState([]);
 
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "Not Started", label: "Not Started" },
-    { value: "Started", label: "Started" },
-    { value: "Completed", label: "Completed" },
-    { value: "Canceled", label: "Canceled" },
-    { value: "Deferred", label: "Deferred" },
-  ];
+
+  // 
+   useEffect(() => {
+      const loadData = async () => {
+        try {
+          const [statusRes] = await Promise.all([
+            fetchStatus(),
+          ]);
+  
+          setStatus(statusRes.options || []);
+        } catch (err) {
+          console.error("Failed to load data", err);
+        }
+      };
+  
+      loadData();
+    }, []);
+    const statusOptions = status
+      .filter((item) => item !== "")
+      .map((item) => ({
+        value: item,
+        label: item,
+      }));
   const priorityOptions = [
     { value: "", label: "All Status" },
     { value: "Low", label: "Low" },

@@ -9,7 +9,7 @@ import UserTab from "./components/UserTab";
 
 const Settings = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("user");
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -20,12 +20,12 @@ const Settings = () => {
   };
 
   const tabs = [
-    {
-      id: "company",
-      label: "Company",
-      icon: "Building2",
-      description: "Organization details and branding",
-    },
+    // {
+    //   id: "company",
+    //   label: "Company",
+    //   icon: "Building2",
+    //   description: "Organization details and branding",
+    // },
     {
       id: "user",
       label: "Users & Roles",
@@ -42,8 +42,8 @@ const Settings = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "company":
-        return <CompanyTab />;
+      // case "company":
+        // return <CompanyTab />;
       case "user":
         return <UserTab />;
       case "team":

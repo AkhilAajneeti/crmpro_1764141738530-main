@@ -4,6 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import Icon from "../../../components/AppIcon";
+import { fetchUser } from "services/user.service";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -77,12 +78,18 @@ const LoginForm = () => {
       if (!res.ok) {
         throw new Error(data?.message || "Invalid credentials");
       }
+      //
 
+      /* STEP 2: get logged in user */
+      const user = data.user;
       // 🔐 Step 2: create login object from response
       const loginObj = {
-        username: formData.username,
+        id: user.id,
+        username: user.userName,
         token: data.token,
         secret: data.secret,
+        type: user.type,
+        roles: Object.values(user.rolesNames || {}),
       };
 
       // 🔐 Step 3: stringify + base64 encode

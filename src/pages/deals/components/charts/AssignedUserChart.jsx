@@ -9,9 +9,9 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
+  Legend,
 } from "recharts";
 import { motion } from "framer-motion";
-
 const COLORS = [
   "#6366F1",
   "#22C55E",
@@ -27,15 +27,28 @@ const AssignedUserChart = ({ leads = [] }) => {
 
     leads.forEach((lead) => {
       const fullName = lead.assignedUserName || "Unassigned";
-      const firstName = fullName.split(" ")[0]; // 👈 only first name
+      const firstName = fullName?.trim()?.split(" ")[0];
 
-      if (!grouped[firstName]) grouped[firstName] = 0;
-      grouped[firstName] += 1;
+      const status = lead.status || "Others";
+
+      if (!grouped[firstName]) {
+        grouped[firstName] = {
+          name: firstName,
+          interested: 0,
+          notInterested: 0,
+          followUp: 0,
+          others: 0,
+        };
+      }
+
+      if (status === "Interested") grouped[firstName].interested += 1;
+      else if (status === "Not Interested")
+        grouped[firstName].notInterested += 1;
+      else if (status === "Follow up") grouped[firstName].followUp += 1;
+      else grouped[firstName].others += 1;
     });
 
-    return Object.entries(grouped)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    return Object.values(grouped);
   }, [leads]);
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -62,48 +75,50 @@ const AssignedUserChart = ({ leads = [] }) => {
               data={chartData}
               layout="vertical"
               margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
-              barCategoryGap="25%"
             >
-              {/* Subtle grid */}
               <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
 
-              <XAxis type="number" axisLine={false} tickLine={false} />
-
+              <XAxis type="number" />
               <YAxis
                 type="category"
                 dataKey="name"
-                width={60}
-                axisLine={false}
-                tickLine={false}
+                width={80}
+                tick={{ fontSize: 12 }}
               />
 
               <Tooltip
                 contentStyle={{
                   borderRadius: "10px",
                   border: "none",
-                  boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
                 }}
               />
+              <Legend />
 
-              <Bar dataKey="value" radius={[0, 12, 12, 0]} barSize={28}>
-                {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={
-                      index === 0
-                        ? "#4F46E5" // highlight top performer
-                        : COLORS[index % COLORS.length]
-                    }
-                  />
-                ))}
-
-                {/* Value labels */}
-                <LabelList
-                  dataKey="value"
-                  position="right"
-                  style={{ fontSize: 10 }}
-                />
-              </Bar>
+              <Bar
+                dataKey="interested"
+                stackId="a"
+                fill="#22C55E"
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar
+                dataKey="followUp"
+                stackId="a"
+                fill="#F59E0B"
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar
+                dataKey="notInterested"
+                stackId="a"
+                fill="#EF4444"
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar
+                dataKey="others"
+                stackId="a"
+                fill="#6366F1"
+                radius={[0, 4, 4, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         )}

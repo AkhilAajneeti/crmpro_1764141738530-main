@@ -1,24 +1,49 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
-import { Checkbox } from "../../../components/ui/Checkbox";
+import Avatar from "react-avatar";
+import { attachment, fetchUserById, updateUser } from "services/user.service";
+import { fetchTeam } from "services/team.service";
+import toast from "react-hot-toast";
 
 const ProfileTab = () => {
-  const [profileData, setProfileData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@company.com",
-    phone: "+1 (555) 123-4567",
-    jobTitle: "Sales Manager",
-    department: "Sales",
-    timezone: "America/New_York",
-    language: "en",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-  });
+  const [profileData, setProfileData] = useState({});
+  const [team, setTeam] = useState([]);
+  const loginUserStr = localStorage.getItem("login_object");
+  const loginUser = loginUserStr ? JSON.parse(loginUserStr) : null;
+
+  const UserId = loginUser?.id;
+  console.log(UserId);
+  useEffect(() => {
+    if (!UserId) return;
+
+    const loadUser = async () => {
+      try {
+        const data = await fetchUserById(UserId);
+
+        setProfileData({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          userName: data.userName || "",
+          email: data.emailAddress || "",
+          phone: data.phoneNumber || "",
+          role: Object.values(data.rolesNames || {}).join(", "),
+          type: data.type || "",
+          teamId: data.teamsIds?.[0] || "",
+          createdAt: data.createdAt,
+          lastAccess: data.lastAccess,
+          avatarId: data.avatarId,
+        });
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    loadUser();
+  }, [UserId]);
 
   const [notifications, setNotifications] = useState({
     emailDeals: true,
@@ -32,36 +57,6 @@ const ProfileTab = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-
-  const timezoneOptions = [
-    { value: "America/New_York", label: "Eastern Time (ET)" },
-    { value: "America/Chicago", label: "Central Time (CT)" },
-    { value: "America/Denver", label: "Mountain Time (MT)" },
-    { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-    { value: "Europe/London", label: "Greenwich Mean Time (GMT)" },
-    { value: "Europe/Paris", label: "Central European Time (CET)" },
-    { value: "Asia/Tokyo", label: "Japan Standard Time (JST)" },
-    { value: "Australia/Sydney", label: "Australian Eastern Time (AET)" },
-  ];
-
-  const languageOptions = [
-    { value: "en", label: "English" },
-    { value: "es", label: "Spanish" },
-    { value: "fr", label: "French" },
-    { value: "de", label: "German" },
-    { value: "it", label: "Italian" },
-    { value: "pt", label: "Portuguese" },
-  ];
-
-  const departmentOptions = [
-    { value: "Sales", label: "Sales" },
-    { value: "Marketing", label: "Marketing" },
-    { value: "Customer Success", label: "Customer Success" },
-    { value: "Operations", label: "Operations" },
-    { value: "Finance", label: "Finance" },
-    { value: "HR", label: "Human Resources" },
-    { value: "IT", label: "Information Technology" },
-  ];
 
   const handleProfileChange = (field, value) => {
     setProfileData((prev) => ({
@@ -77,51 +72,112 @@ const ProfileTab = () => {
     }));
   };
 
-  const handleAvatarUpload = () => {
-    // Mock avatar upload functionality
-    console.log("Avatar upload clicked");
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      const base64 = reader.result;
+
+      const payload = {
+        role: "Attachment",
+        relatedType: "User",
+        field: "avatar",
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        file: base64,
+      };
+
+      try {
+        // 1️⃣ upload attachment
+        const attachmentRes = await attachment(payload);
+
+        console.log("Attachment uploaded:", attachmentRes);
+
+        // 2️⃣ update user
+        await updateUser(UserId, {
+          avatarId: attachmentRes.id,
+        });
+
+        // 3️⃣ update UI
+        setProfileData((prev) => ({
+          ...prev,
+          avatarId: attachmentRes.id,
+        }));
+
+        toast.success("Avatar updated");
+      } catch (error) {
+        console.error(error);
+        toast.error("Avatar upload failed");
+      }
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProfile = async () => {
     setIsLoading(true);
-    // Mock save functionality
-    setTimeout(() => {
+
+    try {
+      const payload = {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        emailAddress: profileData.email,
+        phoneNumber: profileData.phone,
+        teamsIds: [profileData.teamId],
+      };
+
+      await updateUser(UserId, payload);
+
+      console.log("Profile updated successfully");
+      toast.success("Your profile is updated");
+    } catch (error) {
+      console.error("Update error:", error);
+    } finally {
       setIsLoading(false);
-      console.log("Profile saved successfully");
-    }, 1000);
+    }
   };
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [teamRes] = await Promise.all([fetchTeam()]);
+        setTeam(teamRes.list || []);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      }
+    };
+
+    loadData();
+  }, []);
+  const teamOptions = team?.map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
+  const fileInputRef = useRef();
   return (
     <div className="space-y-8">
       {/* Profile Information */}
       <div className="bg-card border border-border rounded-xl p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <Icon name="User" size={24} className="text-primary" />
-          <div>
-            <h3 className="text-lg font-semibold text-card-foreground">
-              Profile Information
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Update your personal details and preferences
-            </p>
-          </div>
-        </div>
-
         <div className="space-y-6">
           {/* Avatar Section */}
           <div className="flex items-center space-x-6">
             <div className="relative">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
-                <Image
-                  src={profileData?.avatar}
-                  alt="Professional headshot of John Doe in business attire"
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+                  <Avatar
+                    name={`${profileData?.firstName || ""} ${profileData?.lastName || ""}`}
+                    size="80"
+                    round
+                  />
+                </div>
               </div>
               <button
-                onClick={handleAvatarUpload}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/90 transition-smooth"
-                aria-label="Upload new avatar"
+                onClick={() => fileInputRef.current.click()}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center"
               >
                 <Icon name="Camera" size={16} />
               </button>
@@ -133,10 +189,20 @@ const ProfileTab = () => {
               <p className="text-sm text-muted-foreground mb-2">
                 JPG, PNG or GIF. Max size 2MB.
               </p>
-              <Button variant="outline" size="sm" onClick={handleAvatarUpload}>
-                <Icon name="Upload" size={16} className="mr-2" />
-                Upload New Photo
-              </Button>
+              <label className="cursor-pointer">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+
+                <Button variant="outline" size="sm">
+                  <Icon name="Upload" size={16} className="mr-2" />
+                  Upload New Photo
+                </Button>
+              </label>
             </div>
           </div>
 
@@ -146,64 +212,52 @@ const ProfileTab = () => {
               label="First Name"
               type="text"
               value={profileData?.firstName}
-              onChange={(e) =>
-                handleProfileChange("firstName", e?.target?.value)
-              }
+              onChange={(e) => handleProfileChange("firstName", e.target.value)}
               required
             />
             <Input
               label="Last Name"
               type="text"
               value={profileData?.lastName}
-              onChange={(e) =>
-                handleProfileChange("lastName", e?.target?.value)
-              }
+              onChange={(e) => handleProfileChange("lastName", e.target.value)}
               required
             />
             <Input
-              label="Email Address"
-              type="email"
-              value={profileData?.email}
-              onChange={(e) => handleProfileChange("email", e?.target?.value)}
-              required
+              label="Username"
+              value={profileData?.userName || ""}
+              onChange={(e) => handleProfileChange("userName", e.target.value)}
             />
+
+            <Input
+              label="Email"
+              value={profileData?.email || ""}
+              onChange={(e) => handleProfileChange("email", e.target.value)}
+            />
+
             <Input
               label="Phone Number"
-              type="tel"
-              value={profileData?.phone}
-              onChange={(e) => handleProfileChange("phone", e?.target?.value)}
+              value={profileData?.phone || ""}
+              onChange={(e) => handleProfileChange("phone", e.target.value)}
             />
-            <Input
-              label="Job Title"
-              type="text"
-              value={profileData?.jobTitle}
-              onChange={(e) =>
-                handleProfileChange("jobTitle", e?.target?.value)
+            <Input label="Role" value={profileData?.role || ""} disabled />
+            <Select
+              label="Teams"
+              value={profileData?.teamId || ""}
+              options={teamOptions}
+              onChange={(value) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  teamId: value,
+                }))
               }
             />
-            <Select
-              label="Department"
-              options={departmentOptions}
-              value={profileData?.department}
-              onChange={(value) => handleProfileChange("department", value)}
-            />
+            <Input label="Type" value={profileData?.type || ""} disabled />
           </div>
 
           {/* Preferences */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Timezone"
-              options={timezoneOptions}
-              value={profileData?.timezone}
-              onChange={(value) => handleProfileChange("timezone", value)}
-              searchable
-            />
-            <Select
-              label="Language"
-              options={languageOptions}
-              value={profileData?.language}
-              onChange={(value) => handleProfileChange("language", value)}
-            />
+          <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+            <p>Created At: {profileData?.createdAt}</p>
+            <p>Last Access: {profileData?.lastAccess}</p>
           </div>
 
           <div className="flex justify-end">

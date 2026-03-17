@@ -165,20 +165,14 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                         <Icon name="User" size={16} className="mr-3" />
                         Profile Settings
                       </button>
-                      <button
+                      {/* <button
                         onClick={handleSettingsClick}
                         className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
                       >
                         <Icon name="Settings" size={16} className="mr-3" />
                         Account Settings
-                      </button>
-                      <button
-                        onClick={() => console.log('Billing clicked')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
-                        <Icon name="CreditCard" size={16} className="mr-3" />
-                        Billing & Plans
-                      </button>
+                      </button> */}
+                     
                       <div className="border-t border-border my-1" />
                       <button
                         onClick={handleLogout}

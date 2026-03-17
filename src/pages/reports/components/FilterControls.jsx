@@ -4,6 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import RoleGuard from "components/RoleGuard";
 
 const FilterControls = ({
   filters,
@@ -214,9 +215,9 @@ const FilterControls = ({
             }
           />
         </div>
-
+        <RoleGuard allowedRoles={["admin", "manager"]}>
           <Button onClick={toggleAnalytics}>Anaylze By Chart</Button>
-      
+        </RoleGuard>
       </div>
     </div>
   );

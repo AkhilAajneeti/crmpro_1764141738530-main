@@ -40,7 +40,6 @@ export const fetchUserById = async (id) => {
 }
 
 
-
 export const updateUser = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   console.log(id, payload);
@@ -79,5 +78,31 @@ export const deleteUser = async (id) => {
   if (!res.ok) {
     throw new Error("Failed to delete User");
   }
+  return res.json();
+};
+
+// upload attachment
+export const attachment = async (payload) => {
+  const token = localStorage.getItem("auth_token");
+  console.log(payload);
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/User/Attachment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const text = await res.text();
+  console.log("response from User.service.js", res);
+  if (!res.ok) {
+    throw new Error(text || "User update failed");
+  }
+
   return res.json();
 };

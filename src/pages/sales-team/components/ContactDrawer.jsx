@@ -784,9 +784,16 @@ const ContactDrawer = ({
                       </h3>
 
                       {userLeads.length === 0 && (
-                        <p className="text-muted-foreground text-sm">
-                          No leads assigned to this user.
-                        </p>
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                          <img
+                            src="/assets/images/no-content.png"
+                            alt="No Activities"
+                            className="w-40 opacity-80"
+                          />
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            No leads are currently assigned to this user.
+                          </p>
+                        </div>
                       )}
 
                       {userLeads.map((lead) => (

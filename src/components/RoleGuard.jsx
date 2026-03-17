@@ -1,19 +1,20 @@
-const RoleGuard = ({ allowedRoles, children }) => {
-  const storedUser = localStorage.getItem("user");
-
-  console.log("Stored User:", storedUser);
+const RoleGuard = ({ allowedRoles = [], children }) => {
+  const storedUser = localStorage.getItem("login_object");
 
   if (!storedUser) return null;
 
   const user = JSON.parse(storedUser);
-  console.log("Parsed User:", user);
 
-  const role = user?.type;
-  console.log("User Role:", role);
-  console.log("Allowed Roles:", allowedRoles);
+  const userType = user?.type;
+  const userRoles = user?.roles || [];
 
-  if (!role || !allowedRoles.includes(role)) return null;
+  const hasAccess =
+    allowedRoles.includes(userType) ||
+    userRoles.some((role) => allowedRoles.includes(role));
+
+  if (!hasAccess) return null;
 
   return children;
 };
+
 export default RoleGuard;

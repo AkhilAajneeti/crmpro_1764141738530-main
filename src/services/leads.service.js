@@ -1,7 +1,9 @@
 export const fetchLeads = async () => {
   const token = localStorage.getItem("auth_token");
+  const user = JSON.parse(localStorage.getItem("login_object"));
+
   console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Lead", {
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -110,6 +112,33 @@ export const leadStreamById = async (id) => {
     `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
     {
       method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+    }
+  );
+
+  console.log(res);
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch User's stream");
+  }
+  return await res.json();
+};
+export const updateStream = async (id,payload) => {
+  console.log(id);
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
+    {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

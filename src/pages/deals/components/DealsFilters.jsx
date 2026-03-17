@@ -4,6 +4,8 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import RoleGuard from "components/RoleGuard";
+import { fetchSources, fetchStatus } from "services/others.service";
 
 const DealsFilters = ({
   filters,
@@ -17,39 +19,44 @@ const DealsFilters = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "New", label: "New" },
-    { value: "Converted", label: "Converted" },
-    { value: "Dead", label: "Dead" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Not Interested", label: "Not Interested" },
-    { value: "Low Budget | Low Intent", label: "Low Budget | Low Intent" },
-    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
-    { value: "Site Visit Done", label: "Site Visit Done" },
-    { value: "Invalid", label: "Invalid" },
-    { value: "Qualified", label: "Qualified" },
-    { value: "Broker", label: "Broker" },
-    { value: "Budget Issue", label: "Budget Issue" },
-  ];
-  const sourceOptions = [
-    { value: "Call", label: "Call" },
-    { value: "Existing Customer", label: "Existing Customer" },
-    { value: "Facebook", label: "Facebook" },
-    { value: "Import", label: "Import" },
-    { value: "IVR", label: "IVR" },
-    { value: "Web Site", label: "Web Site" },
-  ];
+  const [status, setStatus] = useState([]);
+  const [source, setSource] = useState([]);
 
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
     { value: "export", label: "Export Selected", icon: "Download" },
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [statusRes, sourceRes] = await Promise.all([
+          fetchStatus(),
+          fetchSources(),
+        ]);
+
+        setStatus(statusRes.options || []);
+        setSource(sourceRes.options || []);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      }
+    };
+
+    loadData();
+  }, []);
+  const sourceOptions = source
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
+  const statusOptions = status
+    .filter((item) => item !== "")
+    .map((item) => ({
+      value: item,
+      label: item,
+    }));
 
   const handleFilterChange = (key, value) => {
     onFiltersChange({
@@ -172,7 +179,7 @@ const DealsFilters = ({
       >
         <Input
           type="search"
-          placeholder="Search deals..."
+          placeholder="Search leads..."
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
@@ -224,10 +231,12 @@ const DealsFilters = ({
             }
           />
         </div>
-        <Button onClick={toggleAnalytics}>
-          <Icon name="Plus" size={16} className="mr-2" />
-          Anaylze By Chart
-        </Button>
+        <RoleGuard allowedRoles={["admin", "manager"]}>
+          <Button onClick={toggleAnalytics}>
+            <Icon name="Plus" size={16} className="mr-2" />
+            Anaylze By Chart
+          </Button>
+        </RoleGuard>
       </div>
     </div>
   );

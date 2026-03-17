@@ -11,6 +11,7 @@ import {
   createLeadActivity,
   leadActivitesById,
   leadStreamById,
+  updateStream,
 } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
 
@@ -39,6 +40,7 @@ const DealDrawer = ({
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
   const [expandedActivityId, setExpandedActivityId] = useState(null);
+  const [editingActivityId, setEditingActivityId] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -80,7 +82,6 @@ const DealDrawer = ({
     }
   }, [deal, mode]);
 
-
   const [massFields, setMassFields] = useState({
     assignedUserId: false,
     status: false,
@@ -96,7 +97,11 @@ const DealDrawer = ({
     }));
   };
 
-
+  const handleEditActivity = (activity) => {
+    setEditingActivityId(activity.id);
+    setActivityText(activity.post || "");
+    setActivityForm(true);
+  };
   const toggleActivity = (id) => {
     setExpandedActivityId((prev) => (prev === id ? null : id));
   };
@@ -287,6 +292,7 @@ const DealDrawer = ({
     const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
+    setmockStream((prev) => prev.filter((a) => a.id !== activity.id));
   };
   const createActivity = async () => {
     //post activity
@@ -303,27 +309,43 @@ const DealDrawer = ({
     try {
       setPostingActivity(true);
 
-      const payload = {
-        post: activityText,
-        parentId: deal.id, // 👈 ID PAYLOAD me
-        parentType: "Lead", // 👈 MUST
-        type: "Post",
-        isInternal: false,
-        attachmentsIds: [],
-      };
+      if (editingActivityId) {
+        // 🔥 UPDATE STREAM
+        const updated = await updateStream(editingActivityId, {
+          post: activityText,
+        });
 
-      const newActivity = await createLeadActivity(payload);
+        setmockStream((prev) =>
+          prev.map((a) =>
+            a.id === editingActivityId ? { ...a, post: activityText } : a,
+          ),
+        );
 
-      // 🔥 UI update instantly
-      setmockStream((prev) => [newActivity, ...prev]);
+        toast.success("Activity updated");
+      } else {
+        // 🔥 CREATE STREAM
+        const payload = {
+          post: activityText,
+          parentId: deal.id,
+          parentType: "Lead",
+          type: "Post",
+          isInternal: false,
+          attachmentsIds: [],
+        };
+
+        const newActivity = await createLeadActivity(payload);
+
+        setmockStream((prev) => [newActivity, ...prev]);
+
+        toast.success("Activity posted");
+      }
 
       setActivityText("");
+      setEditingActivityId(null);
       setActivityForm(false);
-
-      toast.success("Activity posted");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to post activity");
+      toast.error("Failed to save activity");
     } finally {
       setPostingActivity(false);
     }
@@ -678,7 +700,7 @@ const DealDrawer = ({
                     <Select
                       label="Team"
                       value={formData.teamId}
-                      options={industryOptions}
+                      options={teamOptions}
                       disabled={!massFields.teamId}
                       onChange={(v) => handleChange("teamId", v)}
                     />
@@ -933,8 +955,12 @@ const DealDrawer = ({
                                 size="sm"
                                 disabled={postingActivity}
                               >
-                                Post
-                                <Icon name="Send" size={16} className="mr-1" />
+                                {editingActivityId ? "Update" : "Post"}
+                                <Icon
+                                  name={editingActivityId ? "Save" : "Send"}
+                                  size={16}
+                                  className="mr-1"
+                                />
                               </Button>
                             </div>
                           </form>
@@ -987,10 +1013,8 @@ const DealDrawer = ({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    // onClick={(e) =>
-                                    //   handleQuickAction(e, "edit", deal)
-                                    // }
-                                    className="h-8 w-8"
+                                    onClick={() => handleEditActivity(activity)}
+                                    className="h-8 w-8 hidden"
                                   >
                                     <Icon name="Edit" size={14} />
                                   </Button>
@@ -1117,132 +1141,145 @@ const DealDrawer = ({
 
                   {activeTab === "Activity" && (
                     <div className="space-y-4">
-                      {mockActivities?.map((activity) => (
-                        <div
-                          key={activity.id}
-                          onClick={() => toggleActivity(activity.id)}
-                          className={`cursor-pointer rounded-lg p-4 transition-all duration-300${
-                            expandedActivityId === activity.id
-                              ? "bg-muted shadow-sm"
-                              : "bg-muted/30 hover:bg-muted"
-                          }`}
-                        >
-                          {/*  */}
-                          <div className="flex space-x-3">
-                            <Avatar
-                              name={activity.name || "System"}
-                              size="36"
-                              round
-                              textSizeRatio={2}
-                            />
-
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-medium text-foreground">
-                                  {activity.name || "Activity"}
-                                </h4>
-
-                                <span className="text-xs text-muted-foreground">
-                                  {activity._scope}
-                                </span>
-
-                                {activity.status && (
-                                  <span
-                                    className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                      activity.status,
-                                    )}`}
-                                  >
-                                    {activity.status}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Icon name="Clock" size={12} />
-                                  {formatDate(activity.dateStart)}
-                                </span>
-
-                                {activity.duration && (
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="Timer" size={12} />
-                                    {Math.round(activity.duration / 60)} min
-                                  </span>
-                                )}
-
-                                {activity.parentType && (
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="Link" size={12} />
-                                    {activity.parentType}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/*  */}
+                      {mockActivities?.length < 0 ? (
+                        mockActivities.map((activity) => (
                           <div
-                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            key={activity.id}
+                            onClick={() => toggleActivity(activity.id)}
+                            className={`cursor-pointer rounded-lg p-4 transition-all duration-300${
                               expandedActivityId === activity.id
-                                ? "max-h-[600px] opacity-100 mt-4"
-                                : "max-h-0 opacity-0"
+                                ? "bg-muted shadow-sm"
+                                : "bg-muted/30 hover:bg-muted"
                             }`}
                           >
-                            <div className="border-t pt-4 text-sm text-muted-foreground">
-                              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                  <p className="text-xs">Direction</p>
-                                  <p className="font-medium text-foreground">
-                                    {activity.direction}
-                                  </p>
+                            {/*  */}
+                            <div className="flex space-x-3">
+                              <Avatar
+                                name={activity.name || "System"}
+                                size="36"
+                                round
+                                textSizeRatio={2}
+                              />
+
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-medium text-foreground">
+                                    {activity.name || "Activity"}
+                                  </h4>
+
+                                  <span className="text-xs text-muted-foreground">
+                                    {activity._scope}
+                                  </span>
+
+                                  {activity.status && (
+                                    <span
+                                      className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                                        activity.status,
+                                      )}`}
+                                    >
+                                      {activity.status}
+                                    </span>
+                                  )}
                                 </div>
 
-                                <div>
-                                  <p className="text-xs">Assigned User</p>
-                                  <p className="font-medium text-foreground">
-                                    {activity.assignedUserName}
-                                  </p>
-                                </div>
+                                <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Icon name="Clock" size={12} />
+                                    {formatDate(activity.dateStart)}
+                                  </span>
 
-                                <div>
-                                  <p className="text-xs">Date Start</p>
-                                  <p className="font-medium text-foreground">
-                                    {formatDateTime(activity.dateStart)}
-                                  </p>
-                                </div>
+                                  {activity.duration && (
+                                    <span className="flex items-center gap-1">
+                                      <Icon name="Timer" size={12} />
+                                      {Math.round(activity.duration / 60)} min
+                                    </span>
+                                  )}
 
-                                <div>
-                                  <p className="text-xs">Date End</p>
-                                  <p className="font-medium text-foreground">
-                                    {formatDateTime(activity.dateEnd)}
-                                  </p>
+                                  {activity.parentType && (
+                                    <span className="flex items-center gap-1">
+                                      <Icon name="Link" size={12} />
+                                      {activity.parentType}
+                                    </span>
+                                  )}
                                 </div>
+                              </div>
+                            </div>
 
-                                <div>
-                                  <p className="text-xs">Duration</p>
-                                  <p className="font-medium text-foreground">
-                                    {Math.round(activity.duration / 60)} min
-                                  </p>
-                                </div>
+                            {/*  */}
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                expandedActivityId === activity.id
+                                  ? "max-h-[600px] opacity-100 mt-4"
+                                  : "max-h-0 opacity-0"
+                              }`}
+                            >
+                              <div className="border-t pt-4 text-sm text-muted-foreground">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                  <div>
+                                    <p className="text-xs">Direction</p>
+                                    <p className="font-medium text-foreground">
+                                      {activity.direction}
+                                    </p>
+                                  </div>
 
-                                <div>
-                                  <p className="text-xs">Parent</p>
-                                  <p className="font-medium text-primary">
-                                    {activity.parentType}
-                                  </p>
-                                </div>
+                                  <div>
+                                    <p className="text-xs">Assigned User</p>
+                                    <p className="font-medium text-foreground">
+                                      {activity.assignedUserName}
+                                    </p>
+                                  </div>
 
-                                <div>
-                                  <p className="text-xs">Created</p>
-                                  <p className="font-medium text-foreground">
-                                    {formatDate(activity.createdAt)}
-                                  </p>
+                                  <div>
+                                    <p className="text-xs">Date Start</p>
+                                    <p className="font-medium text-foreground">
+                                      {formatDateTime(activity.dateStart)}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs">Date End</p>
+                                    <p className="font-medium text-foreground">
+                                      {formatDateTime(activity.dateEnd)}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs">Duration</p>
+                                    <p className="font-medium text-foreground">
+                                      {Math.round(activity.duration / 60)} min
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs">Parent</p>
+                                    <p className="font-medium text-primary">
+                                      {activity.parentType}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs">Created</p>
+                                    <p className="font-medium text-foreground">
+                                      {formatDate(activity.createdAt)}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                          <img
+                            src="/assets/images/no-content.png"
+                            alt="No Activities"
+                            className="w-40 opacity-80"
+                          />
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            Currently you don't have any activities
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>

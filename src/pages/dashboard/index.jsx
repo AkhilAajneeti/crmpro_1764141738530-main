@@ -4,7 +4,6 @@ import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import KPICard from "./components/KPICard";
 import PipelineChart from "./components/PipelineChart";
-import RecentActivities from "./components/RecentActivities";
 import Icon from "../../components/AppIcon";
 import RightRail from "./components/RightRail";
 import { fetchLeads } from "services/leads.service";
@@ -536,7 +535,7 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
           </div>
 
           {/* Right Rail */}
-          <div className="hidden xl:block w-80 p-6 border-l border-border bg-background">
+          <div className="hidden xl:block w-96 p-6 border-l border-border bg-background">
             <RightRail leads={leads} />
           </div>
         </div>

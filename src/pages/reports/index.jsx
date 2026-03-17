@@ -7,12 +7,10 @@ import MetricsCard from "./components/MetricsCard";
 import FilterControls from "./components/FilterControls";
 import ConversionFunnelChart from "./components/ConversionFunnelChart";
 import WinRateChart from "./components/WinRateChart";
-import RevenueChart from "./components/RevenueChart";
-import ExportControls from "./components/ExportControls";
-import DealsTable from "./components/DealsTable";
-import { fetchLeads } from "services/leads.service";
 import TablePagination from "./components/TablePagination";
 import { fetchSources, fetchStatus } from "services/others.service";
+import Button from "components/ui/Button";
+import Icon from "../../components/AppIcon";
 
 const Reports = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -264,7 +262,7 @@ const Reports = () => {
         1,
       );
 
-      return leads?.filter((lead) => {
+      return filteredAndSortedDeals?.filter((lead) => {
         const created = new Date(lead?.createdAt?.replace(" ", "T"));
         return (
           created.getMonth() === targetMonth.getMonth() &&
@@ -331,10 +329,10 @@ const Reports = () => {
         "Leads rejected",
       ),
     ];
-  }, [leads]);
+  }, [filteredAndSortedDeals]);
 
   const repConversionData = useMemo(() => {
-    if (!leads?.length) return [];
+    if (!filteredAndSortedDeals?.length) return [];
 
     const WON_STATUSES = ["Converted"];
 
@@ -361,7 +359,7 @@ const Reports = () => {
 
     const grouped = {};
 
-    leads.forEach((lead) => {
+    filteredAndSortedDeals.forEach((lead) => {
       if (!lead.createdAt || !lead.assignedUserId) return;
 
       const leadDate = new Date(lead.createdAt.replace(" ", "T"));
@@ -431,10 +429,10 @@ const Reports = () => {
         ][index % 6],
       };
     });
-  }, [leads]);
+  }, [filteredAndSortedDeals]);
 
   const monthlyWinRateData = useMemo(() => {
-    if (!leads?.length) return [];
+    if (!filteredAndSortedDeals?.length) return [];
 
     const months = [
       "Jan",
@@ -492,12 +490,12 @@ const Reports = () => {
           : 0,
       };
     });
-  }, [leads]);
+  }, [filteredAndSortedDeals]);
 
   const pieData = useMemo(() => {
-    const won = leads.filter((l) => l.status === "Interested").length;
-    const newLead = leads.filter((l) => l.status === "New").length;
-    const Sitevisit = leads.filter(
+    const won = filteredAndSortedDeals.filter((l) => l.status === "Interested").length;
+    const newLead = filteredAndSortedDeals.filter((l) => l.status === "New").length;
+    const Sitevisit = filteredAndSortedDeals.filter(
       (l) => l.status === "Site Visit Scheduled",
     ).length;
 
@@ -511,15 +509,15 @@ const Reports = () => {
       { name: "New Leads", value: newLead, fill: "#a3d9a5" },
       { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
     ];
-  }, [leads]);
+  }, [filteredAndSortedDeals]);
   const monthlyInsights = useMemo(() => {
-    if (!leads?.length) return null;
+    if (!filteredAndSortedDeals?.length) return null;
 
     const WON_STATUSES = ["Converted"];
 
     const monthly = {};
 
-    leads.forEach((lead) => {
+    filteredAndSortedDeals.forEach((lead) => {
       if (!lead.createdAt) return;
 
       const date = new Date(lead.createdAt.replace(" ", "T"));
@@ -566,7 +564,7 @@ const Reports = () => {
       overallWinRate,
       totalDeals,
     };
-  }, [leads]);
+  }, [filteredAndSortedDeals]);
   const summary = useMemo(() => {
     if (!monthlyWinRateData?.length) return null;
 
@@ -675,17 +673,30 @@ const Reports = () => {
 
             {/* Charts Grid */}
             {showAnalytics && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-                {/* Conversion Funnel */}
-                <ConversionFunnelChart data={repConversionData} />
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Lead Analytics</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowAnalytics((prev) => !prev)}
+                  >
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
 
-                {/* Win Rate Analytics */}
-                <WinRateChart
-                  data={monthlyWinRateData}
-                  pieData={pieData}
-                  summary={summary}
-                />
-              </div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+                  {/* Conversion Funnel */}
+                  <ConversionFunnelChart data={repConversionData} />
+
+                  {/* Win Rate Analytics */}
+                  <WinRateChart
+                    data={monthlyWinRateData}
+                    pieData={pieData}
+                    summary={summary}
+                  />
+                </div>
+              </>
             )}
             {/* table */}
             <DealsTable
