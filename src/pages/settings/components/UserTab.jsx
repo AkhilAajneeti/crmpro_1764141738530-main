@@ -26,10 +26,10 @@ const UserTab = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [inviteData, setInviteData] = useState({
     userName: "",
     title: "",
@@ -160,6 +160,8 @@ const UserTab = () => {
         setTeamMembers(data.list || []);
       } catch (err) {
         console.error("failed to fetch data", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -329,6 +331,47 @@ const UserTab = () => {
 
     toast.success("Password generated ✅");
   };
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
+
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* status */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      {/* Next Contact */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div>
       {/* Team Overview */}
@@ -437,89 +480,101 @@ const UserTab = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedMembers?.map((member) => (
-                <tr
-                  key={member?.id}
-                  className="border-b border-border hover:bg-muted/50 transition-smooth"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
-                        {member?.avatar ? (
-                          <Image
-                            src={member.avatar}
-                            alt={member?.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Avatar
-                            name={member?.name || member?.userName || "User"}
-                            size="40"
-                            round
-                            textSizeRatio={2}
-                            className="font-medium"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <p
-                          className="font-medium text-card-foreground"
-                          onClick={() => {
-                            fetchuserById(member);
-                          }}
-                        >
-                          {member?.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {member?.emailAddress}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-card-foreground">
-                      {member?.type}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-card-foreground">
-                      {member?.userName}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    {getStatusBadge(member?.isActive ? "Active" : "InActive")}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-muted-foreground">
-                      {member?.createdAt}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(member)}
-                        aria-label="Edit member"
-                      >
-                        <Icon name="Edit" size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedUserId(member?.id);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        aria-label="Remove member"
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+              ) : !paginatedMembers?.length ? (
+                <tr>
+                  <td colSpan="4">
+                    <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                      No leads available
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedMembers?.map((member) => (
+                  <tr
+                    key={member?.id}
+                    className="border-b border-border hover:bg-muted/50 transition-smooth"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
+                          {member?.avatar ? (
+                            <Image
+                              src={member.avatar}
+                              alt={member?.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Avatar
+                              name={member?.name || member?.userName || "User"}
+                              size="40"
+                              round
+                              textSizeRatio={2}
+                              className="font-medium"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <p
+                            className="font-medium text-card-foreground"
+                            onClick={() => {
+                              fetchuserById(member);
+                            }}
+                          >
+                            {member?.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {member?.emailAddress}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-sm text-card-foreground">
+                        {member?.type}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-sm text-card-foreground">
+                        {member?.userName}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      {getStatusBadge(member?.isActive ? "Active" : "InActive")}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-sm text-muted-foreground">
+                        {member?.createdAt}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(member)}
+                          aria-label="Edit member"
+                        >
+                          <Icon name="Edit" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUserId(member?.id);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          aria-label="Remove member"
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

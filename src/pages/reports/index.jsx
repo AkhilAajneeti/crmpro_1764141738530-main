@@ -11,10 +11,12 @@ import TablePagination from "./components/TablePagination";
 import { fetchSources, fetchStatus } from "services/others.service";
 import Button from "components/ui/Button";
 import Icon from "../../components/AppIcon";
+import DealsTable from "./components/DealsTable";
+import { fetchLeads } from "services/leads.service";
 
 const Reports = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState([]);
   const [source, setSource] = useState([]);
   const [status, setStatus] = useState([]);
@@ -35,6 +37,21 @@ const Reports = () => {
     closeDateFrom: "",
     closeDateTo: "",
   });
+
+    useEffect(() => {
+    const loadSource = async () => {
+      try {
+        const data = await fetchSources();
+        setSource(data.options || []);
+        // console.log(data.list);
+      } catch (error) {
+        console.log("failed to fetch data", error);
+      } finally {
+        
+      }
+    };
+    loadSource();
+  }, []);
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -84,19 +101,7 @@ const Reports = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    const loadSource = async () => {
-      try {
-        const data = await fetchSources();
-        setSource(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadSource();
-  }, []);
+
   // fetch status
   useEffect(() => {
     const loadStatus = async () => {
@@ -120,6 +125,7 @@ const Reports = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setIsLoading(false);
       }
     };
     loadContact();
@@ -253,27 +259,6 @@ const Reports = () => {
   };
 
   const metricsData = useMemo(() => {
-    const now = new Date();
-
-    const getMonthLeads = (monthOffset = 0) => {
-      const targetMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() - monthOffset,
-        1,
-      );
-
-      return filteredAndSortedDeals?.filter((lead) => {
-        const created = new Date(lead?.createdAt?.replace(" ", "T"));
-        return (
-          created.getMonth() === targetMonth.getMonth() &&
-          created.getFullYear() === targetMonth.getFullYear()
-        );
-      });
-    };
-
-    const currentMonthLeads = getMonthLeads(0);
-    const lastMonthLeads = getMonthLeads(1);
-
     const countByStatus = (data, statusName) =>
       data?.filter((deal) => deal?.status === statusName)?.length || 0;
 
@@ -282,6 +267,10 @@ const Reports = () => {
       const growth = ((current - previous) / previous) * 100;
       return growth.toFixed(1) + "%";
     };
+
+    // 🔥 IMPORTANT CHANGE
+    const currentMonthLeads = filteredAndSortedDeals;
+    const lastMonthLeads = []; // ya same rakhna ho to filteredAndSortedDeals
 
     const buildMetric = (title, statusName, icon, iconColor, description) => {
       const current = countByStatus(currentMonthLeads, statusName);
@@ -305,28 +294,28 @@ const Reports = () => {
         "Follow up",
         "TrendingUp",
         "bg-success",
-        "Leads needing follow-up",
+        "Leads awaiting action",
       ),
       buildMetric(
         "Call Not Picked",
         "Call Not Picked",
         "PhoneOff",
         "bg-primary",
-        "Customer didn't answer",
+        "Leads not reachable on call",
       ),
       buildMetric(
         "Call Later",
         "Call Later",
         "Clock",
         "bg-purple-400",
-        "Scheduled for later contact",
+        "Leads scheduled for future follow-up",
       ),
       buildMetric(
         "Not Interested",
         "Not Interested",
         "XCircle",
         "bg-red-400",
-        "Leads rejected",
+        "Leads marked as not interested",
       ),
     ];
   }, [filteredAndSortedDeals]);
@@ -462,7 +451,7 @@ const Reports = () => {
     }, {});
 
     // 🔥 Step 2: Fill actual data
-    leads.forEach((lead) => {
+    filteredAndSortedDeals.forEach((lead) => {
       if (!lead.createdAt) return;
 
       const date = new Date(lead.createdAt.replace(" ", "T"));
@@ -493,8 +482,12 @@ const Reports = () => {
   }, [filteredAndSortedDeals]);
 
   const pieData = useMemo(() => {
-    const won = filteredAndSortedDeals.filter((l) => l.status === "Interested").length;
-    const newLead = filteredAndSortedDeals.filter((l) => l.status === "New").length;
+    const won = filteredAndSortedDeals.filter(
+      (l) => l.status === "Interested",
+    ).length;
+    const newLead = filteredAndSortedDeals.filter(
+      (l) => l.status === "New",
+    ).length;
     const Sitevisit = filteredAndSortedDeals.filter(
       (l) => l.status === "Site Visit Scheduled",
     ).length;
@@ -510,6 +503,7 @@ const Reports = () => {
       { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
     ];
   }, [filteredAndSortedDeals]);
+
   const monthlyInsights = useMemo(() => {
     if (!filteredAndSortedDeals?.length) return null;
 
@@ -596,7 +590,7 @@ const Reports = () => {
   return (
     <>
       <Helmet>
-        <title>Reports - CRMPro</title>
+        <title>CRM Reports</title>
         <meta
           name="description"
           content="Comprehensive sales analytics with interactive visualizations and export capabilities for data-driven decision making"
@@ -675,7 +669,7 @@ const Reports = () => {
             {showAnalytics && (
               <>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Lead Analytics</h2>
+                  <h2 className="text-lg font-semibold">Report Analytics</h2>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -687,7 +681,10 @@ const Reports = () => {
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
                   {/* Conversion Funnel */}
-                  <ConversionFunnelChart data={repConversionData} />
+                  <ConversionFunnelChart
+                    data={repConversionData}
+                    isLoading={isLoading}
+                  />
 
                   {/* Win Rate Analytics */}
                   <WinRateChart
@@ -706,6 +703,7 @@ const Reports = () => {
               onSort={handleSort}
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
+              isLoading={isLoading}
             />
             <TablePagination
               currentPage={currentPage}
@@ -718,6 +716,7 @@ const Reports = () => {
 
             {/* Revenue Forecasting - Full Width */}
             {/* <div className="mb-8">
+              
               <RevenueChart />
             </div> */}
 

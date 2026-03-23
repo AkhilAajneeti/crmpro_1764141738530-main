@@ -38,15 +38,57 @@ const Routes = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/integrations" element={<IntegrationsPage />} />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/integrations"
+            element={
+              <ProtectedRoute>
+                <IntegrationsPage />
+              </ProtectedRoute>
+            }
+          />
 
-          <Route path="/leads" element={<DealsPage />} />
-          <Route path="/sales-team" element={<SalesTeam/>} />
+          <Route
+            path="/leads"
+            element={
+              <ProtectedRoute>
+                <DealsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-team"
+            element={
+              <ProtectedRoute>
+                <SalesTeam />
+              </ProtectedRoute>
+            }
+          />
           {/* <Route path="/contacts" element={<ContactsPage />} /> */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/emails" element={<EmailsPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
+          <Route
+            path="/emails"
+            element={
+              <ProtectedRoute>
+                <EmailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <ProjectsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/accounts"
             element={
@@ -55,14 +97,70 @@ const Routes = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tasks" element={<TaskPage />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/activities" element={<Activities />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/meeting" element={<MeetingPage />} />
-          <Route path="/call" element={<CallPage/>} />
-          <Route path="/pipeline" element={<Pipeline/>} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <TaskPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute>
+                <Activities />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meeting"
+            element={
+              <ProtectedRoute>
+                <MeetingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/call"
+            element={
+              <ProtectedRoute>
+                <CallPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pipeline"
+            element={
+              <ProtectedRoute>
+                <Pipeline />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

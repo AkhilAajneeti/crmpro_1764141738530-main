@@ -7,7 +7,7 @@ export const fetchIntegrationAcc = async () => {
   const res = await fetch("https://gateway.aajneetiadvertising.com/LeadCapture", {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain",
       token: token, // ✅ backend expects this
     },
   });
@@ -35,7 +35,7 @@ export const fetchIntegrationAccById = async (id) => {
   const res = await fetch(`https://gateway.aajneetiadvertising.com/LeadCapture/${id}`, {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain",
       token: token, // ✅ backend expects this
     },
   });
@@ -63,7 +63,7 @@ export const integrateAcc = async (payload) => {
   const res = await fetch("https://gateway.aajneetiadvertising.com/LeadCapture", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain",
       token: token, // ✅ backend expects this
     },
     body: JSON.stringify(payload),
@@ -87,7 +87,7 @@ export const updateIntergrateAcc = async (id, payload) => {
     {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "text/plain",
         Accept: "application/json",
         token: token,
       },
@@ -112,7 +112,7 @@ export const deleteIntegration = async (id) => {
     `https://gateway.aajneetiadvertising.com/LeadCapture/${id}`,
     {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", token: token },
+      headers: { "Content-Type": "text/plain", token: token },
     },
   );
   return res.json();

@@ -8,7 +8,7 @@ import { fetchUser } from "services/user.service";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -131,20 +131,30 @@ const LoginForm = () => {
         required
       />
 
-      <Input
-        label="Password"
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        error={errors.password}
-        disabled={isLoading}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="Password"
+          type={showPassword ? "text" : "password"}
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          error={errors.password}
+          disabled={isLoading}
+          required
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-9 text-muted-foreground hover:text-primary"
+        >
+          <Icon name={showPassword ? "EyeOff" : "Eye"} size={18} />
+        </button>
+      </div>
 
       <div className="flex items-center justify-between">
         <Checkbox
-          label="Remember me"
+          label="Keep me signed in"
           name="rememberMe"
           checked={formData.rememberMe}
           onChange={handleInputChange}

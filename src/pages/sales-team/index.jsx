@@ -31,6 +31,7 @@ const SalesTeam = () => {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [allLeads, setallLeads] = useState([]);
   const [contactDetail, setContactDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -45,6 +46,7 @@ const SalesTeam = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadContact();
@@ -503,6 +505,7 @@ const SalesTeam = () => {
             onSort={handleSort}
             onEditContact={handleEditContact}
             onDeleteContact={handleDeleteContact}
+            isLoading={loading}
           />
 
           {/* Pagination */}

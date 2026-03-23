@@ -409,6 +409,7 @@ const AccountsPage = () => {
             onRowClick={handleRowClick}
             onBulkAction={handleBulkAction}
             onSelectionChange={setSelectedAccountIds}
+            isLoading={loading}
           />
         </div>
       </main>

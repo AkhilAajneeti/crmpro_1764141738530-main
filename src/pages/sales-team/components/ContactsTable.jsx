@@ -13,6 +13,7 @@ const ContactsTable = ({
   onSort,
   onEditContact,
   onDeleteContact,
+  isLoading
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -67,6 +68,48 @@ const ContactsTable = ({
     };
     return colors?.[status] || colors?.["Inactive"];
   };
+   const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+      {/* Checkbox */}
+      <td className="p-4">
+        <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
+
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Last Activity */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Desktop Table */}
@@ -115,85 +158,97 @@ const ContactsTable = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {contacts?.map((contact) => (
-              <tr
-                key={contact?.id}
-                className="hover:bg-muted/30 cursor-pointer transition-colors"
-                onMouseEnter={() => setHoveredRow(contact?.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-              >
-                <td className="px-4 py-4">
-                  <Checkbox
-                    checked={selectedContacts?.includes(contact?.id)}
-                    onChange={(e) => {
-                      e?.stopPropagation();
-                      onSelectContact(contact?.id, e?.target?.checked);
-                    }}
-                  />
-                </td>
-                <td
-                  className="px-4 py-4"
-                  onClick={() => onContactClick(contact)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div>
-                      {/* <div className="font-medium text-foreground">{contact?.salutationName}</div> */}
-                      <div className="font-medium text-foreground">
-                        {contact?.salutationName}
-                        {contact?.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {contact?.emailAddress}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-sm text-foreground">
-                  {contact?.leadsAssigned}
-                </td>
-                <td className="px-4 py-4 text-sm text-foreground">
-                  {contact?.siteVisits}
-                </td>
-                <td className="px-4 py-4 text-sm text-primary hover:underline">
-                  {contact?.dealsClosed}
-                </td>
-
-                <td className="px-4 py-4">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-semibold border ${getConversionColor(
-                      contact?.conversionRate,
-                    )}`}
-                  >
-                    {contact?.conversionRate ?? 0}%
-                  </span>
-                </td>
-                <td className="px-4 py-4 hidden">
-                  <div
-                    className={`flex items-center justify-center space-x-1 transition-opacity`}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleQuickAction(e, "edit", contact)}
-                    >
-                      <Icon name="Edit" size={14} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteContact(contact.id);
-                      }}
-                    >
-                      <Icon name="Trash" size={14} />
-                    </Button>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !contacts?.length ? (
+              <tr>
+                <td colSpan="6">
+                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                    No leads available
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              contacts?.map((contact) => (
+                <tr
+                  key={contact?.id}
+                  className="hover:bg-muted/30 cursor-pointer transition-colors"
+                  onMouseEnter={() => setHoveredRow(contact?.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <td className="px-4 py-4">
+                    <Checkbox
+                      checked={selectedContacts?.includes(contact?.id)}
+                      onChange={(e) => {
+                        e?.stopPropagation();
+                        onSelectContact(contact?.id, e?.target?.checked);
+                      }}
+                    />
+                  </td>
+                  <td
+                    className="px-4 py-4"
+                    onClick={() => onContactClick(contact)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div>
+                        {/* <div className="font-medium text-foreground">{contact?.salutationName}</div> */}
+                        <div className="font-medium text-foreground">
+                          {contact?.salutationName}
+                          {contact?.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {contact?.emailAddress}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-sm text-foreground">
+                    {contact?.leadsAssigned}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-foreground">
+                    {contact?.siteVisits}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-primary hover:underline">
+                    {contact?.dealsClosed}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-semibold border ${getConversionColor(
+                        contact?.conversionRate,
+                      )}`}
+                    >
+                      {contact?.conversionRate ?? 0}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 hidden">
+                    <div
+                      className={`flex items-center justify-center space-x-1 transition-opacity`}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => handleQuickAction(e, "edit", contact)}
+                      >
+                        <Icon name="Edit" size={14} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteContact(contact.id);
+                        }}
+                      >
+                        <Icon name="Trash" size={14} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import IndustryChart from "./IndustryChart";
 import StatusChart from "./StatusChart";
+import ProgressChart from "./ProgressChart";
 
 const RightRail = ({ leads = [] }) => {
   return (
     <div className="space-y-6">
       {/* Stats Card */}
-      <motion.div
+      {/* <motion.div
         className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -64,9 +65,10 @@ const RightRail = ({ leads = [] }) => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.div> */}
 
       {/* Industry Chart */}
+      {/* <ProgressChart leads={leads} /> */}
       <IndustryChart leads={leads} />
       <StatusChart leads={leads} />
     </div>

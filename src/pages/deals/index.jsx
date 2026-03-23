@@ -10,6 +10,7 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createLead,
   deleteActivity,
@@ -19,32 +20,29 @@ import {
   updateLead,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import {
-  fetchIndustries,
-  fetchSources,
-  fetchStatus,
-} from "services/others.service";
 import StatusChart from "./components/charts/StatusChart";
-import SourceChart from "./components/charts/SourceChart";
 import IndustryChart from "./components/charts/IndustryChart";
 import AssignedUserChart from "./components/charts/AssignedUserChart";
 import MultiLineChart from "pages/dashboard/components/MultiLineChart";
+import { useLeads } from "hooks/useLeads";
+import { useMetaData } from "hooks/useMetaData";
+import { useLeadDetails } from "hooks/useLeadDetails";
 
 const DealsPage = () => {
+  const queryClient = useQueryClient();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [source, setSource] = useState([]);
-  const [status, setStatus] = useState([]);
-  const [industry, setIndustry] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
-  const [leadsDetails, setLeadsDetails] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const { data: leadsData, isLoading } = useLeads();
+  const { data: metaData } = useMetaData();
+  const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
     direction: "desc",
@@ -58,69 +56,25 @@ const DealsPage = () => {
     closeDateFrom: "",
     closeDateTo: "",
   });
-
-  useEffect(() => {
-    const loadContact = async () => {
-      try {
-        const data = await fetchLeads();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadContact();
-  }, []);
-  // fetch sources
-  useEffect(() => {
-    const loadSource = async () => {
-      try {
-        const data = await fetchSources();
-        setSource(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadSource();
-  }, []);
-  // fetch status
-  useEffect(() => {
-    const loadStatus = async () => {
-      try {
-        const data = await fetchStatus();
-        setStatus(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadStatus();
-  }, []);
-  useEffect(() => {
-    const loadIndustry = async () => {
-      try {
-        const data = await fetchIndustries();
-        setIndustry(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadIndustry();
-  }, []);
-  // Mock deals data
-  useEffect(() => {
-    if (!selectedDeal?.id || mode !== "view") return;
-
-    fetchLeadsById(selectedDeal.id)
-      .then(setLeadsDetails)
-      .catch((err) => console.error("Failed to fetch lead detail", err));
-  }, [selectedDeal?.id, mode]);
+  const createLeadMutation = useMutation({
+    mutationFn: createLead,
+    onSuccess: () => {
+      toast.success("Lead created");
+      queryClient.invalidateQueries(["leads"]);
+    },
+  });
+  const deleteLeadMutation = useMutation({
+    mutationFn: deleteLead,
+    onSuccess: () => {
+      toast.success("Deleted");
+      queryClient.invalidateQueries(["leads"]);
+    },
+  });
+  // fetch leads
+  const leads = leadsData?.list || [];
+  const source = metaData?.sources || [];
+  const status = metaData?.status || [];
+  const industry = metaData?.industries || [];
 
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
     if (!rows || rows.length === 0) {
@@ -253,12 +207,10 @@ const DealsPage = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
-    setLeadsDetails(null);
   };
   const handleCreateLead = async (payload) => {
     try {
-      await createLead(payload); // API
-      toast.success("Lead created successfully");
+      createLeadMutation.mutate(payload);
     } catch (err) {
       console.error("Lead creationd failed", err);
     }
@@ -271,10 +223,7 @@ const DealsPage = () => {
   const handleDeleteLead = async (id) => {
     try {
       toast.loading("Deleting lead...", { id: "delete-lead" });
-      await deleteLead(id); // API call
-      toast.success("Lead deleted successfully", {
-        id: "delete-lead",
-      });
+      deleteLeadMutation.mutate(id);
     } catch (err) {
       console.error("Delete failed", err);
     }
@@ -346,7 +295,6 @@ const DealsPage = () => {
         n;
       }
       setSelectedDeal(null);
-      setLeadsDetails(null);
       setMode("mass-update");
       setIsDrawerOpen(true);
 
@@ -381,28 +329,33 @@ const DealsPage = () => {
       // later mass update drawer
     }
   };
-  const handleConfirmBulkDelete = async () => {
-    try {
-      toast.loading("Deleting leads...", { id: "bulk-delete" });
-
-      await Promise.all(selectedDeals.map((id) => deleteLead(id)));
-
-      setLeads((prev) =>
-        prev.filter((lead) => !selectedDeals.includes(lead.id)),
-      );
-
-      setSelectedDeals([]);
-      setShowDeleteConfirm(false);
-
-      toast.success("Selected leads deleted", {
-        id: "bulk-delete",
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete leads", {
-        id: "bulk-delete",
-      });
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      return Promise.all(ids.map((id) => deleteLead(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["leads"]);
+      toast.success("Selected leads deleted");
+    },
+  });
+  const handleConfirmBulkDelete = () => {
+    if (!selectedDeals.length) {
+      toast.error("No leads selected");
+      return;
     }
+
+    toast.loading("Deleting leads...", { id: "bulk-delete" });
+
+    bulkDeleteMutation.mutate(selectedDeals, {
+      onSuccess: () => {
+        toast.success("Selected leads deleted", { id: "bulk-delete" });
+        setSelectedDeals([]);
+        setShowDeleteConfirm(false);
+      },
+      onError: () => {
+        toast.error("Failed to delete leads", { id: "bulk-delete" });
+      },
+    });
   };
 
   const handlePageChange = (page) => {
@@ -424,8 +377,9 @@ const DealsPage = () => {
       });
 
       // refresh UI
-      const data = await fetchLeads();
-      setLeads(data.list);
+      // const data = await fetchLeads();
+      // setLeads(data.list);
+      queryClient.invalidateQueries(["leads"]);
 
       setSelectedDeals([]);
       setIsDrawerOpen(false);
@@ -501,7 +455,7 @@ const DealsPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={()=>setShowAnalytics((prev)=>!prev)}
+                    onClick={() => setShowAnalytics((prev) => !prev)}
                   >
                     <Icon name="X" size={20} />
                   </Button>
@@ -530,6 +484,7 @@ const DealsPage = () => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteLead}
+              isLoading={isLoading}
             />
 
             {/* Pagination */}

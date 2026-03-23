@@ -14,6 +14,7 @@ const DealsTable = ({
   currentPage,
   itemsPerPage,
   onDelete,
+  isLoading,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -96,6 +97,56 @@ const DealsTable = ({
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
 
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+      {/* Checkbox */}
+      <td className="p-4">
+        <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
+
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* status */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      {/* Next Contact */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      {/* Created At */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Desktop Table */}
@@ -170,7 +221,17 @@ const DealsTable = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedDeals?.map((deal) => (
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !paginatedDeals?.length ? (
+              <tr>
+                <td colSpan="8">
+                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                    No leads available
+                  </div>
+                </td>
+              </tr>
+            ) :(paginatedDeals?.map((deal) => (
               <tr
                 key={deal?.id}
                 onMouseEnter={() => setHoveredRow(deal?.id)}
@@ -259,7 +320,7 @@ const DealsTable = ({
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

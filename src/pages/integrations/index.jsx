@@ -23,6 +23,7 @@ const IntegrationsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [integrationsAcc, setIntegrationAcc] = useState([""]);
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [drawerMode, setDrawerMode] = useState("view"); // add | edit
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -35,6 +36,8 @@ const IntegrationsPage = () => {
         setIntegrationAcc(data.list);
       } catch (error) {
         console.log("failed to fetch data", error);
+      }finally{
+        setLoading(false);
       }
     };
 
@@ -384,6 +387,7 @@ const IntegrationsPage = () => {
               integrations={integrationsAcc}
               onRowClick={handleRowClick}
               onDelete={handleDeleteClick}
+              isLoading={loading}
             />
           </div>
 

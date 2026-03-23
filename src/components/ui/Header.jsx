@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Icon from '../AppIcon';
-import Button from './Button';
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Icon from "../AppIcon";
+import Button from "./Button";
 
+import { fetchNotifications } from "services/notification.service";
+import NotificationDropdown from "components/NotificationDropdown";
+import { useNotification } from "NotificationContext";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
-   const LogInuserstr = localStorage.getItem("login_object");
-   const LogInuser = LogInuserstr?JSON.parse(LogInuserstr):null;
+  const LogInuserstr = localStorage.getItem("login_object");
+  const LogInuser = LogInuserstr ? JSON.parse(LogInuserstr) : null;
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
   const location = useLocation();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   const handleUserDropdownToggle = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
@@ -29,33 +32,43 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
   const handleLogout = () => {
     // Implement logout logic
-    console.log('User Logout');
+    console.log("User Logout");
     // 1️⃣ Clear auth data
-  localStorage.removeItem("auth_token");
-  localStorage.removeItem("username");
-  localStorage.removeItem("rememberMe");
-  localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("auth_token");
 
-  // 2️⃣ Close dropdown
-  handleDropdownClose();
+    // 2️⃣ Close dropdown
+    handleDropdownClose();
 
-  // 3️⃣ Redirect to login
-  navigate("/login", { replace: true });
+    // 3️⃣ Redirect to login
+    navigate("/login", { replace: true });
   };
 
   const handleProfileClick = () => {
     // Navigate to profile
-    console.log('Profile clicked');
-    navigate('/profile')
+    console.log("Profile clicked");
+    navigate("/profile");
     handleDropdownClose();
   };
 
   const handleSettingsClick = () => {
     // Navigate to settings
-    console.log('Settings clicked');
+    console.log("Settings clicked");
     handleDropdownClose();
   };
+  const { open, setOpen, setNotifications } = useNotification();
 
+  const handleClick = async () => {
+    setOpen(!open);
+
+    // fetch only when opening
+    if (!open) {
+      const data = await fetchNotifications();
+      setNotifications(data.list || []);
+    }
+  };
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
@@ -79,7 +92,9 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <Icon name="Zap" size={20} color="white" />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-lg font-semibold text-foreground">CRM</span>
+                <span className="text-lg font-semibold text-foreground">
+                  CRM
+                </span>
                 <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
@@ -91,8 +106,10 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
               {/* <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Icon name="Zap" size={20} color="white" />
               </div>       */}
-                <div className="flex items-center space-x-2">
-                <span className="text-lg font-semibold text-foreground">CRM</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-semibold text-foreground">
+                  CRM
+                </span>
                 <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
                   ACL
                 </span>
@@ -102,21 +119,22 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
-
-
-            {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
-              aria-label="Notifications"
-            >
-              <Icon name="Bell" size={20} />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full flex items-center justify-center">
-                <span className="w-1.5 h-1.5 bg-white rounded-full" />
-              </span>
-            </Button>
-
+            <div className="relative">
+              {/* Notifications */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                aria-label="Notifications"
+                onClick={handleClick}
+              >
+                <Icon name="Bell" size={20} />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                </span>
+              </Button>
+              <NotificationDropdown />
+            </div>
             {/* User Dropdown */}
             <div className="relative">
               <button
@@ -125,16 +143,22 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 aria-label="User account menu"
               >
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">ACL</span>
+                  <span className="text-sm font-medium text-primary-foreground">
+                    ACL
+                  </span>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-foreground">{LogInuser.username}</div>
-                  <div className="text-xs text-muted-foreground">Aajneeti Connect ltd</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {LogInuser.username}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Aajneeti Connect ltd
+                  </div>
                 </div>
-                <Icon 
-                  name="ChevronDown" 
-                  size={16} 
-                  className={`transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`}
+                <Icon
+                  name="ChevronDown"
+                  size={16}
+                  className={`transition-transform ${isUserDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -148,12 +172,18 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                     <div className="p-4 border-b border-border">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary-foreground">ACL</span>
+                          <span className="text-sm font-medium text-primary-foreground">
+                            ACL
+                          </span>
                         </div>
                         <div>
-                          <div className="font-medium text-popover-foreground">{LogInuser.username}</div>
+                          <div className="font-medium text-popover-foreground">
+                            {LogInuser.username}
+                          </div>
                           {/* <div className="text-sm text-muted-foreground">john.doe@company.com</div> */}
-                          <div className="text-xs text-muted-foreground">Aajneeti Connect ltd</div>
+                          <div className="text-xs text-muted-foreground">
+                            Aajneeti Connect ltd
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -172,7 +202,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                         <Icon name="Settings" size={16} className="mr-3" />
                         Account Settings
                       </button> */}
-                     
+
                       <div className="border-t border-border my-1" />
                       <button
                         onClick={handleLogout}

@@ -122,7 +122,7 @@ const Dashboard = () => {
   );
   // monthly growth
   const monthGrowth =
-    lastMonthLead.lenght === 0
+    lastMonthLead.length === 0
       ? 0
       : Math.round(
           ((thisMonthLead.length - lastMonthLead.length) /
@@ -163,14 +163,23 @@ const Dashboard = () => {
   };
 
   const meetings = meetingsList.filter(
-    (m) => m.status === "Held" && m.dateStart && isToday(m.dateStart),
+    (m) =>
+      m.status === "Held" &&
+      m.dateStart &&
+      isToday(m.dateStart.replace(" ", "T")),
   ).length;
 
-  const proposals = leads.filter((l) => l.status === "Proposal Shared").length;
+  const proposals = leads.filter(
+    (l) => l.status === "Proposal Shared" && isToday(l.modifiedAt),
+  ).length;
 
-  const siteVisits = leads.filter((l) => l.status === "Site Visit Done").length;
+  const siteVisits = leads.filter(
+    (l) => l.status === "Site Visit Done" && isToday(l.modifiedAt),
+  ).length;
 
-  const closedDeals = leads.filter((l) => l.status === "Deal Closed").length;
+  const closedDeals = leads.filter(
+    (l) => l.status === "Deal Closed" && isToday(l.modifiedAt),
+  ).length;
   // Close sidebar on escape key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -221,6 +230,28 @@ const Dashboard = () => {
       <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
       <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       <main className="lg:ml-64 pt-16">
+        <div className="m-6">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Welcome back! Here's what's happening with your sales pipeline
+            today.
+          </p>
+        </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 m-5">
+          {kpiData?.map((kpi, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <KPICard {...kpi} />
+            </motion.div>
+          ))}
+        </div>
         <div className="flex">
           {/* Main Content */}
           <div className="flex-1 p-4 lg:p-0 xl:pr-0">
@@ -230,29 +261,6 @@ const Dashboard = () => {
               transition={{ duration: 0.5 }}
             >
               {/* Page Header */}
-              <div className="m-6">
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                  Dashboard
-                </h1>
-                <p className="text-muted-foreground">
-                  Welcome back! Here's what's happening with your sales pipeline
-                  today.
-                </p>
-              </div>
-
-              {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 m-5">
-                {kpiData?.map((kpi, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                  >
-                    <KPICard {...kpi} />
-                  </motion.div>
-                ))}
-              </div>
 
               {/* Pipeline Chart */}
               <div className="m-5">
@@ -304,7 +312,9 @@ const Dashboard = () => {
                   <div
                     onClick={() => {
                       const filtered = leads.filter(
-                        (l) => l.status === "Proposal Shared",
+                        (l) =>
+                          l.status === "Proposal Shared" &&
+                          isToday(l.modifiedAt),
                       );
 
                       setInsightData(filtered);
@@ -335,7 +345,9 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                   <div
                     onClick={() => {
                       const filtered = leads.filter(
-                        (l) => l.status === "Site Visit Done",
+                        (l) =>
+                          l.status === "Site Visit Done" &&
+                          isToday(l.modifiedAt),
                       );
 
                       setInsightData(filtered);
@@ -366,7 +378,8 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                   <div
                     onClick={() => {
                       const filtered = leads.filter(
-                        (l) => l.status === "Deal Closed",
+                        (l) =>
+                          l.status === "Deal Closed" && isToday(l.modifiedAt),
                       );
 
                       setInsightData(filtered);

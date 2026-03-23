@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { Pie, PieChart, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import {
+  Pie,
+  PieChart,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Label,
+} from "recharts";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
@@ -173,6 +180,11 @@ const StatusChart = ({ leads = [] }) => {
                   />
                 ),
               )}
+              <Label
+                value={`Total\n${total}`}
+                position="center"
+                className="text-sm font-semibold"
+              />
             </Pie>
 
             <Tooltip content={<CustomTooltip />} />

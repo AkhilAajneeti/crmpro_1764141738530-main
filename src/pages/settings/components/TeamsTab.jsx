@@ -3,7 +3,6 @@ import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-import Select from "../../../components/ui/Select";
 import Avatar from "react-avatar";
 import ReactSelect from "react-select";
 import CreatableSelect from "react-select/creatable";
@@ -18,11 +17,11 @@ import {
   createTeam,
   deleteTeam,
   fetchTeam,
+  fetchTeamUser,
   updateTeam,
 } from "services/team.service";
 import { createUser, fetchRoles } from "services/setting.service";
 import toast from "react-hot-toast";
-import UserDetailsModal from "./models/UserDetailsModal";
 const TeamsTab = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,10 +32,13 @@ const TeamsTab = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [teamUsers, setTeamUsers] = useState([]);
   const [inviteData, setInviteData] = useState({
     id: null,
     name: "",
@@ -117,6 +119,21 @@ const TeamsTab = () => {
     }
   };
 
+  const handleTeamClick = async (team) => {
+    try {
+      setIsLoading(true);
+      setSelectedTeam(team);
+
+      const data = await fetchTeamUser(team.id);
+      setTeamUsers(data.list || []);
+
+      setIsTeamModalOpen(true);
+    } catch (err) {
+      toast.error("Failed to load team users ❌");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -124,6 +141,8 @@ const TeamsTab = () => {
         setTeamMembers(data.list || []);
       } catch (err) {
         console.error("failed to fetch data", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -220,7 +239,38 @@ const TeamsTab = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [itemsPerPage]);
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
 
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div>
       {/* Team Overview */}
@@ -270,79 +320,89 @@ const TeamsTab = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedMembers?.map((member) => (
-                <tr
-                  key={member?.id}
-                  className="border-b border-border hover:bg-muted/50 transition-smooth"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
-                        {member?.avatar ? (
-                          <Image
-                            src={member.avatar}
-                            alt={member?.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Avatar
-                            name={member?.name || member?.userName || "User"}
-                            size="40"
-                            round
-                            textSizeRatio={2}
-                            className="font-medium"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <p
-                          className="font-medium text-card-foreground"
-                          onClick={() => {
-                            fetchuserById(member);
-                          }}
-                        >
-                          {member?.name}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-4 text-center">
-                    <span className="text-sm text-muted-foreground">
-                      {member?.createdAt}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <span className="text-sm text-muted-foreground">
-                      {member?.modifiedAt}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(member)}
-                        aria-label="Edit member"
-                      >
-                        <Icon name="Edit" size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedUserId(member?.id);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        aria-label="Remove member"
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+              ) : !paginatedMembers?.length ? (
+                <tr>
+                  <td colSpan="4">
+                    <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                      No leads available
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedMembers?.map((member) => (
+                  <tr
+                    key={member?.id}
+                    className="border-b border-border hover:bg-muted/50 transition-smooth"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
+                          {member?.avatar ? (
+                            <Image
+                              src={member.avatar}
+                              alt={member?.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Avatar
+                              name={member?.name || member?.userName || "User"}
+                              size="40"
+                              round
+                              textSizeRatio={2}
+                              className="font-medium"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <p
+                            className="font-medium text-card-foreground"
+                            onClick={() => handleTeamClick(member)}
+                          >
+                            {member?.name}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-sm text-muted-foreground">
+                        {member?.createdAt}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-sm text-muted-foreground">
+                        {member?.modifiedAt}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(member)}
+                          aria-label="Edit member"
+                        >
+                          <Icon name="Edit" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUserId(member?.id);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          aria-label="Remove member"
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -534,12 +594,58 @@ const TeamsTab = () => {
           </div>
         </>
       )}
-      {isShowDetails && selectedUser && (
-        <UserDetailsModal
-          user={selectedUser}
-          onClose={() => setIsShowDetails(false)}
-          getStatusBadge={getStatusBadge}
-        />
+
+      {isTeamModalOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setIsTeamModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-xl w-full max-w-2xl shadow-xl">
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b">
+                <h3 className="text-lg font-semibold">
+                  {selectedTeam?.name} - Team Members
+                </h3>
+                <button onClick={() => setIsTeamModalOpen(false)}>
+                  <Icon name="X" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-4 max-h-[400px] overflow-y-auto">
+                {isLoading ? (
+                  <p>Loading...</p>
+                ) : !teamUsers.length ? (
+                  <p className="text-center text-gray-400">
+                    No users in this team
+                  </p>
+                ) : (
+                  teamUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 border-b"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar name={user.name} size="35" round />
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+
+                      {getStatusBadge(user.status)}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {isDeleteModalOpen && (

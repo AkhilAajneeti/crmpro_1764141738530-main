@@ -9,6 +9,7 @@ const AccountsTable = ({
   onRowClick,
   onBulkAction,
   onSelectionChange,
+  isLoading,
 }) => {
   // do some changes
 
@@ -139,7 +140,6 @@ const AccountsTable = ({
     setSelectedRows(newSelected);
   };
 
-
   const formatDate = (dateString) => {
     return new Date(dateString)?.toLocaleDateString("en-US", {
       month: "short",
@@ -155,7 +155,48 @@ const AccountsTable = ({
     paginatedData?.length > 0 && selectedRows?.size === paginatedData?.length;
   const isIndeterminate =
     selectedRows?.size > 0 && selectedRows?.size < paginatedData?.length;
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+      {/* Checkbox */}
+      <td className="p-4">
+        <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
+      </td>
 
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
+
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Last Activity */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Table Header with Search and Filters */}
@@ -257,79 +298,91 @@ const AccountsTable = ({
             </tr>
           </thead>
           <tbody>
-            {paginatedData?.map((account) => (
-              <tr
-                key={account?.id}
-                className="border-t border-border hover:bg-muted/30 cursor-pointer transition-colors"
-                onClick={() => onRowClick(account)}
-              >
-                <td className="p-4" onClick={(e) => e?.stopPropagation()}>
-                  <Checkbox
-                    checked={selectedRows?.has(account?.id)}
-                    onChange={(e) =>
-                      handleSelectRow(account?.id, e?.target?.checked)
-                    }
-                  />
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !paginatedData?.length ? (
+              <tr>
+                <td colSpan="6">
+                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                    No leads available
+                  </div>
                 </td>
-                {visibleColumns?.company && (
-                  <td className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Icon
-                          name="Building2"
-                          size={16}
-                          className="text-primary"
-                        />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {account?.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {account?.website}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                )}
-                {visibleColumns?.industry && (
-                  <td className="p-4 text-foreground">{account?.industry}</td>
-                )}
-
-                {visibleColumns?.contacts && (
-                  <td className="p-4 text-foreground">{account?.type}</td>
-                )}
-
-                {visibleColumns?.lastActivity && (
-                  <td className="p-4 text-muted-foreground">
-                    {formatDate(account?.modifiedAt)}
-                  </td>
-                )}
-                {visibleColumns?.actions && (
-                  <td className="p-4" onClick={(e) => e?.stopPropagation()}>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onRowClick(account, "edit")}
-                      >
-                        <Icon name="Edit" size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:bg-red-50"
-                        onClick={() =>
-                          onBulkAction("delete", Array.from(selectedRows))
-                        }
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
-                    </div>
-                  </td>
-                )}
               </tr>
-            ))}
+            ) : (
+              paginatedData?.map((account) => (
+                <tr
+                  key={account?.id}
+                  className="border-t border-border hover:bg-muted/30 cursor-pointer transition-colors"
+                  onClick={() => onRowClick(account)}
+                >
+                  <td className="p-4" onClick={(e) => e?.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedRows?.has(account?.id)}
+                      onChange={(e) =>
+                        handleSelectRow(account?.id, e?.target?.checked)
+                      }
+                    />
+                  </td>
+                  {visibleColumns?.company && (
+                    <td className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Icon
+                            name="Building2"
+                            size={16}
+                            className="text-primary"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {account?.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {account?.website}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns?.industry && (
+                    <td className="p-4 text-foreground">{account?.industry}</td>
+                  )}
+
+                  {visibleColumns?.contacts && (
+                    <td className="p-4 text-foreground">{account?.type}</td>
+                  )}
+
+                  {visibleColumns?.lastActivity && (
+                    <td className="p-4 text-muted-foreground">
+                      {formatDate(account?.modifiedAt)}
+                    </td>
+                  )}
+                  {visibleColumns?.actions && (
+                    <td className="p-4" onClick={(e) => e?.stopPropagation()}>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onRowClick(account, "edit")}
+                        >
+                          <Icon name="Edit" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-red-50"
+                          onClick={() =>
+                            onBulkAction("delete", Array.from(selectedRows))
+                          }
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

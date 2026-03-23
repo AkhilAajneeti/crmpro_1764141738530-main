@@ -13,6 +13,7 @@ const DealsTable = ({
   onSort,
   currentPage,
   itemsPerPage,
+  isLoading,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -87,7 +88,22 @@ const DealsTable = ({
     paginatedDeals?.length > 0;
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
-
+  const SkeletonRow = () => (
+    <tr className="animate-pulse">
+      <td className="px-4 py-4">
+        <div className="h-4 w-24 bg-gray-300/70 rounded"></div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-4 w-32 bg-gray-300/60 rounded"></div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-5 w-16 bg-gray-300/60 rounded-full"></div>
+      </td>
+    </tr>
+  );
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Desktop Table */}
@@ -134,39 +150,51 @@ const DealsTable = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedDeals?.map((deal) => (
-              <tr
-                key={deal?.id}
-                onMouseEnter={() => setHoveredRow(deal?.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-                className="hover:bg-muted/30 cursor-pointer transition-smooth"
-              >
-                <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                  <div className="font-medium text-foreground">
-                    {deal?.name}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="text-foreground">{deal?.cProjectName}</div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="font-medium text-foreground">
-                    {deal?.source}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div
-                    className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                      deal?.status,
-                    )}`}
-                  >
-                    <span className={`text-sm text-foreg roundunded-full `}>
-                      {deal?.status}
-                    </span>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !paginatedDeals?.length ? (
+              <tr>
+                <td colSpan="4">
+                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                    No leads available
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginatedDeals?.map((deal) => (
+                <tr
+                  key={deal?.id}
+                  onMouseEnter={() => setHoveredRow(deal?.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                  className="hover:bg-muted/30 cursor-pointer transition-smooth"
+                >
+                  <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
+                    <div className="font-medium text-foreground">
+                      {deal?.name}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="text-foreground">{deal?.cProjectName}</div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="font-medium text-foreground">
+                      {deal?.source}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div
+                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
+                        deal?.status,
+                      )}`}
+                    >
+                      <span className={`text-sm text-foreg roundunded-full `}>
+                        {deal?.status}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

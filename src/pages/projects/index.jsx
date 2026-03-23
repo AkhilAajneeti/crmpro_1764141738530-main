@@ -10,15 +10,7 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
-import {
-  createTasks,
-  deleteTasks,
-  fetchTasks,
-  updateTasks,
-  bulkDeleteTasks,
-  fetchTasksById,
-  deleteActivity,
-} from "services/tasks.service";
+
 import {
   bulkDeleteProject,
   createProject,
@@ -37,6 +29,7 @@ const ProjectsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
+    const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -59,6 +52,7 @@ const ProjectsPage = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadProjects();
@@ -439,6 +433,7 @@ const ProjectsPage = () => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteLead}
+              isLoading={loading}
             />
 
             {/* Pagination */}

@@ -9,17 +9,17 @@ import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import TablePagination from "./components/TablePagination";
-import { deleteActivity } from "services/leads.service";
-import {
-  bulkDeleteMeeting,
-  createMeeting,
-  deleteMeeting,
-  fetchMeeting,
-  fetchMeetingById,
-  updateMeeting,
-} from "services/meeting.service";
+
+
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import { bulkDeleteCall, createCall, deleteCall, fetchCall, fetchCallById, updateCall } from "../../services/call.services";
+import {
+  bulkDeleteCall,
+  createCall,
+  deleteCall,
+  fetchCall,
+  fetchCallById,
+  updateCall,
+} from "../../services/call.services";
 
 const CallPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -31,6 +31,7 @@ const CallPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
+  const[loading,setLoading]=useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -52,6 +53,7 @@ const CallPage = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadCall();
@@ -329,7 +331,7 @@ const CallPage = () => {
   return (
     <>
       <Helmet>
-        <title>Meetings - Aajneeti Connect ltd</title>
+        <title>Training - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
@@ -345,16 +347,16 @@ const CallPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  Calls
+                  Training
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Track and manage your Calls
+                  Track and manage your Training
                 </p>
               </div>
               <div className="flex items-center space-x-3">
                 <Button onClick={handleAddMeeting}>
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Call
+                  New Trainig
                 </Button>
               </div>
             </div>
@@ -381,6 +383,7 @@ const CallPage = () => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteMeeting}
+              isLoading={loading}
             />
 
             {/* Pagination */}

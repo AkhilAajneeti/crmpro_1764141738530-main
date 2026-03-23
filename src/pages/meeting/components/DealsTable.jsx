@@ -15,6 +15,7 @@ const DealsTable = ({
   currentPage,
   itemsPerPage,
   onDelete,
+  isLoading,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -84,7 +85,52 @@ const DealsTable = ({
     paginatedDeals?.length > 0;
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-t border-border">
+      {/* Checkbox */}
+      <td className="p-4">
+        <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
+      </td>
 
+      {/* Company */}
+      <td className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
+          <div>
+            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
+            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+          </div>
+        </div>
+      </td>
+
+      {/* Industry */}
+      <td className="p-4">
+        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Type */}
+      <td className="p-4">
+        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* status */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+      {/* Next Contact */}
+      <td className="p-4">
+        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
+      </td>
+
+      {/* Actions */}
+      <td className="p-4">
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+          <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Desktop Table */}
@@ -148,94 +194,106 @@ const DealsTable = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedDeals?.map((deal) => (
-              <tr
-                key={deal?.id}
-                onMouseEnter={() => setHoveredRow(deal?.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-                className="hover:bg-muted/30 cursor-pointer transition-smooth"
-              >
-                <td className="px-4 py-4">
-                  <Checkbox
-                    checked={selectedDeals?.includes(deal?.id)}
-                    onChange={(e) => {
-                      e?.stopPropagation();
-                      onSelectDeal(deal?.id, e?.target?.checked);
-                    }}
-                  />
-                </td>
-                <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                  <div className="font-medium text-foreground">
-                    {deal?.name}
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !paginatedDeals?.length ? (
+              <tr>
+                <td colSpan="8">
+                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+                    No leads available
                   </div>
                 </td>
-                <td className="px-4 py-4">
-                  <div className="text-foreground">{deal?.parentName}</div>
-                </td>
-                {/* <td className="px-4 py-4">
+              </tr>
+            ) : (
+              paginatedDeals?.map((deal) => (
+                <tr
+                  key={deal?.id}
+                  onMouseEnter={() => setHoveredRow(deal?.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                  className="hover:bg-muted/30 cursor-pointer transition-smooth"
+                >
+                  <td className="px-4 py-4">
+                    <Checkbox
+                      checked={selectedDeals?.includes(deal?.id)}
+                      onChange={(e) => {
+                        e?.stopPropagation();
+                        onSelectDeal(deal?.id, e?.target?.checked);
+                      }}
+                    />
+                  </td>
+                  <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
+                    <div className="font-medium text-foreground">
+                      {deal?.name}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="text-foreground">{deal?.parentName}</div>
+                  </td>
+                  {/* <td className="px-4 py-4">
                   <div className="font-medium text-foreground">
                     {deal?.source}
                   </div>
                 </td> */}
-                <td className="px-4 py-4">
-                  <div
-                    className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                      deal?.status,
-                    )}`}
-                  >
-                    <span className={`text-sm text-foreg roundunded-full `}>
-                      {deal?.status}
-                    </span>
-                  </div>
-                </td>
-                {/* <td className="px-4 py-4">
+                  <td className="px-4 py-4">
+                    <div
+                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
+                        deal?.status,
+                      )}`}
+                    >
+                      <span className={`text-sm text-foreg roundunded-full `}>
+                        {deal?.status}
+                      </span>
+                    </div>
+                  </td>
+                  {/* <td className="px-4 py-4">
                   <span
                     className={`inline-flex px-1 py-1 text-xs font-medium rounded-full`}
                   >
                     {formatDate(deal?.cNextContact)}
                   </span>
                 </td> */}
-                <td className="px-4 py-4">
-                  <div className="text-sm text-foreground">
-                    {formatDate(deal?.dateStart)}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div
-                    className={`text-sm font-medium ${getProbabilityColor(
-                      deal?.assignedUserName,
-                    )}`}
-                  >
-                    {deal?.assignedUserName}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div
-                    className={`flex items-center space-x-1 transition-opacity ${
-                      hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleQuickAction(e, "edit", deal)}
-                      className="h-8 w-8"
+                  <td className="px-4 py-4">
+                    <div className="text-sm text-foreground">
+                      {formatDate(deal?.dateStart)}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div
+                      className={`text-sm font-medium ${getProbabilityColor(
+                        deal?.assignedUserName,
+                      )}`}
                     >
-                      <Icon name="Edit" size={14} />
-                    </Button>
+                      {deal?.assignedUserName}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div
+                      className={`flex items-center space-x-1 transition-opacity ${
+                        hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleQuickAction(e, "edit", deal)}
+                        className="h-8 w-8"
+                      >
+                        <Icon name="Edit" size={14} />
+                      </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDelete(e, deal)}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Icon name="Trash2" size={14} />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDelete(e, deal)}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Icon name="Trash2" size={14} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

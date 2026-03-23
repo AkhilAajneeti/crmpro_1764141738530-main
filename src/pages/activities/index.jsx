@@ -15,6 +15,7 @@ const Activities = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activities, setActivities] = useState([]);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedActivities, setSelectedActivities] = useState([]);
 
   // operations
@@ -27,6 +28,7 @@ const Activities = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadAccount();
@@ -209,7 +211,27 @@ const Activities = () => {
   const handleClearSelection = () => {
     setSelectedActivities([]);
   };
+  const ActivitySkeleton = () => (
+    <div className="flex items-start space-x-4 animate-pulse">
+      {/* Checkbox */}
+      <div className="h-4 w-4 bg-gray-300/60 rounded mt-6"></div>
 
+      {/* Content */}
+      <div className="flex-1 space-y-3">
+        {/* Title */}
+        <div className="h-4 w-48 bg-gray-300/70 rounded"></div>
+
+        {/* Subtitle */}
+        <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
+
+        {/* Description */}
+        <div className="h-3 w-full bg-gray-300/40 rounded"></div>
+
+        {/* Meta (date/user) */}
+        <div className="h-3 w-24 bg-gray-300/40 rounded"></div>
+      </div>
+    </div>
+  );
   return (
     <div className="min-h-screen bg-background">
       <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
@@ -285,7 +307,13 @@ const Activities = () => {
 
             {/* Activities Timeline */}
             <div className="p-6">
-              {filteredActivities?.length === 0 ? (
+              {loading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <ActivitySkeleton key={i} />
+                  ))}
+                </div>
+              ) : filteredActivities?.length === 0 ? (
                 <div className="text-center py-12">
                   <Icon
                     name="Calendar"

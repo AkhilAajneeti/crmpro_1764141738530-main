@@ -29,6 +29,7 @@ const TaskPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
+  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -51,6 +52,7 @@ const TaskPage = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadContact();
@@ -434,6 +436,7 @@ const handleDealClick = async (deal) => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteLead}
+              isLoading={loading}
             />
 
             {/* Pagination */}

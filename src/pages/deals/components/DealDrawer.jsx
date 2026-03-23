@@ -5,15 +5,13 @@ import Select from "../../../components/ui/Select";
 import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import Avatar from "react-avatar";
-import { fetchUser } from "services/user.service";
-import { fetchTeam } from "services/team.service";
-import {
-  createLeadActivity,
-  leadActivitesById,
-  leadStreamById,
-  updateStream,
-} from "services/leads.service";
-import { fetchAccounts } from "services/account.service";
+
+import { createLeadActivity, updateStream } from "services/leads.service";
+import { useTeams } from "hooks/useTeams";
+import { useUsers } from "hooks/useUsers";
+import { useLeadStream } from "hooks/useLeadStream";
+import { useLeadActivity } from "hooks/useLeadActivity";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DealDrawer = ({
   status,
@@ -32,10 +30,7 @@ const DealDrawer = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [team, setTeam] = useState([]);
-  const [mockStream, setmockStream] = useState([]);
-  const [mockActivities, setActivities] = useState([]);
+
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
@@ -58,27 +53,39 @@ const DealDrawer = ({
     description: "",
     industry: "",
   });
+  const queryClient = useQueryClient();
+  const { data: usersData } = useUsers();
+  const { data: teamData } = useTeams();
+  const { data: streamData } = useLeadStream(deal?.id, isOpen);
+  const { data: activityData } = useLeadActivity(deal?.id, isOpen);
+
+  const users = usersData?.list || [];
+  const team = teamData?.list || [];
+  const streams = streamData?.list || [];
+  const activities = activityData?.list || [];
   useEffect(() => {
     if (mode === "add") {
       setFormData({
-        firstName: formData.firstName || "",
-        lastName: formData.lastName || "",
-        phoneNumber: formData.phoneNumber || "",
-        emailAddress: formData.emailAddress || "",
-        whatsapp: formData.whatsapp || "",
-        addressCity: formData.addressCity || "",
-        cProjectName: formData.cProjectName || "",
-        cNextContactAt: formData.cNextContactAt || "",
-        cQuestion: formData.cQuestion || "",
-        assignedUserId: formData.assignedUserId || "",
-        teamId: formData.teamId || "",
-        status: formData.status || "",
-        source: formData.source || "",
-        description: formData.description || "",
-        industry: formData.industry || "",
+        firstName: "",
+        lastName: "",
+        phoneNumber: "+91",
+        emailAddress: "",
+        whatsapp: "",
+        addressCity: "",
+        cProjectName: "",
+        cNextContactAt: "",
+        cQuestion: "",
+        assignedUserId: "",
+        teamId: "",
+        status: "New",
+        source: "",
+        description: "",
+        industry: "",
       });
-    } else if (deal) {
+      setIsEditing(true); // form open
+    } else if (deal && mode === "view") {
       setFormData(deal);
+      setIsEditing(false);
     }
   }, [deal, mode]);
 
@@ -228,8 +235,17 @@ const DealDrawer = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const fullName =
+      `${formData.firstName || ""} ${formData.lastName || ""}`.trim();
+
+    // 🚨 VALIDATION FIX
+    if (!fullName) {
+      toast.error("Name is required");
+      return;
+    }
     const payload = {
       ...formData,
+      name: fullName,
       cNextContactAt: toEspoDateTime(formData.cNextContactAt),
     };
     try {
@@ -270,29 +286,29 @@ const DealDrawer = ({
   };
   // activity operation -------
   // fetching lead stream from id
-  useEffect(() => {
-    if (!isOpen || !deal?.id) return;
+  // useEffect(() => {
+  //   if (!isOpen || !deal?.id) return;
 
-    const loadStream = async () => {
-      try {
-        const id = deal?.id;
-        const res = await leadStreamById(id);
-        console.log("LEAD DETAIL RESPONSE:", res);
-        setmockStream(res.list || []);
-      } catch (err) {
-        console.error("Failed to fetch streams", err);
-        toast.error("Failed to load activity");
-      }
-    };
+  //   const loadStream = async () => {
+  //     try {
+  //       const id = deal?.id;
+  //       const res = await leadStreamById(id);
+  //       console.log("LEAD DETAIL RESPONSE:", res);
+  //       setmockStream(res.list || []);
+  //     } catch (err) {
+  //       console.error("Failed to fetch streams", err);
+  //       toast.error("Failed to load activity");
+  //     }
+  //   };
 
-    loadStream();
-  }, [isOpen, deal?.id]);
+  //   loadStream();
+  // }, [isOpen, deal?.id]);
   const handleDelete = async (e, activity) => {
     e.stopPropagation();
     const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
-    setmockStream((prev) => prev.filter((a) => a.id !== activity.id));
+    queryClient.invalidateQueries(["lead-stream", deal.id]);
   };
   const createActivity = async () => {
     //post activity
@@ -314,12 +330,12 @@ const DealDrawer = ({
         const updated = await updateStream(editingActivityId, {
           post: activityText,
         });
-
-        setmockStream((prev) =>
-          prev.map((a) =>
-            a.id === editingActivityId ? { ...a, post: activityText } : a,
-          ),
-        );
+        queryClient.invalidateQueries(["lead-stream", deal.id]);
+        // setmockStream((prev) =>
+        //   prev.map((a) =>
+        //     a.id === editingActivityId ? { ...a, post: activityText } : a,
+        //   ),
+        // );
 
         toast.success("Activity updated");
       } else {
@@ -333,9 +349,9 @@ const DealDrawer = ({
           attachmentsIds: [],
         };
 
-        const newActivity = await createLeadActivity(payload);
-
-        setmockStream((prev) => [newActivity, ...prev]);
+        await createLeadActivity(payload);
+        queryClient.invalidateQueries(["lead-stream", deal.id]);
+        // setmockStream((prev) => [newActivity, ...prev]);
 
         toast.success("Activity posted");
       }
@@ -350,24 +366,6 @@ const DealDrawer = ({
       setPostingActivity(false);
     }
   };
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [usersRes, teamRes] = await Promise.all([
-          fetchUser(),
-          fetchTeam(),
-        ]);
-
-        setUsers(usersRes.list || []);
-        setTeam(teamRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    loadData();
-  }, []);
 
   const userOptions = users
     ?.filter((u) => u?.isActive) // ✅ only active users
@@ -417,29 +415,29 @@ const DealDrawer = ({
   };
 
   // fetching lead stream from id
-  useEffect(() => {
-    if (!isOpen || !deal?.id) return;
+  // useEffect(() => {
+  //   if (!isOpen || !deal?.id) return;
 
-    const loadActivity = async () => {
-      try {
-        const id = deal?.id;
-        const res = await leadActivitesById(id);
-        console.log("LEAD DETAIL RESPONSE:", res);
-        setActivities(res.list || []);
-      } catch (err) {
-        console.error("Failed to fetch streams", err);
-        toast.error("Failed to load activity");
-      }
-    };
+  //   const loadActivity = async () => {
+  //     try {
+  //       const id = deal?.id;
+  //       const res = await leadActivitesById(id);
+  //       console.log("LEAD DETAIL RESPONSE:", res);
+  //       setActivities(res.list || []);
+  //     } catch (err) {
+  //       console.error("Failed to fetch streams", err);
+  //       toast.error("Failed to load activity");
+  //     }
+  //   };
 
-    loadActivity();
-  }, [isOpen, deal?.id]);
+  //   loadActivity();
+  // }, [isOpen, deal?.id]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setmockStream([]);
-    }
-  }, [isOpen]);
+  // useEffect(() => {
+  //   if (!isOpen) {
+  //     setmockStream([]);
+  //   }
+  // }, [isOpen]);
   const leadData = leadsDetails || deal;
   return (
     <>
@@ -473,11 +471,11 @@ const DealDrawer = ({
                   deal?.status,
                 )}`}
               >
-                {mode !== "mass-update" && deal && <span>{deal.status}</span>}
+                {mode !== "view" && deal && <span>{deal.status}</span>}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              {mode !== "mass-update" && (
+              {mode == "view" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -965,7 +963,7 @@ const DealDrawer = ({
                             </div>
                           </form>
                         )}
-                        {mockStream?.map((activity) => (
+                        {streams?.map((activity) => (
                           <div
                             key={activity.id}
                             className="flex space-x-3 p-4 bg-muted/30 rounded-lg"
@@ -1141,8 +1139,8 @@ const DealDrawer = ({
 
                   {activeTab === "Activity" && (
                     <div className="space-y-4">
-                      {mockActivities?.length < 0 ? (
-                        mockActivities.map((activity) => (
+                      {activities?.length > 0 ? (
+                        activities.map((activity) => (
                           <div
                             key={activity.id}
                             onClick={() => toggleActivity(activity.id)}
@@ -1292,4 +1290,4 @@ const DealDrawer = ({
   );
 };
 
-export default DealDrawer;
+export default React.memo(DealDrawer);

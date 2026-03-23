@@ -10,7 +10,7 @@ import UserTab from "./components/UserTab";
 const Settings = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("user");
-
+  const [isLoading, setIsLoading] = useState(true);
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };

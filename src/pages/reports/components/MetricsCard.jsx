@@ -38,7 +38,7 @@ const MetricsCard = ({ title, value, change, changeType, icon, iconColor, descri
             <p className="text-sm text-muted-foreground mb-3">{description}</p>
           )}
           
-          {change && (
+          {/* {change && (
             <div className="flex items-center space-x-2">
               <div className={`flex items-center space-x-1 ${getChangeColor()}`}>
                 <Icon name={getChangeIcon()} size={16} />
@@ -46,7 +46,7 @@ const MetricsCard = ({ title, value, change, changeType, icon, iconColor, descri
               </div>
               <span className="text-sm text-muted-foreground">vs last month</span>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </motion.div>

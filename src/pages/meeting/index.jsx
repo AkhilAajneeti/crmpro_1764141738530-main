@@ -30,7 +30,7 @@ const MeetingPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
-
+const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -52,6 +52,7 @@ const MeetingPage = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
+        setLoading(false);
       }
     };
     loadMeeting();
@@ -381,6 +382,7 @@ const MeetingPage = () => {
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteMeeting}
+              isLoading={loading}
             />
 
             {/* Pagination */}
