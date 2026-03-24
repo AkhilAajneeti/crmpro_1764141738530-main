@@ -81,13 +81,6 @@ const DealDrawer = ({
     setMassFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // mockactivities
-
-  const Parent_OPTIONS = [
-    { value: "Account", label: "Account" },
-    { value: "Lead", label: "Lead" },
-    { value: "Contact", label: "Contact" },
-  ];
   // if (!isOpen) return null;
   const handleFieldListChange = (selectedOptions) => {
     const selected = selectedOptions || [];
@@ -180,54 +173,6 @@ const DealDrawer = ({
     }
     onBulkUpdate(selectedIds, payload);
     onClose();
-  };
-
-  // activity operation -------
-  const handleDelete = async (e, activity) => {
-    e.stopPropagation();
-    const ok = window.confirm(`Delete Activity ${activity?.createdByName}?`);
-    if (!ok) return;
-    await onDelete(activity.id); // 👈 parent ko bol rahe ho
-  };
-  const createStream = async () => {
-    //post activity
-    setActivityForm(true);
-  };
-  const handlePostActivity = async (e) => {
-    e.preventDefault();
-
-    if (!activityText.trim()) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-
-    try {
-      setPostingActivity(true);
-
-      const payload = {
-        post: activityText,
-        parentId: deal.id, // 👈 ID PAYLOAD me
-        parentType: "Task", // 👈 MUST
-        type: "Post",
-        isInternal: false,
-        attachmentsIds: [],
-      };
-
-      const newActivity = await createLeadActivity(payload);
-
-      // 🔥 UI update instantly
-      setmockStream((prev) => [newActivity, ...prev]);
-
-      setActivityText("");
-      setActivityForm(false);
-
-      toast.success("Stream posted");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to Stream post activity");
-    } finally {
-      setPostingActivity(false);
-    }
   };
 
   useEffect(() => {

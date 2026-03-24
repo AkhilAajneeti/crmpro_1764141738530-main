@@ -13,23 +13,21 @@ import TablePagination from "./components/TablePagination";
 import {
   createTasks,
   deleteTasks,
-  fetchTasks,
   updateTasks,
   bulkDeleteTasks,
-  fetchTasksById,
   deleteActivity,
 } from "services/tasks.service";
-
+import { useQueryClient } from "@tanstack/react-query";
+import { useTasks } from "hooks/useTasks";
+import { useTask } from "hooks/useTask";
 const TaskPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
-  const [leads, setLeads] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
-  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -42,38 +40,22 @@ const TaskPage = () => {
     closeDateFrom: "",
     closeDateTo: "",
   });
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useTasks();
 
-  useEffect(() => {
-    const loadContact = async () => {
-      try {
-        const data = await fetchTasks();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadContact();
-  }, []);
+  const leads = data?.list || [];
+  const loading = isLoading;
+
   // Mock deals data
-const handleDealClick = async (deal) => {
-  try {
+  const handleDealClick = async (deal) => {
+    setSelectedDeal(deal);
     setMode("view");
     setIsDrawerOpen(true);
-
-    // 🔥 fetch task detail by ID
-    const data = await fetchTasksById(deal.id);
-
-    // ✅ pass fetched task to drawer
-    setSelectedDeal(data);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to load task details");
-  }
-};
-
+  };
+  const { data: selectedDealData } = useTask(
+  selectedDeal?.id,
+  isDrawerOpen && !!selectedDeal?.id
+);
 
   // Filter and sort deals
   const filteredAndSortedDeals = useMemo(() => {
@@ -189,7 +171,6 @@ const handleDealClick = async (deal) => {
     setIsDrawerOpen(true);
   };
 
-
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
@@ -199,6 +180,7 @@ const handleDealClick = async (deal) => {
   const handleCreateLead = async (payload) => {
     try {
       await createTasks(payload); // API
+      queryClient.invalidateQueries(["tasks"]);
       toast.success("Task created successfully");
     } catch (err) {
       console.error("Task creationd failed", err);
@@ -207,13 +189,14 @@ const handleDealClick = async (deal) => {
 
   const handleUpdateTasks = async (id, payload) => {
     await updateTasks(id, payload);
+    queryClient.invalidateQueries(["tasks"]);
   };
   const handleBulkUpdateTasks = async (ids, payload) => {
     try {
       toast.loading("Updating tasks...", { id: "bulk-update" });
 
       await Promise.all(ids.map((id) => updateTasks(id, payload)));
-
+      queryClient.invalidateQueries(["tasks"]);
       toast.success(`${ids.length} tasks updated`, { id: "bulk-update" });
       setSelectedDeals([]);
     } catch (err) {
@@ -225,8 +208,9 @@ const handleDealClick = async (deal) => {
   //deletion delete
   const handleDeleteLead = async (id) => {
     try {
-      toast.loading("Deleting lead...", { id: "delete-lead" });
+      toast.loading("Deleting task...", { id: "delete-task" });
       await deleteTasks(id); // API call
+      queryClient.invalidateQueries(["tasks"]);
       toast.success("Task deleted successfully", {
         id: "delete-task",
       });
@@ -247,11 +231,8 @@ const handleDealClick = async (deal) => {
       toast.loading("Deleting tasks...", { id: "bulk-delete" });
 
       await bulkDeleteTasks(selectedDeals);
-
       // ✅ Remove from UI
-      setLeads((prev) =>
-        prev.filter((task) => !selectedDeals.includes(task.id)),
-      );
+      queryClient.invalidateQueries(["tasks"]);
 
       // ✅ Clear selection
       setSelectedDeals([]);
@@ -453,7 +434,7 @@ const handleDealClick = async (deal) => {
 
         {/* Deal Drawer */}
         <DealDrawer
-          deal={selectedDeal}
+          deal={selectedDealData}
           mode={mode}
           isOpen={isDrawerOpen}
           onCreate={handleCreateLead}

@@ -5,15 +5,16 @@ import Select from "../../../components/ui/Select";
 import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import Avatar from "react-avatar";
-import { fetchUser } from "services/user.service";
-import { fetchTeam } from "services/team.service";
-import { fetchLeads } from "services/leads.service";
-import { fetchAccounts } from "services/account.service";
-import { fetchContacts } from "services/contact.service";
 import {
   createMeetingStream,
   meetingStreamById,
 } from "services/meeting.service";
+import { useUsers } from "hooks/useUsers";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMetaData } from "hooks/useMetaData";
+import { useTeams } from "hooks/useTeams";
+import { useLeads } from "hooks/useLeads";
+import { useAccounts } from "hooks/useAccounts";
 
 const DealDrawer = ({
   deal,
@@ -28,12 +29,6 @@ const DealDrawer = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [team, setTeam] = useState([]);
-  const [acc, setAcc] = useState([]);
-  const [lead, setLead] = useState([]);
-  const [contact, setContact] = useState([]);
-  const [mockStream, setmockStream] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
@@ -50,9 +45,10 @@ const DealDrawer = ({
     parentType: "",
     // 👇 Attendees
     attendeeUsers: [],
-    attendeeContacts: [],
+    // attendeeContacts: [],
     attendeeLeads: [],
   });
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (mode === "add") {
       setFormData({
@@ -68,7 +64,7 @@ const DealDrawer = ({
         parentName: "", // Account | Lead | Contact (TYPE)
         parentType: "", // record ID
         attendeeUsers: [],
-        attendeeContacts: [],
+        // attendeeContacts: [],
         attendeeLeads: [],
       });
     } else if (deal) {
@@ -90,14 +86,22 @@ const DealDrawer = ({
         parentName: deal.parentType || "",
         parentType: deal.parentId || "",
         attendeeUsers: deal.attendeesUsersIds || [],
-        attendeeContacts: deal.attendeesContactsIds || [],
+        // attendeeContacts: deal.attendeesContactsIds || [],
         attendeeLeads: deal.attendeesLeadsIds || [],
       });
     }
   }, [deal, mode]);
-  // mass update
-  const isMassUpdate = mode === "mass-update";
 
+  const { data: streamData } = useQuery({
+    queryKey: ["meetingStream", deal?.id],
+    queryFn: () => meetingStreamById(deal.id),
+    enabled: isOpen && !!deal?.id,
+  });
+  // mass update
+  const { data: usersData } = useUsers();
+  const users = usersData?.list || [];
+  const isMassUpdate = mode === "mass-update";
+  const mockStream = streamData?.list || [];
   const [massFields, setMassFields] = useState({
     status: false,
     assignedUserId: false,
@@ -108,25 +112,14 @@ const DealDrawer = ({
     setMassFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // fetching lead stream from id
-  useEffect(() => {
-    if (!isOpen || !deal?.id) return;
 
-    const loadStream = async () => {
-      try {
-        const id = deal?.id;
-        const res = await meetingStreamById(id);
-        console.log("LEAD DETAIL RESPONSE:", res);
-        setmockStream(res.list || []);
-      } catch (err) {
-        console.error("Failed to fetch streams", err);
-        toast.error("Failed to load activity");
-      }
-    };
-
-    loadStream();
-  }, [isOpen, deal?.id]);
-
+  const { data: meta } = useMetaData();
+  const { data: teamData } = useTeams();
+  const { data: accountData } = useAccounts();
+  const { data: leadsData } = useLeads();
+  const team = teamData?.list || [];
+  const acc = accountData?.list || [];
+  const lead = leadsData?.list || [];
   const STATUS_OPTIONS = [
     { value: "Planned", label: "Planned" },
     { value: "Held", label: "Held" },
@@ -135,9 +128,8 @@ const DealDrawer = ({
   const Parent_OPTIONS = [
     { value: "Account", label: "Account" },
     { value: "Lead", label: "Lead" },
-    { value: "Contact", label: "Contact" },
   ];
-  const SOURCE_OPTIONS = [
+  const DURATION_OPTIONS = [
     { value: "15m", label: "15m" },
     { value: "30m", label: "30m" },
     { value: "1h", label: "1h" },
@@ -146,7 +138,7 @@ const DealDrawer = ({
     { value: "1d", label: "1d" },
   ];
 
-  // if (!isOpen) return null;
+
 
   const formatDate = (date) => {
     if (!date) return "—";
@@ -283,7 +275,7 @@ const DealDrawer = ({
       parentType: formData.parentName || null, // Account
       parentId: formData.parentType || null, // record ID
       attendeesUsersIds: formData.attendeeUsers || [],
-      attendeesContactsIds: formData.attendeeContacts || [],
+      // attendeesContactsIds: formData.attendeeContacts || [],
       attendeesLeadsIds: formData.attendeeLeads || [],
     };
 
@@ -313,7 +305,7 @@ const DealDrawer = ({
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
     if (massFields.startDate)
-      payload.startDate = toEspoDateTime(formData.startDate);
+      payload.dateStart = toEspoDateTime(formData.startDate);
     if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
 
     if (!Object.keys(payload).length) {
@@ -352,10 +344,10 @@ const DealDrawer = ({
         attachmentsIds: [],
       };
 
-      const newActivity = await createMeetingStream(payload);
-
+      await createMeetingStream(payload);
+      queryClient.invalidateQueries(["meetingStream", deal.id]);
       // 🔥 UI update instantly
-      setmockStream((prev) => [newActivity, ...prev]);
+      // setmockStream((prev) => [newActivity, ...prev]);
 
       setActivityText("");
       setActivityForm(false);
@@ -369,31 +361,6 @@ const DealDrawer = ({
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [usersRes, teamRes, accRes, leadRes, contactRes] =
-          await Promise.all([
-            fetchUser(),
-            fetchTeam(),
-            fetchAccounts(),
-            fetchLeads(),
-            fetchContacts(),
-          ]);
-
-        setUsers(usersRes.list || []);
-        setTeam(teamRes.list || []);
-        setAcc(accRes.list || []);
-        setLead(leadRes.list || []);
-        setContact(contactRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    loadData();
-  }, []);
-
   const userOptions = users
     ?.filter((u) => u?.isActive) // ✅ only active users
     ?.map((u) => ({
@@ -404,12 +371,7 @@ const DealDrawer = ({
     value: t.id,
     label: t.name,
   }));
-  const contactOptions = contact.map((c) => ({
-    value: c.id,
-    label: c.name || c.accountName,
-  }));
-
-  const leadOptions = lead.map((l) => ({
+  const leadOptions = (lead||[]).map((l) => ({
     value: l.id,
     label: l.name,
   }));
@@ -429,11 +391,6 @@ const DealDrawer = ({
     setActivityForm(true);
   };
 
-  useEffect(() => {
-    if (!isOpen) {
-      setmockStream([]);
-    }
-  }, [isOpen]);
   const formatDuration = (seconds) => {
     if (!seconds || seconds <= 0) return "—";
 
@@ -458,13 +415,6 @@ const DealDrawer = ({
           value: item.id,
           label: item.name,
         }));
-
-      case "Contact":
-        return contact.map((item) => ({
-          value: item.id,
-          label: item.accountName,
-        }));
-
       default:
         return [];
     }
@@ -588,7 +538,7 @@ const DealDrawer = ({
                       <Select
                         label="Duration"
                         value={formData.priority || ""}
-                        options={SOURCE_OPTIONS}
+                        options={DURATION_OPTIONS}
                         onChange={(value) => handleChange("priority", value)}
                       />
                     </div>
@@ -674,20 +624,6 @@ const DealDrawer = ({
                           handleChange("attendeeUsers", value)
                         }
                       />
-
-                      <Select
-                        label="Contacts"
-                        value={formData.attendeeContacts}
-                        options={contactOptions}
-                        isMulti
-                        isSearchable
-                        placeholder="Search contacts..."
-                        onChange={(value) =>
-                          handleChange("attendeeContacts", value)
-                        }
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Select
                         label="Leads"
                         value={formData.attendeeLeads}
@@ -699,6 +635,18 @@ const DealDrawer = ({
                           handleChange("attendeeLeads", value)
                         }
                       />
+
+                      {/* <Select
+                        label="Contacts"
+                        value={formData.attendeeContacts}
+                        options={contactOptions}
+                        isMulti
+                        isSearchable
+                        placeholder="Search contacts..."
+                        onChange={(value) =>
+                          handleChange("attendeeContacts", value)
+                        }
+                      /> */}
                     </div>
                   </div>
 

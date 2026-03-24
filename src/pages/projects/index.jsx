@@ -10,7 +10,7 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
-
+import { useProject, useProjects } from "hooks/useProjects";
 import {
   bulkDeleteProject,
   createProject,
@@ -19,21 +19,31 @@ import {
   fetchProjectsById,
   updateProject,
 } from "services/projects.service";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ProjectsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
-  const [leads, setLeads] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
-    const [loading, setLoading] = useState(true);
+
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
   });
+
+  const { data, isLoading } = useProjects();
+  const queryClient = useQueryClient();
+  const leads = data?.list || [];
+  const loading = isLoading;
+  const { data: selectedDealData } = useProject(
+    selectedDeal?.id,
+    isDrawerOpen && !!selectedDeal?.id,
+  );
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -43,35 +53,10 @@ const ProjectsPage = () => {
     closeDateTo: "",
   });
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const data = await fetchProjects();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProjects();
-  }, []);
-  // Mock deals data
   const handleDealClick = async (deal) => {
-    try {
-      setMode("view");
-      setIsDrawerOpen(true);
-
-      // 🔥 fetch task detail by ID
-      const data = await fetchProjectsById(deal.id);
-
-      // ✅ pass fetched task to drawer
-      setSelectedDeal(data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load task details");
-    }
+    setSelectedDeal(deal); // only store basic info (id)
+    setMode("view");
+    setIsDrawerOpen(true);
   };
 
   // Filter and sort deals
@@ -197,6 +182,7 @@ const ProjectsPage = () => {
   const handleCreateLead = async (payload) => {
     try {
       await createProject(payload); // API
+      queryClient.invalidateQueries(["projects"]);
       toast.success("Project created successfully");
     } catch (err) {
       console.error("Project creationd failed", err);
@@ -207,6 +193,7 @@ const ProjectsPage = () => {
   const handleUpdateTasks = async (id, payload) => {
     try {
       await updateProject(id, payload);
+      queryClient.invalidateQueries(["projects"]);
       toast.success("Project Update successfully");
     } catch (err) {
       console.error("Project updation failed", err);
@@ -218,9 +205,10 @@ const ProjectsPage = () => {
       toast.loading("Updating projects...", { id: "bulk-update" });
 
       await Promise.all(ids.map((id) => updateProject(id, payload)));
-
+      // 🔥 MISSING LINE (IMPORTANT)
+      queryClient.invalidateQueries(["projects"]);
       toast.success(`${ids.length} Projects updated`, { id: "bulk-update" });
-      setSelectedDeals([]); 
+      setSelectedDeals([]);
     } catch (err) {
       console.error(err);
       toast.error("Mass update failed", { id: "bulk-update" });
@@ -232,6 +220,7 @@ const ProjectsPage = () => {
     try {
       toast.loading("Deleting Project...", { id: "delete-project" });
       await deleteProject(id); // API call
+      queryClient.invalidateQueries(["projects"]);
       toast.success("Project deleted successfully", {
         id: "delete-project",
       });
@@ -252,17 +241,11 @@ const ProjectsPage = () => {
 
     try {
       toast.loading("Deleting projects...", { id: "bulk-delete" });
-
       await bulkDeleteProject(selectedDeals);
-
       // ✅ Remove from UI
-      setLeads((prev) =>
-        prev.filter((task) => !selectedDeals.includes(task.id)),
-      );
-
+      queryClient.invalidateQueries(["projects"]);
       // ✅ Clear selection
       setSelectedDeals([]);
-
       toast.success("Project deleted successfully", {
         id: "bulk-delete",
       });
@@ -450,7 +433,7 @@ const ProjectsPage = () => {
 
         {/* Deal Drawer */}
         <DealDrawer
-          deal={selectedDeal}
+          deal={selectedDealData}
           mode={mode}
           isOpen={isDrawerOpen}
           onCreate={handleCreateLead}

@@ -15,8 +15,6 @@ import {
   createLead,
   deleteActivity,
   deleteLead,
-  fetchLeads,
-  fetchLeadsById,
   updateLead,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";

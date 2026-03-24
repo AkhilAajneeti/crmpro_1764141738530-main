@@ -10,12 +10,14 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import TablePagination from "./components/TablePagination";
 import { deleteActivity } from "services/leads.service";
+import { useMeetings } from "hooks/useMeetings";
+import { useMeeting } from "hooks/useMeeting";
+import { useQueryClient } from "@tanstack/react-query";
+
 import {
   bulkDeleteMeeting,
   createMeeting,
   deleteMeeting,
-  fetchMeeting,
-  fetchMeetingById,
   updateMeeting,
 } from "services/meeting.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
@@ -25,16 +27,19 @@ const MeetingPage = () => {
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
-  const [leads, setLeads] = useState([]);
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
-const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
   });
+  const { data, isLoading } = useMeetings();
+
+  const leads = data?.list || [];
+  const loading = isLoading;
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -42,36 +47,15 @@ const [loading, setLoading] = useState(true);
     closeDateFrom: "",
     closeDateTo: "",
   });
-
-  useEffect(() => {
-    const loadMeeting = async () => {
-      try {
-        const data = await fetchMeeting();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadMeeting();
-  }, []);
+  const { data: selectedDealData } = useMeeting(
+    selectedDeal?.id,
+    isDrawerOpen && !!selectedDeal?.id,
+  );
   // Mock deals data
-  const handleDealClick = async (deal) => {
-    try {
-      setMode("view");
-      setIsDrawerOpen(true);
-
-      // 🔥 fetch task detail by ID
-      const data = await fetchMeetingById(deal.id);
-
-      // ✅ pass fetched task to drawer
-      setSelectedDeal(data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load task details");
-    }
+  const handleDealClick = (deal) => {
+    setSelectedDeal(deal);
+    setMode("view");
+    setIsDrawerOpen(true);
   };
   // Filter and sort deals
   const filteredAndSortedDeals = useMemo(() => {
@@ -157,6 +141,7 @@ const [loading, setLoading] = useState(true);
   const handleCreateMeeting = async (payload) => {
     try {
       await createMeeting(payload); // API
+      queryClient.invalidateQueries(["meetings"]);
       toast.success("Meeting created successfully");
     } catch (err) {
       console.error("Meeting creationd failed", err);
@@ -165,15 +150,14 @@ const [loading, setLoading] = useState(true);
 
   const handleUpdateMeeting = async (id, payload) => {
     await updateMeeting(id, payload);
+    queryClient.invalidateQueries(["meetings"]);
   };
 
   const handleDeleteMeeting = async (id) => {
     try {
       toast.loading("Deleting meeting...", { id: "delete-lead" });
       await deleteMeeting(id);
-
-      setLeads((prev) => prev.filter((m) => m.id !== id));
-
+      queryClient.invalidateQueries(["meetings"]);
       toast.success("Meeting deleted successfully", {
         id: "delete-lead",
       });
@@ -185,6 +169,7 @@ const [loading, setLoading] = useState(true);
   const handleDeleteActivity = async (id) => {
     try {
       await deleteActivity(id); // API call
+      queryClient.invalidateQueries(["meetings"]);
       toast.success("Activity deleted successfully");
     } catch (err) {
       console.error("Delete failed", err);
@@ -271,14 +256,8 @@ const [loading, setLoading] = useState(true);
     try {
       toast.loading("Deleting meetings...", { id: "bulk-delete" });
 
-      // ✅ ONE CALL, FULL ARRAY
       await bulkDeleteMeeting(selectedDeals);
-
-      // ✅ UI se remove
-      setLeads((prev) =>
-        prev.filter((meeting) => !selectedDeals.includes(meeting.id)),
-      );
-
+      queryClient.invalidateQueries(["meetings"]);
       setSelectedDeals([]);
       setShowDeleteConfirm(false);
 
@@ -311,8 +290,7 @@ const [loading, setLoading] = useState(true);
         id: "bulk-update",
       });
 
-      const data = await fetchMeeting();
-      setLeads(data.list);
+      queryClient.invalidateQueries(["meetings"]);
 
       setSelectedDeals([]);
       setIsDrawerOpen(false);
@@ -399,7 +377,7 @@ const [loading, setLoading] = useState(true);
 
         {/* Deal Drawer */}
         <DealDrawer
-          deal={selectedDeal}
+          deal={selectedDealData}
           selectedIds={selectedDeals}
           mode={mode}
           isOpen={isDrawerOpen}

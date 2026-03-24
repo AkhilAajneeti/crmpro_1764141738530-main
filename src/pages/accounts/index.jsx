@@ -16,18 +16,18 @@ import {
 import toast from "react-hot-toast";
 import ImportModel from "./components/ImportModel";
 import { fetchAccountType, fetchIndustries } from "services/others.service";
+import { useAccounts } from "hooks/useAccounts";
+import { useMetaData } from "hooks/useMetaData";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AccountsPage = () => {
-  const [mockAccounts, setmockAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [drawerMode, setDrawerMode] = useState("view");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [activities, setActivities] = useState([]);
-  const [industry, setIndustry] = useState([]);
-  const [accType, setAccType] = useState([]);
+
   const [selectedAccountIds, setSelectedAccountIds] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -35,53 +35,19 @@ const AccountsPage = () => {
     type: "",
     activityDate: "",
   });
-  useEffect(() => {
-    const loadAccount = async () => {
-      try {
-        const data = await fetchAccounts();
-        setmockAccounts(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAccount();
-  }, []);
-  // fetch industries
-  useEffect(() => {
-    const loadIndustry = async () => {
-      try {
-        const data = await fetchIndustries();
-        setIndustry(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadIndustry();
-  }, []);
-  // fetch types
-  useEffect(() => {
-    const loadAccType = async () => {
-      try {
-        const data = await fetchAccountType();
-        setAccType(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadAccType();
-  }, []);
+
+  const { data, isLoading } = useAccounts();
+  const { data: meta } = useMetaData();
+  const queryClient = useQueryClient();
+  const mockAccounts = data?.list || [];
+  const industry = meta?.industries || [];
+  const accType = meta?.type || [];
+
   const handleAccountSuccess = async () => {
     try {
       setLoading(true);
       const data = await fetchAccounts();
-      setmockAccounts(data.list); // refresh table
+      queryClient.invalidateQueries(["accounts"]);
     } catch (error) {
       console.error("Failed to refresh accounts", error);
     } finally {
@@ -298,6 +264,7 @@ const AccountsPage = () => {
           }
 
           await createAccount(payload);
+          queryClient.invalidateQueries(["accounts"]);
           success++;
         } catch (err) {
           console.error("❌ Import API error (full):", err);
@@ -409,13 +376,13 @@ const AccountsPage = () => {
             onRowClick={handleRowClick}
             onBulkAction={handleBulkAction}
             onSelectionChange={setSelectedAccountIds}
-            isLoading={loading}
+            isLoading={isLoading}
           />
         </div>
       </main>
       {/* Account Details Drawer */}
       <AccountDrawer
-      accType={accType}
+        accType={accType}
         industry={industry}
         account={selectedAccount}
         isOpen={isDrawerOpen}

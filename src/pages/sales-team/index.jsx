@@ -13,15 +13,16 @@ import {
   bulkDeleteContacts,
   deleteContact,
   fetchContactById,
-  fetchContacts,
   updateContact,
 } from "services/contact.service";
 import { fetchUser } from "services/user.service";
 import { fetchLeads } from "services/leads.service";
+import { useUsers } from "hooks/useUsers";
+import { useLeads } from "hooks/useLeads";
+import { useQueryClient } from "@tanstack/react-query";
 
 const SalesTeam = () => {
-  const [drawerMode, setDrawerMode] = useState(null); // 'view' | 'create'
-  const [mockContacts, setmockContact] = useState([]);
+  const [drawerMode, setDrawerMode] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContacts, setSelectedContacts] = useState([]);
@@ -29,19 +30,21 @@ const SalesTeam = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [allLeads, setallLeads] = useState([]);
-  const [contactDetail, setContactDetail] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data: usersData, isLoading: usersLoading } = useUsers();
+  const { data: leadsData, isLoading: leadsLoading } = useLeads();
+  const loading = usersLoading || leadsLoading;
+  const mockContacts = usersData?.list || [];
+  const allLeads = leadsData?.list || [];
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
   });
   // function for fetchUser
+  const queryClient = useQueryClient();
   useEffect(() => {
     const loadContact = async () => {
       try {
         const data = await fetchUser();
-        setmockContact(data.list);
         console.log(data.list);
       } catch (error) {
         console.log("failed to fetch data", error);
@@ -51,20 +54,20 @@ const SalesTeam = () => {
     };
     loadContact();
   }, []);
-  useEffect(() => {
-    if (!isDrawerOpen || !selectedContact?.id || drawerMode !== "view") return;
+  // useEffect(() => {
+  //   if (!isDrawerOpen || !selectedContact?.id || drawerMode !== "view") return;
 
-    const loadContactDetail = async () => {
-      try {
-        const res = await fetchContactById(selectedContact.id);
-        setContactDetail(res);
-      } catch (err) {
-        console.error("Failed to fetch contact detail", err);
-      }
-    };
+  //   const loadContactDetail = async () => {
+  //     try {
+  //       const res = await fetchContactById(selectedContact.id);
+  //       setContactDetail(res);
+  //     } catch (err) {
+  //       console.error("Failed to fetch contact detail", err);
+  //     }
+  //   };
 
-    loadContactDetail();
-  }, [isDrawerOpen, selectedContact?.id, drawerMode]);
+  //   loadContactDetail();
+  // }, [isDrawerOpen, selectedContact?.id, drawerMode]);
   useEffect(() => {
     if (mockContacts.length > 0) {
       console.log("SAMPLE CONTACT 👉", mockContacts[0]);
@@ -83,8 +86,6 @@ const SalesTeam = () => {
     const loadContact = async () => {
       try {
         const data = await fetchLeads();
-        setallLeads(data.list);
-        console.log(data.list);
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
@@ -264,7 +265,7 @@ const SalesTeam = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedContact(null);
-    setContactDetail(null);
+    // setContactDetail(null);
   };
 
   const handlePageChange = (page) => {
@@ -311,9 +312,7 @@ const SalesTeam = () => {
       await bulkDeleteContacts(selectedContacts);
 
       // Remove deleted contacts from UI
-      setmockContact((prev) =>
-        prev.filter((c) => !selectedContacts.includes(c.id)),
-      );
+      queryClient.invalidateQueries(["users"]);
 
       setSelectedContacts([]);
     } catch (error) {
@@ -350,7 +349,7 @@ const SalesTeam = () => {
       await deleteContact(id);
       toast.success("Contact deleted successfully");
 
-      setmockContact((prev) => prev.filter((c) => c.id !== id));
+      queryClient.invalidateQueries(["users"]);
 
       // agar paginatedContacts derive ho raha hai → auto update ho jayega
     } catch (err) {
@@ -370,11 +369,7 @@ const SalesTeam = () => {
       );
 
       // 🔄 update local state
-      setmockContact((prev) =>
-        prev.map((c) =>
-          selectedContacts.includes(c.id) ? { ...c, ...payload } : c,
-        ),
-      );
+      queryClient.invalidateQueries(["users"]);
 
       toast.success(`${selectedContacts.length} contacts updated`, {
         id: "bulk-update",
@@ -523,7 +518,7 @@ const SalesTeam = () => {
       </main>
       {/* Contact Drawer */}
       <ContactDrawer
-        contactDetail={contactDetail}
+        // contactDetail={contactDetail}
         mode={drawerMode}
         contact={selectedContact}
         isOpen={isDrawerOpen}
