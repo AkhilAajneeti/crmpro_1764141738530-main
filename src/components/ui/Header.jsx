@@ -6,6 +6,8 @@ import Button from "./Button";
 import { fetchNotifications } from "services/notification.service";
 import NotificationDropdown from "components/NotificationDropdown";
 import { useNotification } from "NotificationContext";
+import { useNotificationCount } from "hooks/useNotificationCount";
+import Avatar from "react-avatar";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const LogInuserstr = localStorage.getItem("login_object");
   const LogInuser = LogInuserstr ? JSON.parse(LogInuserstr) : null;
@@ -69,6 +71,8 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       setNotifications(data.list || []);
     }
   };
+  const { data } = useNotificationCount();
+  const count = data || 0;
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
@@ -88,14 +92,15 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
             {/* Desktop Logo - Always visible on desktop */}
             <div className="hidden lg:flex items-center space-x-3 ml-64">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Icon name="Zap" size={20} color="white" />
+              <div className="w-8 h-8 bg-mahroon-200 rounded-lg flex items-center justify-center">
+                {/* <Icon name="Zap" size={20} color="white" /> */}
+                <img src="/assets/images/aajneeti-favicon.png" alt="" />
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-lg font-semibold text-foreground">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon text-white rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
@@ -103,14 +108,11 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
             {/* Mobile Logo - Only visible on mobile */}
             <div className="flex items-center space-x-3 lg:hidden">
-              {/* <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Icon name="Zap" size={20} color="white" />
-              </div>       */}
               <div className="flex items-center space-x-2">
                 <span className="text-lg font-semibold text-foreground">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon-200 text-accent-foreground rounded-full">
                   ACL
                 </span>
               </div>
@@ -129,9 +131,11 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 onClick={handleClick}
               >
                 <Icon name="Bell" size={20} />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full flex items-center justify-center">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                </span>
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
+                    {count}
+                  </span>
+                )}
               </Button>
               <NotificationDropdown />
             </div>
@@ -142,9 +146,9 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-smooth"
                 aria-label="User account menu"
               >
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-foreground">
-                    ACL
+                    <Avatar name={LogInuser.username} size="32" round={true} />
                   </span>
                 </div>
                 <div className="hidden sm:block text-left">
@@ -171,7 +175,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   <div className="absolute right-0 mt-2 w-64 bg-popover border border-border rounded-lg shadow-elevation-2 z-60">
                     <div className="p-4 border-b border-border">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-mahroon-400 rounded-full flex items-center justify-center">
                           <span className="text-sm font-medium text-primary-foreground">
                             ACL
                           </span>
@@ -180,7 +184,6 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                           <div className="font-medium text-popover-foreground">
                             {LogInuser.username}
                           </div>
-                          {/* <div className="text-sm text-muted-foreground">john.doe@company.com</div> */}
                           <div className="text-xs text-muted-foreground">
                             Aajneeti Connect ltd
                           </div>
@@ -190,8 +193,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                     <div className="py-1">
                       <button
                         onClick={handleProfileClick}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                      >
+                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth">
                         <Icon name="User" size={16} className="mr-3" />
                         Profile Settings
                       </button>

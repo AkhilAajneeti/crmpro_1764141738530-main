@@ -144,29 +144,7 @@ const PipelineChart = ({ leads = [] }) => {
             Monthly leads closed and leads generated
           </p>
         </div>
-        {/* <div className="flex items-center space-x-2">
-          <Button
-            variant={selectedYear === 2023 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2023)}
-          >
-            2023
-          </Button>
-          <Button
-            variant={selectedYear === 2024 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2024)}
-          >
-            2024
-          </Button>
-          <Button
-            variant={selectedYear === 2025 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedYear(2025)}
-          >
-            2025
-          </Button>
-        </div> */}
+        
         <div className="flex items-center space-x-2">
           {["monthly", "weekly", "daily"].map((type) => (
             <Button

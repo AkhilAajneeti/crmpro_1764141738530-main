@@ -79,8 +79,8 @@ const DealCard = ({ deal = {}, onEdit, onDelete, onClone, onViewHistory }) => {
         isDragging ? "opacity-50 scale-105" : ""
       }`}
       draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      // onDragStart={handleDragStart}
+      // onDragEnd={handleDragEnd}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -2 }}

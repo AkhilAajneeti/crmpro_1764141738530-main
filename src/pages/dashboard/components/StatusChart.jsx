@@ -12,15 +12,15 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
 const COLORS = [
-  "#1877F2",
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-  "#10b981",
-  "#f97316",
-  "#6366f1",
+  "#06b6d4", // cyan
+  "#8b5cf6", // purple
+ "#2563eb", // blue
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#10b981", // green
+  "#f97316", // orange
+  "#22c55e", // light green
+  "#e11d48", // rose
 ];
 const STATUS_OPTIONS = [
   "Interested",

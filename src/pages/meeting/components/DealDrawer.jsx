@@ -5,6 +5,8 @@ import Select from "../../../components/ui/Select";
 import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import Avatar from "react-avatar";
+import ReactSelect from "react-select";
+import makeAnimated from "react-select/animated";
 import {
   createMeetingStream,
   meetingStreamById,
@@ -43,12 +45,11 @@ const DealDrawer = ({
     description: "",
     parentName: "",
     parentType: "",
-    // 👇 Attendees
     attendeeUsers: [],
-    // attendeeContacts: [],
     attendeeLeads: [],
   });
   const queryClient = useQueryClient();
+  const animatedComponents = makeAnimated();
   useEffect(() => {
     if (mode === "add") {
       setFormData({
@@ -64,7 +65,6 @@ const DealDrawer = ({
         parentName: "", // Account | Lead | Contact (TYPE)
         parentType: "", // record ID
         attendeeUsers: [],
-        // attendeeContacts: [],
         attendeeLeads: [],
       });
     } else if (deal) {
@@ -77,7 +77,6 @@ const DealDrawer = ({
         startDate: deal.dateStart
           ? deal.dateStart.replace(" ", "T").slice(0, 16)
           : "",
-
         dueDate: deal.dateEnd
           ? deal.dateEnd.replace(" ", "T").slice(0, 16)
           : "",
@@ -85,8 +84,10 @@ const DealDrawer = ({
         description: deal.description || "",
         parentName: deal.parentType || "",
         parentType: deal.parentId || "",
-        attendeeUsers: deal.attendeesUsersIds || [],
-        // attendeeContacts: deal.attendeesContactsIds || [],
+        attendeeUsers: (deal.usersIds || []).map((id) => ({
+          value: id,
+          label: deal.usersNames?.[id] || "Unknown",
+        })),
         attendeeLeads: deal.attendeesLeadsIds || [],
       });
     }
@@ -104,14 +105,13 @@ const DealDrawer = ({
   const mockStream = streamData?.list || [];
   const [massFields, setMassFields] = useState({
     status: false,
-    assignedUserId: false,
+    usersIds: false,
     startDate: false,
     dueDate: false,
   });
   const toggleMassField = (field) => {
     setMassFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
-
 
   const { data: meta } = useMetaData();
   const { data: teamData } = useTeams();
@@ -137,8 +137,6 @@ const DealDrawer = ({
     { value: "3h", label: "3h" },
     { value: "1d", label: "1d" },
   ];
-
-
 
   const formatDate = (date) => {
     if (!date) return "—";
@@ -252,7 +250,12 @@ const DealDrawer = ({
       toast.error("Task name is required");
       return;
     }
+    const allUserIds = [
+      formData.assignedUserId,
+      ...(formData.attendeeUsers?.map((u) => u.value) || []),
+    ].filter(Boolean);
 
+    const uniqueUserIds = [...new Set(allUserIds)];
     const payload = {
       // ✅ TASK REQUIRED
       name: formData.name.trim(),
@@ -274,7 +277,11 @@ const DealDrawer = ({
       // ✅ CORRECT parent mapping
       parentType: formData.parentName || null, // Account
       parentId: formData.parentType || null, // record ID
-      attendeesUsersIds: formData.attendeeUsers || [],
+      usersIds: uniqueUserIds,
+      usersColumns: uniqueUserIds.reduce((acc, id) => {
+        acc[id] = { status: "Accepted" }; // 🔥 default status
+        return acc;
+      }, {}),
       // attendeesContactsIds: formData.attendeeContacts || [],
       attendeesLeadsIds: formData.attendeeLeads || [],
     };
@@ -288,6 +295,8 @@ const DealDrawer = ({
       } else {
         // ✅ UPDATE (id MUST be passed)
         await onUpdate(deal.id, payload);
+        queryClient.invalidateQueries(["meeting", deal.id]);
+        queryClient.invalidateQueries(["meetings"]);
       }
 
       onClose();
@@ -302,8 +311,8 @@ const DealDrawer = ({
     const payload = {};
 
     if (massFields.status) payload.status = formData.status;
-    if (massFields.assignedUserId)
-      payload.assignedUserId = formData.assignedUserId;
+    if (massFields.usersIds)
+      payload.attendeesUsersIds = formData.attendeeUsers.map((u) => u.value);
     if (massFields.startDate)
       payload.dateStart = toEspoDateTime(formData.startDate);
     if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
@@ -346,8 +355,6 @@ const DealDrawer = ({
 
       await createMeetingStream(payload);
       queryClient.invalidateQueries(["meetingStream", deal.id]);
-      // 🔥 UI update instantly
-      // setmockStream((prev) => [newActivity, ...prev]);
 
       setActivityText("");
       setActivityForm(false);
@@ -371,7 +378,7 @@ const DealDrawer = ({
     value: t.id,
     label: t.name,
   }));
-  const leadOptions = (lead||[]).map((l) => ({
+  const leadOptions = (lead || []).map((l) => ({
     value: l.id,
     label: l.name,
   }));
@@ -467,7 +474,7 @@ const DealDrawer = ({
                   size="sm"
                   onClick={() => {
                     if (isEditing) {
-                      setFormData(deal); // reset on cancel
+                     setIsEditing(false); // reset on cancel
                     }
                     setIsEditing(!isEditing);
                   }}
@@ -613,17 +620,50 @@ const DealDrawer = ({
                     <h3 className="font-medium text-foreground">Attendees</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Select
-                        label="Users"
-                        value={formData.attendeeUsers}
-                        options={userOptions}
-                        isMulti
-                        isSearchable
-                        placeholder="Search users..."
-                        onChange={(value) =>
-                          handleChange("attendeeUsers", value)
-                        }
-                      />
+                      <div className="flex flex-col gap-y-1">
+                        <label className="text-sm font-medium">User</label>
+                        <ReactSelect
+                          label="eeee"
+                          isMulti
+                          closeMenuOnSelect={false}
+                          components={animatedComponents}
+                          options={userOptions}
+                          value={formData.attendeeUsers}
+                          onChange={(value) =>
+                            handleChange("attendeeUsers", value)
+                          }
+                          placeholder="Search users..."
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              minHeight: "42px",
+                              borderColor: state.isFocused
+                                ? "#a3d9a5"
+                                : "#a3d9a5",
+                              boxShadow: "none",
+                              "&:hover": { borderColor: "#6366f1" },
+                            }),
+                            multiValue: (base) => ({
+                              ...base,
+                              backgroundColor: "#EEF2FF",
+                            }),
+                            multiValueLabel: (base) => ({
+                              ...base,
+                              color: "#000",
+                              fontWeight: 500,
+                            }),
+                            multiValueRemove: (base) => ({
+                              ...base,
+                              color: "#e8a8a0",
+                              ":hover": {
+                                backgroundColor: "#e8a8a0",
+                                color: "#fff",
+                              },
+                            }),
+                          }}
+                        />
+                      </div>
                       <Select
                         label="Leads"
                         value={formData.attendeeLeads}
@@ -635,18 +675,6 @@ const DealDrawer = ({
                           handleChange("attendeeLeads", value)
                         }
                       />
-
-                      {/* <Select
-                        label="Contacts"
-                        value={formData.attendeeContacts}
-                        options={contactOptions}
-                        isMulti
-                        isSearchable
-                        placeholder="Search contacts..."
-                        onChange={(value) =>
-                          handleChange("attendeeContacts", value)
-                        }
-                      /> */}
                     </div>
                   </div>
 
@@ -831,7 +859,7 @@ const DealDrawer = ({
                     <div className="space-y-6">
                       {/* ================= Assigned User ================= */}
                       <div className="border border-border rounded-xl p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Assigned User */}
                           <div>
                             <p className="text-sm text-muted-foreground">
@@ -841,8 +869,6 @@ const DealDrawer = ({
                               {deal?.assignedUserName || "—"}
                             </p>
                           </div>
-
-                          {/* Followers */}
                           <div>
                             <p className="text-sm text-muted-foreground">
                               Followers
@@ -864,6 +890,86 @@ const DealDrawer = ({
                               ) : (
                                 <span>—</span>
                               )}
+                            </p>
+                          </div>
+
+                          {/* Users */}
+                          <div className="grid-cols-1 col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              User Names
+                            </p>
+                            <p className="text-foreground font-medium">
+                              <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3">
+                                  {deal?.usersNames &&
+                                    Object.entries(deal.usersNames).map(
+                                      ([id, name]) => {
+                                        const status =
+                                          deal?.usersColumns?.[id]?.status;
+
+                                        const statusConfig = {
+                                          Accepted: {
+                                            color:
+                                              "bg-emerald-100 text-emerald-700",
+                                            dot: "bg-emerald-500",
+                                          },
+                                          Declined: {
+                                            color: "bg-rose-100 text-rose-700",
+                                            dot: "bg-rose-500",
+                                          },
+                                          Tentative: {
+                                            color:
+                                              "bg-amber-100 text-amber-700",
+                                            dot: "bg-amber-500",
+                                          },
+                                          "Needs Action": {
+                                            color: "bg-gray-100 text-gray-600",
+                                            dot: "bg-gray-400",
+                                          },
+                                        };
+
+                                        const config =
+                                          statusConfig[status] ||
+                                          statusConfig["Needs Action"];
+
+                                        return (
+                                          <div
+                                            key={id}
+                                            className="group flex items-center gap-3 px-3 py-2 rounded-xl 
+                     bg-white/60 backdrop-blur-md border border-gray-200 
+                     shadow-sm hover:shadow-md transition-all duration-200"
+                                          >
+                                            {/* Avatar */}
+                                            <Avatar
+                                              name={name}
+                                              size="32"
+                                              round
+                                              textSizeRatio={2}
+                                              className="!text-sm"
+                                            />
+
+                                            {/* Name */}
+                                            <div className="flex flex-col">
+                                              <span className="text-sm font-semibold text-gray-800 leading-tight">
+                                                {name}
+                                              </span>
+
+                                              {/* Status */}
+                                              <div className="flex items-center gap-1 mt-0.5">
+                                                <span
+                                                  className={`w-2 h-2 rounded-full ${config.dot}`}
+                                                ></span>
+                                                <span className="text-xs text-gray-500">
+                                                  {status || "No Response"}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      },
+                                    )}
+                                </div>
+                              </div>
                             </p>
                           </div>
                         </div>

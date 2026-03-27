@@ -26,8 +26,8 @@
     --color-muted-foreground: #1A202C; /* significantly darker for better visibility */
     
     /* Primary Colors */
-    --color-primary: #A3D9A5; /* much darker mint green */
-    --color-primary-foreground: #0F1419; /* even darker gray for maximum contrast */
+    --color-primary: #AC2334; /* much darker mint green */
+    --color-primary-foreground: #ffffff; /* even darker gray for maximum contrast */
     
     /* Secondary Colors */
     --color-secondary: #D1A3E8; /* much darker light purple */
@@ -38,7 +38,7 @@
     --color-destructive-foreground: #4A1010; /* darker red for better contrast */
     
     /* Accent Colors */
-    --color-accent: #D9DB7A; /* much darker pale yellow */
+    --color-accent: #fee0df; /* much darker pale yellow */
     --color-accent-foreground: #0F1419; /* even darker gray for maximum contrast */
     
     /* Success Colors */

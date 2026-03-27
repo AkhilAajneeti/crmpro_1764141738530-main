@@ -11,7 +11,6 @@ import { fetchActivity } from "services/activity.service";
 import MultiLineChart from "./components/MultiLineChart";
 import { fetchMeeting } from "services/meeting.service";
 import Button from "../../components/ui/Button";
-import toast from "react-hot-toast";
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [leads, setLeads] = useState([]);
@@ -235,8 +234,7 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your sales pipeline
-            today.
+            Welcome back! Here's what's happening with your sales today.
           </p>
         </div>
         {/* KPI Cards */}

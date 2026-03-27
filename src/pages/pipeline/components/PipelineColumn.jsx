@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
-import Button from "../../../components/ui/Button";
 import DealCard from "./DealCard";
 import { Draggable } from "@hello-pangea/dnd";
 
@@ -9,7 +8,6 @@ const PipelineColumn = ({
   stage,
   deals,
   onDealMove,
-  onAddDeal,
   onEditDeal,
   onDeleteDeal,
   onCloneDeal,
@@ -65,11 +63,11 @@ const PipelineColumn = ({
       </div>
       {/* Deals Container */}
       <div
-        className={`flex-1 p-3 space-y-3 overflow-y-auto min-h-0 transition-all
+        className={`flex-1 p-3 space-y-3 overflow-y-auto max-h-[100vh] transition-all
         ${isOver ? "bg-primary/10 border-2 border-primary border-dashed" : ""} `}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        // onDragOver={handleDragOver}
+        // onDragLeave={handleDragLeave}
+        // onDrop={handleDrop}
       >
         {deals?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -79,20 +77,7 @@ const PipelineColumn = ({
             <p className="text-base font-medium text-foreground mb-2">
               No deals in {stage?.name}
             </p>
-            {/* <p className="text-sm text-muted-foreground mb-4">
-              Get started by adding your first lead
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAddDeal(stage?.id)}
-              iconName="Plus"
-              iconPosition="left"
-              iconSize={14}
-              className="font-medium"
-            >
-              Add Leads
-            </Button> */}
+            
           </div>
         ) : (
           deals?.map((deal, index) => (

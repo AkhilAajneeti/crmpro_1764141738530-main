@@ -20,7 +20,6 @@ const ContactDrawer = ({
   contact,
   isOpen,
   onClose,
-  contactDetail,
   onBulkUpdate,
   allLeads = [],
 }) => {
@@ -368,6 +367,52 @@ const ContactDrawer = ({
 
     onBulkUpdate(payload);
     onClose();
+  };
+
+  const STATUS_STYLES = {
+    New: "bg-blue-100 text-blue-700",
+
+    Dead: "bg-gray-200 text-gray-700",
+
+    Interested: "bg-indigo-100 text-indigo-700",
+
+    "Not Interested": "bg-red-100 text-red-700",
+
+    "Follow up": "bg-amber-100 text-amber-700",
+
+    "Site Visit Scheduled": "bg-cyan-100 text-cyan-700",
+
+    "Site Visit Done": "bg-teal-100 text-teal-700",
+
+    "Call Later": "bg-yellow-100 text-yellow-700",
+
+    "Switch Off": "bg-gray-300 text-gray-800",
+
+    "Invalid Number": "bg-rose-100 text-rose-700",
+
+    Broker: "bg-purple-100 text-purple-700",
+
+    "Call Not Picked": "bg-orange-100 text-orange-700",
+
+    "Low Budget": "bg-orange-200 text-orange-800",
+
+    "Low Interest": "bg-yellow-200 text-yellow-800",
+
+    "Irrelevant Lead": "bg-slate-200 text-slate-700",
+
+    "Call Not Connecting": "bg-stone-200 text-stone-700",
+
+    "Fake Lead": "bg-pink-200 text-pink-700",
+
+    Purchased: "bg-green-100 text-green-700",
+
+    "Other Location": "bg-lime-100 text-lime-700",
+
+    Converted: "bg-green-100 text-green-700",
+
+    "Deal Closed": "bg-emerald-100 text-emerald-700",
+
+    "Proposal Shared": "bg-violet-100 text-violet-700",
   };
 
   return (
@@ -807,11 +852,19 @@ const ContactDrawer = ({
                                 Name: {lead.name}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Project: {lead.cProjectName}
+                                Project:{" "}
+                                {lead.cProjectName
+                                  ? lead.cProjectName
+                                  : lead.cProject}
                               </p>
                             </div>
 
-                            <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                STATUS_STYLES[lead.status] ||
+                                "bg-gray-100 text-gray-600"
+                              }`}
+                            >
                               {lead.status}
                             </span>
                           </div>

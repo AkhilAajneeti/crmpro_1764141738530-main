@@ -388,7 +388,7 @@ const TaskPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-                <Button onClick={handleAddLeads}>
+                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Tasks
                 </Button>

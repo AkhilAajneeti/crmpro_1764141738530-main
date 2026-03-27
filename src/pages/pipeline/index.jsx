@@ -12,6 +12,7 @@ import { deleteActivity, deleteLead, fetchLeads } from "services/leads.service";
 import VersionHistoryModal from "./components/VersionHistoryModal";
 import toast from "react-hot-toast";
 import { Droppable, Draggable, DragDropContext } from "@hello-pangea/dnd";
+import { Helmet } from "react-helmet";
 
 const Pipeline = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -37,11 +38,11 @@ const Pipeline = () => {
         const normalizedDeals = (data.list || []).map((item) => ({
           id: item.id,
           title: item.name,
-          stage: "active", // default stage until you build real deal stages
+          stage: classifyDeal(item) || "active_daily",
           status: item.status,
           source: item.source,
           value: item.opportunityAmount || 0,
-          cProject:item.cProject,
+          cProject: item.cProject,
           owner: {
             id: item.assignedUserId,
             name: item.assignedUserName,
@@ -105,32 +106,40 @@ const Pipeline = () => {
   };
 
   const handleDragEnd = (result) => {
-    const { destination, source, draggableId } = result;
+    const { source, destination } = result;
 
     if (!destination) return;
 
-    // Same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
     setDeals((prevDeals) => {
-      const updatedDeals = Array.from(prevDeals);
+      const updated = Array.from(prevDeals);
 
-      const movedDeal = updatedDeals.find((deal) => deal.id === draggableId);
+      // find items in source column
+      const sourceItems = updated.filter((d) => d.stage === source.droppableId);
 
-      if (!movedDeal) return prevDeals;
+      const movedItem = sourceItems[source.index];
 
-      // Update stage
-      movedDeal.stage = destination.droppableId;
+      if (!movedItem) return prevDeals;
 
-      return updatedDeals;
+      // remove from old position
+      const newDeals = updated.filter((d) => d.id !== movedItem.id);
+
+      // insert into new position
+      const destinationItems = newDeals.filter(
+        (d) => d.stage === destination.droppableId,
+      );
+
+      destinationItems.splice(destination.index, 0, {
+        ...movedItem,
+        stage: destination.droppableId,
+      });
+
+      // merge back
+      const others = newDeals.filter(
+        (d) => d.stage !== destination.droppableId,
+      );
+
+      return [...others, ...destinationItems];
     });
-
-    toast.success("Stage updated successfully");
   };
 
   const handleEditDeal = (deal) => {
@@ -226,7 +235,7 @@ const Pipeline = () => {
   }, [pipeLineDeals, filters]);
 
   const getDealsBySection = (sectionId) => {
-    return filteredDeals?.filter((deal) => classifyDeal(deal) === sectionId);
+    return filteredDeals?.filter((deal) => deal.stage === sectionId);
   };
 
   const classifyDeal = (deal) => {
@@ -271,6 +280,14 @@ const Pipeline = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Pipeline - Aajneeti Connect ltd</title>
+        <meta
+          name="description"
+          content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
+        />
+      </Helmet>
+
       <Header
         onMenuToggle={handleSidebarToggle}
         isSidebarOpen={isSidebarOpen}
@@ -293,13 +310,7 @@ const Pipeline = () => {
 
           {/* Pipeline Stats */}
           <PipelineStats deals={filteredDeals} />
-
-          {/* Filters */}
-          {/* <PipelineFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onResetFilters={handleResetFilters}
-          /> */}
+          {/* <PipelineFilters deals={filteredDeals}/> */}
 
           {/* Pipeline Board */}
           <div className="bg-card border border-border rounded-xl p-3">

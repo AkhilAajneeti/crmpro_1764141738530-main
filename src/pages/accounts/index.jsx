@@ -9,13 +9,11 @@ import AccountsFilters from "./components/AccountsFilters";
 import AccountDrawer from "./components/AccountDrawer";
 import {
   createAccount,
-  deleteAccount,
   fetchAccounts,
   updateAccount,
 } from "services/account.service";
 import toast from "react-hot-toast";
 import ImportModel from "./components/ImportModel";
-import { fetchAccountType, fetchIndustries } from "services/others.service";
 import { useAccounts } from "hooks/useAccounts";
 import { useMetaData } from "hooks/useMetaData";
 import { useQueryClient } from "@tanstack/react-query";
@@ -356,7 +354,7 @@ const AccountsPage = () => {
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
               </Button>
-              <Button onClick={handleAccountButton}>
+              <Button onClick={handleAccountButton} className="linearbg-1">
                 <Icon name="Plus" size={16} className="mr-2" />
                 Add Account
               </Button>

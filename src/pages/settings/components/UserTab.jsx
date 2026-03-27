@@ -222,7 +222,7 @@ const UserTab = () => {
 
   const handleSendInvite = async () => {
     setIsLoading(true);
-    // Mock invite functionality
+
     setTimeout(() => {
       const newMember = {
         id: teamMembers?.length + 1,
@@ -392,7 +392,7 @@ const UserTab = () => {
             variant="default"
             onClick={() => setIsInviteModalOpen(true)}
             iconName="UserPlus"
-            iconPosition="left"
+            iconPosition="left" className="linearbg-1 text-white hover:text-white"
           >
             Create User
           </Button>

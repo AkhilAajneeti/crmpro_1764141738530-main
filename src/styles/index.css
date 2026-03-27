@@ -21,3 +21,16 @@ select:focus{
    --tw-ring-color: #5bcd5f4d!important;
      border-color: #5bcd5f4d!important;
 }
+
+.bg-mahroon-200{
+  background-color: #fce8e7;
+}
+.bg-mahroon-400{
+  background-color: #fee0df;
+}
+.bg-mahroon{
+  background-color: #AC2334;
+}
+.linearbg-1{
+  background: linear-gradient(52deg, #000000, #AC2334);
+}

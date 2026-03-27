@@ -297,16 +297,6 @@ const IntegrationsPage = () => {
     setSelectedIntegration(null);
   };
 
-  const filteredIntegrations = integrations?.filter((integration) => {
-    const matchesCategory =
-      activeCategory === "all" || integration?.category === activeCategory;
-    const matchesSearch =
-      integration?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      integration?.description
-        ?.toLowerCase()
-        ?.includes(searchQuery?.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -339,7 +329,7 @@ const IntegrationsPage = () => {
                   Refresh All
                 </Button>
                 <Button
-                  variant="default"
+                  variant="default"className="linearbg-1 text-white hover:text-white"
                   iconName="Plus"
                   iconPosition="left"
                   onClick={() => {

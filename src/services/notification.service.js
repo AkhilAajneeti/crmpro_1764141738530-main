@@ -24,3 +24,28 @@ export const fetchNotifications = async () => {
 
   return await res.json();
 };
+
+
+// 
+export const fetchUnreadCount = async () => {
+  const token = localStorage.getItem("auth_token");
+
+  const res = await fetch(
+    "https://gateway.aajneetiadvertising.com/Notification/action/notReadCount",
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        token: token,
+      },
+    }
+  );
+  console.log("STATUS:", res.status);
+  if (!res.ok) {
+    throw new Error("Failed to fetch notifications Count");
+  }
+  const data = await res.json(); // 🔥 FIX HERE
+  console.log("COUNT DATA:", data);
+
+  return data; // ✅ return actual data
+};

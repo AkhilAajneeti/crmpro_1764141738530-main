@@ -7,7 +7,7 @@ import Select from "../../../components/ui/Select";
 const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const healthOptions = [
+  const status = [
     { value: "all", label: "All Categories" },
     { value: "active", label: "Active Opportunities" },
     { value: "scheduled", label: "Scheduled" },

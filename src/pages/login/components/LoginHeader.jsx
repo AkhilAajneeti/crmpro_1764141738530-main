@@ -4,24 +4,14 @@ import Icon from "../../../components/AppIcon";
 const LoginHeader = () => {
   return (
     <div className="text-center mb-8">
-      {/* Logo and Brand */}
-      {/* <div className="flex items-center justify-center space-x-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
-          <Icon name="Zap" size={28} color="white" />
-        </div>
-        <div className="flex items-center space-x-2">
-          <h1 className="text-2xl font-bold text-foreground">CRM</h1>
-        </div>
-      </div> */}
-
+      
       {/* Welcome Message */}
       <div className="space-y-2">
         <h2 className="text-xl font-semibold text-foreground">
           Welcome Back 👋
         </h2>
         <p className="text-muted-foreground">
-          Access your CRM dashboard to manage leads, track performance, and grow
-          your business efficiently.
+          Access your CRM dashboard to manage leads and track performance efficiently.
         </p>
       </div>
     </div>

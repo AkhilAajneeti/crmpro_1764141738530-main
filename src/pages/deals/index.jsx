@@ -374,8 +374,7 @@ const DealsPage = () => {
         id: "bulk-update",
       });
 
-      // refresh UI
-      // const data = await fetchLeads();
+      
       // setLeads(data.list);
       queryClient.invalidateQueries(["leads"]);
 
@@ -419,6 +418,7 @@ const DealsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Button
+                className="linearbg-1 text-white hover:text-white"
                   variant="outline"
                   onClick={() =>
                     exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
@@ -428,7 +428,7 @@ const DealsPage = () => {
                   Export All
                 </Button>
 
-                <Button onClick={handleAddLeads}>
+                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Deal
                 </Button>

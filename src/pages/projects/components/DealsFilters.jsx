@@ -172,10 +172,10 @@ const DealsFilters = ({
               handleFilterChange("closeDateTo", e?.target?.value)
             }
           />
-           <Button variant="outline" size="sm">
-          <Icon name="Download" size={16} className="mr-1" />
-          Export All
-        </Button>
+          <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white">
+            <Icon name="Download" size={16} className="mr-1" />
+            Export All
+          </Button>
       </div>
     </div>
   );

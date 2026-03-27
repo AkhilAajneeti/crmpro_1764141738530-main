@@ -1,98 +1,130 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Icon from '../AppIcon';
-import Button from './Button';
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Icon from "../AppIcon";
+import Button from "./Button";
+import { useLeads } from "hooks/useLeads";
+import { useTasks } from "hooks/useTasks";
+import { useMeetings } from "hooks/useMeetings";
+import { useProjects } from "hooks/useProjects";
+import { useTraining } from "hooks/useTraining";
 
 const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
-
+  const { data: leadsData, isLoading } = useLeads();
+  const { data: taskData } = useTasks();
+  const { data: meetingData } = useMeetings();
+  const { data: projectData } = useProjects();
+  const { data: trainingData } = useTraining();
+  const leads = leadsData?.list || [];
+  const tasks = taskData?.list || [];
+  const meetings = projectData?.list || [];
+  const calls = trainingData?.list || [];
+  const projects = leadsData?.list || [];
+  const isToday = (date) => {
+    const d = new Date(date);
+    const now = new Date();
+    return (
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  };
+  const todayLeadsCount = leads.filter(
+    (l) => l.createdAt && isToday(l.createdAt),
+  ).length;
+  const pendingTasksCount = tasks.filter(
+    (t) => t.status !== "Completed",
+  ).length;
+  const todayMeetingsCount = meetings.filter(
+    (m) => m.dateStart && isToday(m.dateStart),
+  ).length;
+  const trainingCountll = calls.filter(
+    (c) => c.dateStart && isToday(c.dateStart),
+  ).length;
+  const activeProjectsCount = projects.filter(
+    (p) => p.status === "Active",
+  ).length;
   const navigationItems = [
     {
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: 'LayoutDashboard',
-      badge: null
+      label: "Dashboard",
+      path: "/dashboard",
+      icon: "LayoutDashboard",
+      badge: null,
     },
     {
-      label: 'Accounts',
-      path: '/accounts',
-      icon: 'Building2',
-      badge: null
+      label: "Accounts",
+      path: "/accounts",
+      icon: "Building2",
+      badge: null,
     },
     {
-      label: 'Sales Team',
-      path: '/sales-team',
-      icon: 'Users',
-      badge: null
+      label: "Sales Team",
+      path: "/sales-team",
+      icon: "Users",
+      badge: null,
     },
     {
-      label: 'Leads',
-      path: '/leads',
-      icon: 'Target',
-      badge: '12'
+      label: "Leads",
+      path: "/leads",
+      icon: "Target",
+      badge: todayLeadsCount==0?" ":todayLeadsCount,
     },
     {
-      label: 'Projects',
-      path: '/projects',
-      icon: 'Layers',
-      badge: '12'
+      label: "Projects",
+      path: "/projects",
+      icon: "Layers",
+      badge: activeProjectsCount==0?" ":activeProjectsCount,
     },
     {
-      label: 'Task',
-      path: '/tasks',
-      icon: 'ListChecks',
-      badge: null
+      label: "Task",
+      path: "/tasks",
+      icon: "ListChecks",
+      badge: pendingTasksCount==0?" ":pendingTasksCount,
     },
     {
-      label: 'Meeting',
-      path: '/meeting',
-      icon: 'Projector',
-      badge: null
+      label: "Meeting",
+      path: "/meeting",
+      icon: "Projector",
+      badge: todayMeetingsCount==0?" ":todayMeetingsCount,
     },
     {
-      label: 'Training',
-      path: '/call',
-      icon: 'Phone',
-      badge: null
+      label: "Training",
+      path: "/call",
+      icon: "Phone",
+      badge: trainingCountll==0?" ":trainingCountll,
     },
     {
-      label: 'Activities',
-      path: '/activities',
-      icon: 'Calendar',
-      badge: '3'
-    },
-    // {
-    //   label: 'Emails',
-    //   path: '/emails',
-    //   icon: 'Mail',
-    //   badge: null
-    // },
-    {
-      label: 'Reports',
-      path: '/reports',
-      icon: 'BarChart3',
-      badge: null
+      label: "Activities",
+      path: "/activities",
+      icon: "Calendar",
+      badge: null,
     },
     {
-      label: 'Settings',
-      path: '/settings',
-      icon: 'Settings',
-      badge: null
+      label: "Reports",
+      path: "/reports",
+      icon: "BarChart3",
+      badge: null,
     },
     {
-      label: 'Pipeline',
-      path: '/pipeline',
-      icon: 'Filter',
-      badge: null
+      label: "Settings",
+      path: "/settings",
+      icon: "Settings",
+      badge: null,
     },
     {
-      label: 'Integrations',
-      path: '/integrations',
-      icon: 'Puzzle',
-      badge: null
-    }
+      label: "Pipeline",
+      path: "/pipeline",
+      icon: "Filter",
+      badge: null,
+    },
+    {
+      label: "Integrations",
+      path: "/integrations",
+      icon: "Puzzle",
+      badge: null,
+    },
   ];
 
   const handleNavigation = (path) => {
@@ -103,7 +135,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   };
 
   const handleUpgradeClick = () => {
-    navigate('/billing');
+    navigate("/billing");
     if (onClose) {
       onClose();
     }
@@ -127,9 +159,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
         className={`
           fixed top-0 left-0 h-full w-64 bg-background border-r border-border z-50 lg:z-30
           transform transition-transform duration-300 ease-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
-      >
+          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `} >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
@@ -138,13 +169,15 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                 <Icon name="Zap" size={20} color="white" />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-lg font-semibold text-foreground">CRM</span>
+                <span className="text-lg font-semibold text-foreground">
+                  CRM
+                </span>
                 <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
             </div>
-            
+
             {/* Close button for mobile */}
             <Button
               variant="ghost"
@@ -162,7 +195,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             <div className="px-3 space-y-1">
               {navigationItems?.map((item) => {
                 const isActive = location?.pathname === item?.path;
-                
+
                 return (
                   <button
                     key={item?.path}
@@ -170,30 +203,32 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                     className={`
                       w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg
                       transition-smooth group
-                      ${isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ${
+                        isActive
+                          ? "linearbg-1 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-mahroon"
                       }
                     `}
-                    aria-current={isActive ? 'page' : undefined}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <div className="flex items-center space-x-3">
                       <Icon
                         name={item?.icon}
                         size={18}
                         className={`
-                          ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'}
+                          ${isActive ? "text-white" : "text-muted-foreground group-hover:text-foreground"}
                         `}
                       />
                       <span>{item?.label}</span>
                     </div>
-                    {item?.badge && (
+                    {item?.badge > 0 && (
                       <span
                         className={`
                           px-2 py-0.5 text-xs font-medium rounded-full
-                          ${isActive
-                            ? 'bg-primary-foreground/20 text-primary-foreground'
-                            : 'bg-accent text-accent-foreground'
+                          ${
+                            isActive
+                              ? "bg-primary-foreground/20 text-primary-foreground"
+                              : "bg-mahroon-400 text-accent-foreground"
                           }
                         `}
                       >
@@ -206,11 +241,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             </div>
           </nav>
 
-          
           {/* Footer */}
           <div className="p-4 border-t border-border">
             <div className="text-xs text-muted-foreground text-center">
-              Developed by Aajneeti connect ltd.<br />© 2025 All rights reserved.
+              Developed by Aajneeti connect ltd.
+              <br />© 2026 All rights reserved.
             </div>
           </div>
         </div>

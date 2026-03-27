@@ -12,6 +12,7 @@ export default {
         ring: 'var(--color-ring)', // violet-500
         background: 'var(--color-background)', // white
         foreground: 'var(--color-foreground)', // slate-800
+        mahroon:"#fee0df",//#AC2334
         primary: {
           DEFAULT: 'var(--color-primary)', // violet-500
           foreground: 'var(--color-primary-foreground)', // white

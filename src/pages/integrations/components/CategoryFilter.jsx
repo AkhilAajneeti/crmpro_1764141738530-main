@@ -10,13 +10,13 @@ const CategoryFilter = ({ categories, activeCategory, onCategoryChange }) => {
           variant={activeCategory === category?.id ? "default" : "outline"}
           size="sm"
           onClick={() => onCategoryChange(category?.id)}
-          className="flex-shrink-0"
+          className="flex-shrink-0 linearbg-1"
         >
           {category?.name}
           {category?.count > 0 && (
-            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full  ${
+            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full   ${
               activeCategory === category?.id 
-                ? 'bg-white text-primary-foreground' 
+                ? 'bg-white text-black' 
                 : 'bg-muted text-muted-foreground'
             }`}>
               {category?.count}

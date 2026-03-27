@@ -57,7 +57,7 @@ const ConnectedIntegrationsList = ({
   return (
     <div className="bg-card border border-border rounded-lg">
       <div className="p-4 border-b border-border">
-        <h3 className="font-semibold text-card-foreground">
+        <h3 className="font-semibold text-card-foreground ">
           Connected Integrations
         </h3>
         <p className="text-sm text-muted-foreground">

@@ -250,7 +250,7 @@ const Activities = () => {
             </div>
 
             <Button
-              variant="default"
+              variant="default" className="linearbg-1 text-white hover:text-white"
               onClick={() => setIsQuickAddOpen(true)}
               iconName="Plus"
               iconPosition="left"

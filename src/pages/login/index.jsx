@@ -68,7 +68,7 @@ const LoginPage = () => {
 
           {/* 🌐 Floating Image - Top Right */}
           <motion.img
-            src="/public/assets/images/Img2.png"
+            src="/assets/images/Img2.png"
             alt="crm visual"
             initial={{ opacity: 0, x: 40, y: -40 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
@@ -113,9 +113,11 @@ const LoginPage = () => {
             {/* Logo / Branding */}
 
             {/* Card */}
-            <div className="bg-card border border-border rounded-2xl shadow-xl p-8 space-y-6 ">
-              <LoginHeader />
-              <LoginForm />
+            <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 animate-border shadow-[0_0_25px_rgba(99,102,241,0.4)]">
+              <div className="bg-card rounded-2xl p-8 space-y-6">
+                <LoginHeader />
+                <LoginForm />
+              </div>
             </div>
 
             {/* Footer */}

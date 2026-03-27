@@ -15,8 +15,6 @@ import {
   bulkDeleteProject,
   createProject,
   deleteProject,
-  fetchProjects,
-  fetchProjectsById,
   updateProject,
 } from "services/projects.service";
 import { useQueryClient } from "@tanstack/react-query";
@@ -242,9 +240,9 @@ const ProjectsPage = () => {
     try {
       toast.loading("Deleting projects...", { id: "bulk-delete" });
       await bulkDeleteProject(selectedDeals);
-      // ✅ Remove from UI
+  
       queryClient.invalidateQueries(["projects"]);
-      // ✅ Clear selection
+  
       setSelectedDeals([]);
       toast.success("Project deleted successfully", {
         id: "bulk-delete",
@@ -379,7 +377,7 @@ const ProjectsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Button
-                  variant="outline"
+                  variant="outline" className="linearbg-1 text-white hover:text-white"
                   onClick={() =>
                     exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
                   }
@@ -387,7 +385,7 @@ const ProjectsPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-                <Button onClick={handleAddLeads}>
+                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Project
                 </Button>
