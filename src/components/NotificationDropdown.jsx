@@ -1,8 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotification } from "NotificationContext";
+import { useState, useRef, useEffect } from "react";
+import Button from "./ui/Button";
 
 const NotificationDropdown = () => {
+  const audioRef = useRef(null);
+  const prevCountRef = useRef(0);
+  const [activeTab, setActiveTab] = useState("all");
+  const [visible, setVisible] = useState(5);
   const { open, notifications } = useNotification();
+  useEffect(() => {
+    if (notifications.length > prevCountRef.current) {
+      audioRef.current?.play();
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications]);
 
   if (!open) return null;
 
@@ -51,6 +63,13 @@ const NotificationDropdown = () => {
     return d.toLocaleDateString();
   };
 
+  // notification filter
+  const filterNotification =
+    activeTab == "unread"
+      ? notifications.filter((n) => !n.read)
+      : notifications;
+  // visible notification
+  const visibleNotification = filterNotification.slice(0, visible);
   return (
     <AnimatePresence>
       {open && (
@@ -66,24 +85,43 @@ const NotificationDropdown = () => {
             <h3 className="font-semibold text-gray-800">Notifications</h3>
 
             <div className="flex gap-2 text-xs">
-              <button className="px-2 py-1 rounded-full bg-gray-100">
+              <button
+                onClick={() => {
+                  setActiveTab("all");
+                  setVisible(5);
+                }}
+                className={`px-2 py-1 rounded-full ${activeTab === "all" ? "bg-gray-100" : "text-gray-500"}`}
+              >
                 All
               </button>
-              <button className="px-2 py-1 text-gray-500">Unread</button>
+              <button
+                onClick={() => {
+                  setActiveTab("unread");
+                  setVisible(5);
+                }}
+                className={`px-2 py-1 rounded-full ${activeTab === "unread" ? "bg-gray-100" : "text-gray-500"}`}
+              >
+                Unread
+              </button>
             </div>
           </div>
 
           {/* Body */}
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="text-sm text-gray-500 p-4 text-center">
-                No notifications
-              </p>
+            {filterNotification.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="text-3xl mb-2">🔔</div>
+                <p className="text-sm text-gray-500">
+                  {activeTab === "unread"
+                    ? "You're all caught up 🎉"
+                    : "No notifications yet"}
+                </p>
+              </div>
             ) : (
-              notifications.map((n) => {
+              visibleNotification.map((n) => {
                 const item = parseNotification(n);
                 const isUnread = !item.read;
-
+                <audio ref={audioRef} src="/notification.mp3" preload="auto" />;
                 return (
                   <motion.div
                     key={item.id}
@@ -119,7 +157,6 @@ const NotificationDropdown = () => {
                           {item.entity}
                         </p>
                       )}
-                      {/* trash button */}
 
                       {/* Time */}
                       <p className="text-xs text-gray-400 mt-1">
@@ -134,6 +171,16 @@ const NotificationDropdown = () => {
                   </motion.div>
                 );
               })
+            )}
+            {visible < filterNotification.length && (
+              <div className="p-3 text-center">
+                <Button
+                  onClick={() => setVisible((prev) => prev + 5)}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Show More
+                </Button>
+              </div>
             )}
           </div>
         </motion.div>

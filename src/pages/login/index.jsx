@@ -58,7 +58,7 @@ const LoginPage = () => {
 
           {/* 🚀 Floating Image - Bottom Left */}
           <motion.img
-            src="/public/assets/images/Img1.png"
+            src="/assets/images/Img1.png"
             alt="crm visual"
             initial={{ opacity: 0, x: -40, y: 40 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
