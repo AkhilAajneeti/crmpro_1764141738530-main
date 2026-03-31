@@ -3,27 +3,36 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
+import { useMetaData } from "hooks/useMetaData";
+import { useUsers } from "hooks/useUsers";
 
 const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { data: meta } = useMetaData();
+  const { data: users } = useUsers();
+  const source = meta?.list || [];
+  const status = meta?.status?.options || [];
+  const userList = users?.list || [];
+  // Source
+  const sourceOptions = source.map((item) => ({
+    value: item.value || item,
+    label: item.label || item,
+  }));
 
-  const status = [
-    { value: "all", label: "All Categories" },
-    { value: "active", label: "Active Opportunities" },
-    { value: "scheduled", label: "Scheduled" },
-    { value: "budget_issue", label: "Budget Issue" },
-    { value: "stale", label: "Stale (30+ Days)" },
-  ];
+  // Status
+  const statusOptions = status.map((item) => ({
+    value: item.value || item,
+    label: item.label || item,
+  }));
 
-  const nextContactOptions = [
-    { value: "all", label: "All Next Contacts" },
-    { value: "today", label: "Due Today" },
-    { value: "7days", label: "Next 7 Days" },
-    { value: "14days", label: "Next 14 Days" },
-    { value: "30days", label: "Next 30 Days" },
-    { value: "overdue", label: "Overdue" },
-  ];
+  // Users
+  const userOptions = userList.map((user) => ({
+    value: user.id,
+    label: user.name,
+  }));
+  // assign user filter
 
+  // age filter
   const ageOptions = [
     { value: "all", label: "All Ages" },
     { value: "0-7", label: "0–7 Days" },
@@ -92,21 +101,32 @@ const PipelineFilters = ({ filters, onFiltersChange, onResetFilters }) => {
       {/* Filters Content */}
       <div className={`space-y-4 ${isExpanded ? "block" : "hidden lg:block"}`}>
         {/* Search and Quick Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Status */}
           <Select
-            placeholder="Lead Category"
-            options={healthOptions}
-            value={filters?.health || "all"}
-            onChange={(value) => handleFilterChange("health", value)}
+            placeholder="Status"
+            options={statusOptions}
+            value={filters?.status || "all"}
+            onChange={(value) => handleFilterChange("status", value)}
           />
 
+          {/* Assigned User */}
           <Select
-            placeholder="Next Contact"
-            options={nextContactOptions}
-            value={filters?.nextContact || "all"}
-            onChange={(value) => handleFilterChange("nextContact", value)}
+            placeholder="Assigned User"
+            options={userOptions}
+            value={filters?.assignedUser || "all"}
+            onChange={(value) => handleFilterChange("assignedUser", value)}
           />
 
+          {/* Source */}
+          <Select
+            placeholder="Source"
+            options={sourceOptions}
+            value={filters?.source || "all"}
+            onChange={(value) => handleFilterChange("source", value)}
+          />
+
+          {/* Age */}
           <Select
             placeholder="Lead Age"
             options={ageOptions}

@@ -10,12 +10,17 @@ const AccountsTable = ({
   onBulkAction,
   onSelectionChange,
   isLoading,
+  page,
+  setPage,
+  total,
+  limit,
+  setLimit,
 }) => {
   // do some changes
 
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [currentPage, setCurrentPage] = useState(1);
+  // const [page, setpage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState({});
@@ -108,11 +113,11 @@ const AccountsTable = ({
   }, [accounts, globalFilter, columnFilters, sortConfig]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedData?.length / pageSize);
-  const paginatedData = filteredAndSortedData?.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const totalPages = Math.ceil(total / limit);
+  // const accounts = filteredAndSortedData?.slice(
+  //   (page - 1) * pageSize,
+  //   page * pageSize,
+  // );
 
   const handleSort = (key) => {
     setSortConfig((prev) => ({
@@ -124,7 +129,7 @@ const AccountsTable = ({
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows(new Set(paginatedData.map((account) => account.id)));
+      setSelectedRows(new Set(accounts.map((account) => account.id)));
     } else {
       setSelectedRows(new Set());
     }
@@ -152,9 +157,9 @@ const AccountsTable = ({
   }, [selectedRows]);
 
   const isAllSelected =
-    paginatedData?.length > 0 && selectedRows?.size === paginatedData?.length;
+    accounts?.length > 0 && selectedRows?.size === accounts?.length;
   const isIndeterminate =
-    selectedRows?.size > 0 && selectedRows?.size < paginatedData?.length;
+    selectedRows?.size > 0 && selectedRows?.size < accounts?.length;
   const SkeletonRow = () => (
     <tr className="animate-pulse border-t border-border">
       {/* Checkbox */}
@@ -300,7 +305,7 @@ const AccountsTable = ({
           <tbody>
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-            ) : !paginatedData?.length ? (
+            ) : !accounts?.length ? (
               <tr>
                 <td colSpan="6">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
@@ -309,7 +314,7 @@ const AccountsTable = ({
                 </td>
               </tr>
             ) : (
-              paginatedData?.map((account) => (
+              accounts?.map((account) => (
                 <tr
                   key={account?.id}
                   className="border-t border-border hover:bg-muted/30 cursor-pointer transition-colors"
@@ -389,7 +394,7 @@ const AccountsTable = ({
       {/* Mobile Card Layout */}
       {/* Mobile Card Layout – CLEAN CRM STYLE */}
       <div className="md:hidden">
-        {paginatedData?.map((account) => (
+        {accounts?.map((account) => (
           <div
             key={account?.id}
             className="p-4 border-b border-border last:border-b-0 bg-background hover:bg-muted/30 transition rounded-none"
@@ -453,19 +458,22 @@ const AccountsTable = ({
           <div className="flex items-center space-x-4">
             <Select
               options={pageSizeOptions}
-              value={pageSize}
-              onChange={setPageSize}
+              value={limit}
+              onChange={(val)=>{
+                setLimit(val);
+                setPage(1)
+              }}
               className="w-32"
             />
             <span className="text-sm text-muted-foreground">
               Showing{" "}
               {Math.min(
-                (currentPage - 1) * pageSize + 1,
-                filteredAndSortedData?.length,
+                (page - 1) * limit + 1,
+                total,
               )}{" "}
               to{" "}
-              {Math.min(currentPage * pageSize, filteredAndSortedData?.length)}{" "}
-              of {filteredAndSortedData?.length} results
+              {Math.min(page * limit, total)}{" "}
+              of {total} results
             </span>
           </div>
 
@@ -473,16 +481,16 @@ const AccountsTable = ({
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(1)}
+              disabled={page === 1}
+              onClick={() => setPage(1)}
             >
               <Icon name="ChevronsLeft" size={16} />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
+              disabled={page === 1}
+              onClick={() => setPage((prev) => prev - 1)}
             >
               <Icon name="ChevronLeft" size={16} />
             </Button>
@@ -492,20 +500,20 @@ const AccountsTable = ({
                 let pageNum;
                 if (totalPages <= 5) {
                   pageNum = i + 1;
-                } else if (currentPage <= 3) {
+                } else if (page <= 3) {
                   pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
+                } else if (page >= totalPages - 2) {
                   pageNum = totalPages - 4 + i;
                 } else {
-                  pageNum = currentPage - 2 + i;
+                  pageNum = page - 2 + i;
                 }
 
                 return (
                   <Button
                     key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
+                    variant={page === pageNum ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
+                    onClick={() => setPage(pageNum)}
                     className="w-8 h-8"
                   >
                     {pageNum}
@@ -517,16 +525,16 @@ const AccountsTable = ({
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
+              disabled={page === totalPages}
+              onClick={() => setPage((prev) => prev + 1)}
             >
               <Icon name="ChevronRight" size={16} />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(totalPages)}
+              disabled={page === totalPages}
+              onClick={() => setPage(totalPages)}
             >
               <Icon name="ChevronsRight" size={16} />
             </Button>

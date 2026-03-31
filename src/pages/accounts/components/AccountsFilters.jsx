@@ -3,7 +3,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 
-const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount }) => {
+const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,limit,page }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activityDateFilter, setActivityDateFilter] = useState("last_7_days");
   const industryOptions = [
@@ -68,6 +68,11 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount }) => {
     (value) => value !== "",
   )?.length;
 
+
+  // add ranges 
+  const start=total===0?0:(page-1)*(limit+1)
+  const end=Math.min(page*limit,total)
+
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -118,7 +123,7 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount }) => {
         {/* Results and Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-4">
           <div className="text-sm text-muted-foreground">
-            {resultCount} {resultCount === 1 ? "account" : "accounts"} found
+            {start}-{end}/{ total} {resultCount === 1 ? "account" : "accounts"} found
           </div>
 
           <div className="flex items-center gap-2">

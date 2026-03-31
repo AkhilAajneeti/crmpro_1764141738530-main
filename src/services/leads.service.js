@@ -1,4 +1,26 @@
-export const fetchLeads = async () => {
+export const fetchLeads = async ({limit,page}) => {
+  const token = localStorage.getItem("auth_token");
+  const user = JSON.parse(localStorage.getItem("login_object"));
+
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${page}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token, // ✅ backend expects this
+    },
+  });
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch accounts");
+  }
+  return await res.json();
+};
+export const fetchNewLeads = async () => {
   const token = localStorage.getItem("auth_token");
   const user = JSON.parse(localStorage.getItem("login_object"));
 

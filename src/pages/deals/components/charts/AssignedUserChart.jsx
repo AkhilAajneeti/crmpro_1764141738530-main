@@ -66,8 +66,21 @@ const AssignedUserChart = ({ leads = [] }) => {
 
       <div className="h-[360px]">
         {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            No Data Available
+          <div className="h-full flex flex-col justify-center gap-4 px-4">
+            {[1, 2, 3, 4].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                {/* Y-axis label */}
+                <div className="w-16 h-3 bg-gray-200 rounded" />
+
+                {/* Bar skeleton */}
+                <div className="flex-1 h-4 bg-gray-200 rounded" />
+              </div>
+            ))}
+
+            {/* Optional message */}
+            <p className="text-center text-sm text-gray-400 mt-4">
+              No data available
+            </p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

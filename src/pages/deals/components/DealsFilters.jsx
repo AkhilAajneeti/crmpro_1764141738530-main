@@ -11,7 +11,7 @@ const DealsFilters = ({
   filters,
   onFiltersChange,
   onClearFilters,
-  dealCount,
+  total,
   onBulkAction,
   selectedCount,
   toggleAnalytics,
@@ -89,7 +89,7 @@ const DealsFilters = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-foreground">
-            leads ({dealCount?.toLocaleString()})
+            Leads ({total})
           </h2>
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">

@@ -310,7 +310,7 @@ const Pipeline = () => {
 
           {/* Pipeline Stats */}
           <PipelineStats deals={filteredDeals} />
-          {/* <PipelineFilters deals={filteredDeals}/> */}
+          <PipelineFilters deals={filteredDeals}/>
 
           {/* Pipeline Board */}
           <div className="bg-card border border-border rounded-xl p-3">

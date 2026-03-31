@@ -25,6 +25,8 @@ const AccountsPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
 
   const [selectedAccountIds, setSelectedAccountIds] = useState([]);
 
@@ -34,22 +36,19 @@ const AccountsPage = () => {
     activityDate: "",
   });
 
-  const { data, isLoading } = useAccounts();
+  const { data, isLoading } = useAccounts({ limit, page });
   const { data: meta } = useMetaData();
   const queryClient = useQueryClient();
   const mockAccounts = data?.list || [];
   const industry = meta?.industries || [];
   const accType = meta?.type || [];
-
+  const total = data?.total || 0;
   const handleAccountSuccess = async () => {
     try {
-      setLoading(true);
-      const data = await fetchAccounts();
-      queryClient.invalidateQueries(["accounts"]);
+      const data = await fetchAccounts({ limit, page });
+      queryClient.invalidateQueries(["accounts", limit, page]);
     } catch (error) {
       console.error("Failed to refresh accounts", error);
-    } finally {
-      setLoading(false);
     }
   };
   const getDateRangeByFilter = (filter) => {
@@ -173,6 +172,7 @@ const AccountsPage = () => {
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
+    setPage(1);
   };
 
   const handleAccountButton = () => {
@@ -366,6 +366,9 @@ const AccountsPage = () => {
             onFiltersChange={handleFiltersChange}
             activeFilters={filters}
             resultCount={filteredAccounts?.length}
+            total={total}
+            limit={limit}
+            page={page}
           />
 
           {/* Accounts Table */}
@@ -375,6 +378,11 @@ const AccountsPage = () => {
             onBulkAction={handleBulkAction}
             onSelectionChange={setSelectedAccountIds}
             isLoading={isLoading}
+            page={page}
+            setPage={setPage}
+            total={total}
+            limit={limit}
+            setLimit={setLimit}
           />
         </div>
       </main>

@@ -38,12 +38,26 @@ const NotificationDropdown = () => {
   };
 
   const parseNotification = (n) => {
+    const entityType =
+      n.data?.entityType ||
+      n.entityType ||
+      n.noteData?.parentType ||
+      n.relatedParentType ||
+      n.relatedType ||
+      "";
+
+    const title =
+      n.data?.entityName || n.entityName || n.noteData?.parentName || "";
+
+    const subtitle =
+      n.data?.status || n.noteData?.data?.value || n.message || "";
+
     return {
       user: n.userName,
       action: getMessage(n),
-      title: n.data?.entityName || n.data?.parentName || "",
-      subtitle: n.data?.status || n.message || "",
-      entity: n.data?.entityType,
+      title,
+      subtitle,
+      entity: entityType,
       time: n.createdAt,
       read: n.read,
       id: n.id,
@@ -62,7 +76,20 @@ const NotificationDropdown = () => {
 
     return d.toLocaleDateString();
   };
-
+  const formatEntity = (type) => {
+    switch (type) {
+      case "Meeting":
+        return "📅 Meeting";
+      case "Lead":
+        return "👤 Lead";
+      case "Task":
+        return "✅ Task";
+      case "Note":
+        return "📝 Update";
+      default:
+        return "";
+    }
+  };
   // notification filter
   const filterNotification =
     activeTab == "unread"
@@ -70,6 +97,7 @@ const NotificationDropdown = () => {
       : notifications;
   // visible notification
   const visibleNotification = filterNotification.slice(0, visible);
+
   return (
     <AnimatePresence>
       {open && (
@@ -80,6 +108,7 @@ const NotificationDropdown = () => {
           transition={{ duration: 0.25 }}
           className="absolute right-0 mt-2 w-96 bg-white shadow-2xl rounded-2xl z-50 border overflow-hidden"
         >
+          <audio ref={audioRef} src="/notification.mp3" preload="auto" />
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <h3 className="font-semibold text-gray-800">Notifications</h3>
@@ -105,7 +134,6 @@ const NotificationDropdown = () => {
               </button>
             </div>
           </div>
-
           {/* Body */}
           <div className="max-h-96 overflow-y-auto">
             {filterNotification.length === 0 ? (
@@ -121,7 +149,7 @@ const NotificationDropdown = () => {
               visibleNotification.map((n) => {
                 const item = parseNotification(n);
                 const isUnread = !item.read;
-                <audio ref={audioRef} src="/notification.mp3" preload="auto" />;
+
                 return (
                   <motion.div
                     key={item.id}
@@ -136,9 +164,6 @@ const NotificationDropdown = () => {
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-semibold">
                         {item.user?.[0]}
                       </div>
-
-                      {/* small badge */}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white"></div>
                     </div>
 
                     {/* Content */}
@@ -146,15 +171,26 @@ const NotificationDropdown = () => {
                       {/* Line 1 */}
                       <p className="text-sm text-gray-800">
                         <span className="font-semibold">{item.user}</span>{" "}
-                        {item.action}{" "}
-                        <span className="font-medium">{item.title}</span>
+                        <span className="text-gray-600">{item.action}</span>{" "}
                       </p>
 
                       {/* Line 2 */}
+                      {item.entity && (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {formatEntity(item.entity)}
+                        </p>
+                      )}
+                      {/* Title */}
+                      {item.title && (
+                        <p className="text-sm font-medium text-gray-900 mt-1">
+                          {item.title}
+                        </p>
+                      )}
+
+                      {/* Subtitle */}
                       {item.subtitle && (
                         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                           {item.subtitle}
-                          {item.entity}
                         </p>
                       )}
 

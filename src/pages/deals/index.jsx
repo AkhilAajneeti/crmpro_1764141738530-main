@@ -33,14 +33,17 @@ const DealsPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const { data: leadsData, isLoading } = useLeads();
+  const { data: leadsData, isLoading } = useLeads({ limit, page });
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
+
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
     direction: "desc",
@@ -73,7 +76,7 @@ const DealsPage = () => {
   const source = metaData?.sources || [];
   const status = metaData?.status || [];
   const industry = metaData?.industries || [];
-
+  const total = leadsData?.total || 0;
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
@@ -180,7 +183,7 @@ const DealsPage = () => {
     return filtered;
   }, [leads, filters, sortConfig]);
 
-  const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
+  const totalPages = Math.ceil(total / limit);
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -244,20 +247,16 @@ const DealsPage = () => {
   };
 
   const handleSelectAll = (isSelected) => {
-    if (isSelected) {
-      const currentPageDeals = filteredAndSortedDeals
-        ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-        ?.map((deal) => deal?.id);
-      setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
-    } else {
-      const currentPageDeals = filteredAndSortedDeals
-        ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-        ?.map((deal) => deal?.id);
-      setSelectedDeals(
-        selectedDeals?.filter((id) => !currentPageDeals?.includes(id)),
-      );
-    }
-  };
+  const currentPageDeals = deals.map((deal) => deal.id);
+
+  if (isSelected) {
+    setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
+  } else {
+    setSelectedDeals(
+      selectedDeals.filter((id) => !currentPageDeals.includes(id))
+    );
+  }
+};
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
@@ -271,7 +270,7 @@ const DealsPage = () => {
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1);
+    setPage(1);
   };
 
   const handleClearFilters = () => {
@@ -284,7 +283,7 @@ const DealsPage = () => {
       closeDateFrom: "",
       closeDateTo: "",
     });
-    setCurrentPage(1);
+    setPage(1);
   };
   const handleBulkAction = (action) => {
     if (action === "mass-update") {
@@ -362,7 +361,7 @@ const DealsPage = () => {
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
+    setPage(1);
   };
   const handleBulkUpdateLeads = async (payload) => {
     try {
@@ -374,7 +373,6 @@ const DealsPage = () => {
         id: "bulk-update",
       });
 
-      
       // setLeads(data.list);
       queryClient.invalidateQueries(["leads"]);
 
@@ -388,7 +386,7 @@ const DealsPage = () => {
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setPage(1);
   }, [filters]);
 
   return (
@@ -418,7 +416,7 @@ const DealsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Button
-                className="linearbg-1 text-white hover:text-white"
+                  className="linearbg-1 text-white hover:text-white"
                   variant="outline"
                   onClick={() =>
                     exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
@@ -428,7 +426,10 @@ const DealsPage = () => {
                   Export All
                 </Button>
 
-                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+                <Button
+                  onClick={handleAddLeads}
+                  className="linearbg-1 text-white hover:text-white"
+                >
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Deal
                 </Button>
@@ -444,6 +445,9 @@ const DealsPage = () => {
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
               toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
+              total={total}
+              limit={limit}
+              page={page}
             />
             {/* chartsAnanlysis */}
             {showAnalytics && (
@@ -479,20 +483,23 @@ const DealsPage = () => {
               onDealClick={handleDealClick}
               sortConfig={sortConfig}
               onSort={handleSort}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
               onDelete={handleDeleteLead}
               isLoading={isLoading}
+              page={page}
+              setPage={setPage}
             />
 
             {/* Pagination */}
             <TablePagination
-              currentPage={currentPage}
+              currentPage={page}
               totalPages={totalPages}
-              totalItems={filteredAndSortedDeals?.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+              totalItems={total}
+              itemsPerPage={limit}
+              onPageChange={(p) => setPage(p)}
+              onItemsPerPageChange={(val) => {
+                setLimit(val);
+                setPage(1);
+              }}
             />
 
             {/* Deal Drawer */}

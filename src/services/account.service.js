@@ -1,10 +1,10 @@
 /* GET */
-export const fetchAccounts = async () => {
+export const fetchAccounts = async ({limit,page}) => {
   const token = localStorage.getItem("auth_token");
+const offset=(page-1)*limit;
+  // console.log("AUTH TOKEN:", token); // 🔍 debug
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Account", {
+  const res = await fetch(`https://gateway.aajneetiadvertising.com/Account?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc&attributeSelect=name%2Ctype%2CmodifiedAt%2CmodifiedById%2CmodifiedByName%2CcreatedAt%2CcreatedById%2CcreatedByName`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

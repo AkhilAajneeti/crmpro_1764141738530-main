@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
-import { useLeads } from "hooks/useLeads";
+import { useNewLeads } from "hooks/useLeads";
 import { useTasks } from "hooks/useTasks";
 import { useMeetings } from "hooks/useMeetings";
 import { useProjects } from "hooks/useProjects";
@@ -12,7 +12,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
-  const { data: leadsData, isLoading } = useLeads();
+  // const { data: leadsData, isLoading } = useLeads();
+  const { data: leadsData, isLoading } = useNewLeads();
   const { data: taskData } = useTasks();
   const { data: meetingData } = useMeetings();
   const { data: projectData } = useProjects();

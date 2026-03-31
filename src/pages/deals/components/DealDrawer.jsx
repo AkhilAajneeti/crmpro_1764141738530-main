@@ -284,25 +284,7 @@ const DealDrawer = ({
     onBulkUpdate(payload);
     onClose();
   };
-  // activity operation -------
-  // fetching lead stream from id
-  // useEffect(() => {
-  //   if (!isOpen || !deal?.id) return;
 
-  //   const loadStream = async () => {
-  //     try {
-  //       const id = deal?.id;
-  //       const res = await leadStreamById(id);
-  //       console.log("LEAD DETAIL RESPONSE:", res);
-  //       setmockStream(res.list || []);
-  //     } catch (err) {
-  //       console.error("Failed to fetch streams", err);
-  //       toast.error("Failed to load activity");
-  //     }
-  //   };
-
-  //   loadStream();
-  // }, [isOpen, deal?.id]);
   const handleDelete = async (e, activity) => {
     e.stopPropagation();
     const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);

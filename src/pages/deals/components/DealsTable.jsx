@@ -11,8 +11,8 @@ const DealsTable = ({
   onDealClick,
   sortConfig,
   onSort,
-  currentPage,
-  itemsPerPage,
+  page,
+  setPage,
   onDelete,
   isLoading,
 }) => {
@@ -79,12 +79,12 @@ const DealsTable = ({
     await onDelete(deal.id); // 👈 parent ko bol rahe ho
   };
 
-  const paginatedDeals = useMemo(() => {
-    if (!deals?.length) return [];
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return deals?.slice(startIndex, startIndex + itemsPerPage);
-  }, [deals, currentPage, itemsPerPage]);
-
+  // const paginatedDeals = useMemo(() => {
+  //   if (!deals?.length) return [];
+  //   const startIndex = (page - 1) * setPage;
+  //   return deals?.slice(startIndex, startIndex + setPage);
+  // }, [deals, page, setPage]);
+const paginatedDeals = deals;
   const isAllSelected =
     selectedDeals?.length === paginatedDeals?.length &&
     paginatedDeals?.length > 0;

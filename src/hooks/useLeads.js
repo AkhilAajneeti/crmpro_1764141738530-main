@@ -1,10 +1,17 @@
-import { useQuery } from "@tanstack/react-query"
-import { fetchLeads } from "services/leads.service"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { fetchLeads, fetchNewLeads } from "services/leads.service"
 
-export const useLeads = () => {
+export const useLeads = ({limit,page}) => {
+    return useQuery({
+        queryKey: ["leads",limit,page],
+        queryFn: ()=>fetchLeads({limit,page}),
+        placeholderData: keepPreviousData,
+    })
+}
+export const useNewLeads = () => {
     return useQuery({
         queryKey: ["leads"],
-        queryFn: fetchLeads,
-        staleTime: 5 * 60 * 1000,
+        queryFn: ()=>fetchNewLeads(),
+        placeholderData: keepPreviousData,
     })
 }

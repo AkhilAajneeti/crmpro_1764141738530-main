@@ -12,7 +12,7 @@ const COLORS = [
   "#8b5cf6",
   "#06b6d4",
 ];
-const IndustryChart = ({ leads = []}) => {
+const IndustryChart = ({ leads = [] }) => {
   const [viewType, setViewType] = useState("monthly");
 
   // 🔥 Filter leads based on view type
@@ -88,7 +88,9 @@ const IndustryChart = ({ leads = []}) => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6`}>
+      <div
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6`}
+      >
         <div>
           <h3 className="text-lg font-semibold text-card-foreground">
             Industry Breakdown
@@ -114,44 +116,62 @@ const IndustryChart = ({ leads = []}) => {
       </div>
 
       {/* Chart */}
-      <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              dataKey="value"
-              paddingAngle={3}
-            >
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Pie>
+      <div className="h-[220px] flex items-center justify-center">
+        {chartData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center">
+            {/* Fake chart circle */}
+            <div className="w-40 h-40 rounded-full border-8 border-gray-200 animate-pulse flex items-center justify-center">
+              <span className="text-sm text-gray-400">No Data</span>
+            </div>
 
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+            {/* Message */}
+            <p className="text-sm text-gray-500 mt-4">
+              No leads found for this period
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                dataKey="value"
+                paddingAngle={3}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Bottom Summary */}
       <div className="flex flex-wrap justify-start gap-6 mt-6 pt-4 border-t border-border text-sm overflow-x-scroll">
-        {chartData.map((item, index) => (
-          <div key={item.name} className="flex items-center space-x-2 ">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-            />
-            <span>
-              {item.name}: {item.value}
-            </span>
-          </div>
-        ))}
+        {chartData.length === 0 ? (
+          <span className="text-gray-400 text-sm">No data available</span>
+        ) : (
+          chartData.map((item, index) => (
+            <div key={item.name} className="flex items-center space-x-2 ">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              />
+              <span>
+                {item.name}: {item.value}
+              </span>
+            </div>
+          ))
+        )}
 
         <div className="flex items-center space-x-2 font-semibold">
           <Icon name="Target" size={16} />
