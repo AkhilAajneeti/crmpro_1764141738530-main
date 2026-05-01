@@ -20,6 +20,7 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
   const [status, setStatus] = useState([]);
+  
   const [source, setSource] = useState([]);
 
   const bulkActions = [
